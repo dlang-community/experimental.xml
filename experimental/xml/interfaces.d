@@ -13,37 +13,25 @@ template isLexer(L)
     enum bool isLexer = is(typeof(
     (inout int = 0)
     {
-        // The kind of character handled by the lexer; should be comparable with dchar
         alias C = L.CharacterType;          // type L.CharacterType
-        // The kind of input taken by the lexer
         alias T = L.InputType;              // type L.InputType
         
         L lexer;
         T source;
-        dchar c;
-        dstring s;
+        char c;
         bool b;
+        string s;
         C[] cs;
         
-        // Initializes the lexer with the input source
         lexer.setSource(source);            // void setSource(InputType)
-        // Checks if there are more characters to parse
         b = lexer.empty;                    // bool empty
-        // Checks if the character at the current position compares equal to c;
-        // if yes, also advances to next character
-        b = lexer.testAndEat(c);            // bool testAndEat(dchar)
-        // Reads from the source until it finds character c; if the first boolean is true, also
-        // consumes c; if the second boolean is true, the returned slice includes c
-        cs = lexer.readUntil(c, b, b);      // CharacterType[] readUntil(dchar, bool, bool)
-        // Reads from the source until it finds sequence s; if b is true, the returned slice includes
-        // that sequence; the sequence is always consumed from input, even if not returned
-        cs = lexer.readUntil(s, b);         // CharacterType[] readUntil(dstring, bool)
-        // Reads from the source until it finds the second sequence, including balanced occurrences of
-        // the first and the second sequence; if b is true, the terminating sequence is included in the
-        // return slice; the terminating sequence is always consumed from input, even if not returned
-        cs = lexer.readBalanced(s, s, b);   // CharacterType[] readBalanced(dstring, dstring, bool)
-        // Advances the input until the current character is not in sequence s;
-        lexer.skip(s);                      // void skip(dstring)
+        lexer.start();                      // void start();
+        cs = lexer.get();                   // CharacterType[] get() const;
+        b = lexer.testAndAdvance(c);        // bool testAndEat(char)
+        lexer.advanceUntil(c, b);           // void advanceUntil(char, bool)
+        lexer.advanceUntilEither(c, c);     // void advanceUntilEither(char, char)
+        lexer.advanceUntilAny(c, c, c);     // void advanceUntilAny(char, char, char)
+        lexer.dropWhile(s);                 // void drowWhile(string)
     }));
 }
 
@@ -79,6 +67,7 @@ struct LowLevelNode(T)
         CDATA,              // <![CDATA[   ]]>
         CONDITIONAL,        // <![     [   ]]>
         COMMENT,            // <!--        -->
+        DOCTYPE,            // <!DOCTYPE [ ] >
         DECLARATION,        // <!  >
     };
     Kind kind;

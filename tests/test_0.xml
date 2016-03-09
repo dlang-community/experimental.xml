@@ -1,0 +1,11 @@
+<?xml encoding="utf-8" ?>
+<aaa>
+    <! ANYTHING HERE>
+    <bbb>
+        <!-- lol -->
+        Lots of Text!
+        On multiple lines!
+    </bbb>
+    <![CDATA[ Ciaone! ]]>
+    <![conditional[ lalalala ]]>
+</aaa>
