@@ -449,7 +449,6 @@ struct Parser(L, bool preserveSpaces = false)
     </aaa>
     };
     writeln(xml);
-<<<<<<< HEAD
     
     {
         writeln("SliceLexer:");
@@ -468,13 +467,6 @@ struct Parser(L, bool preserveSpaces = false)
         {
             writeln(e);
         }
-=======
-    auto parser = Parser!(RangeLexer!string)();
-    parser.setSource(xml);
-    foreach(e; parser)
-    {
-        writeln(e);
->>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
     }
 }*/
 
@@ -485,7 +477,6 @@ unittest
     import std.conv;
     import core.time;
     
-<<<<<<< HEAD
     immutable int tests = 4;
     
     {
@@ -519,20 +510,5 @@ unittest
             Duration elapsed = after - before;
             writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
         }
-=======
-    immutable int tests = 2;
-    auto parser = Parser!(SliceLexer!string)();
-    for(int i = 0; i < tests; i++)
-    {
-        auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
-        MonoTime before = MonoTime.currTime;
-        parser.setSource(data);
-        foreach(e; parser)
-        {
-        }
-        MonoTime after = MonoTime.currTime;
-        Duration elapsed = after - before;
-        writeln("test ", i,": \t", elapsed);
->>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
     }
 }
