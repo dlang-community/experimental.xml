@@ -170,7 +170,6 @@ struct RangeLexer(T)
     }
     
     void dropWhile(string s)
-<<<<<<< HEAD
     {
         while(!input.empty && s.indexOf(input.front) != -1)
             input.popFront();
@@ -178,15 +177,6 @@ struct RangeLexer(T)
     
     bool testAndAdvance(char c)
     {
-=======
-    {
-        while(!input.empty && s.indexOf(input.front) != -1)
-            input.popFront();
-    }
-    
-    bool testAndAdvance(char c)
-    {
->>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
         if(input.front == c)
         {
             app.put(input.front);
