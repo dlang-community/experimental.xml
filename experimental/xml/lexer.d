@@ -170,6 +170,7 @@ struct RangeLexer(T)
     }
     
     void dropWhile(string s)
+<<<<<<< HEAD
     {
         while(!input.empty && s.indexOf(input.front) != -1)
             input.popFront();
@@ -177,6 +178,15 @@ struct RangeLexer(T)
     
     bool testAndAdvance(char c)
     {
+=======
+    {
+        while(!input.empty && s.indexOf(input.front) != -1)
+            input.popFront();
+    }
+    
+    bool testAndAdvance(char c)
+    {
+>>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
         if(input.front == c)
         {
             app.put(input.front);
@@ -439,6 +449,7 @@ struct Parser(L, bool preserveSpaces = false)
     </aaa>
     };
     writeln(xml);
+<<<<<<< HEAD
     
     {
         writeln("SliceLexer:");
@@ -457,6 +468,13 @@ struct Parser(L, bool preserveSpaces = false)
         {
             writeln(e);
         }
+=======
+    auto parser = Parser!(RangeLexer!string)();
+    parser.setSource(xml);
+    foreach(e; parser)
+    {
+        writeln(e);
+>>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
     }
 }*/
 
@@ -467,6 +485,7 @@ unittest
     import std.conv;
     import core.time;
     
+<<<<<<< HEAD
     immutable int tests = 4;
     
     {
@@ -500,5 +519,20 @@ unittest
             Duration elapsed = after - before;
             writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
         }
+=======
+    immutable int tests = 2;
+    auto parser = Parser!(SliceLexer!string)();
+    for(int i = 0; i < tests; i++)
+    {
+        auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
+        MonoTime before = MonoTime.currTime;
+        parser.setSource(data);
+        foreach(e; parser)
+        {
+        }
+        MonoTime after = MonoTime.currTime;
+        Duration elapsed = after - before;
+        writeln("test ", i,": \t", elapsed);
+>>>>>>> df63fa6855a68852547ee25769cf812a9855ce30
     }
 }
