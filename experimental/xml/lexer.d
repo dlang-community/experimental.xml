@@ -9,8 +9,6 @@ import std.range.primitives;
 import std.string;
 import std.traits;
 
-import std.stdio;
-
 class EndOfStreamException: Exception
 {
     this(string file = __FILE__, int line = __LINE__)
@@ -40,6 +38,7 @@ struct SliceLexer(T)
     
     T input;
     size_t pos;
+    size_t begin;
     
     void setSource(T input)
     {
@@ -63,48 +62,23 @@ struct SliceLexer(T)
         return pos >= input.length;
     }
     
-    CharacterType[] readUntil(dchar c, bool included, bool returned)
+    void start()
     {
-        auto start = pos;
-        while(input[pos] != c)
-            pos++;
-        if(included)
-            pos++;
-        if(returned)
-            return input[start..pos];
-        else
-            return input[start..(pos-1)];
-    }
-    CharacterType[] readUntil(dstring s, bool returned)
-    {
-        auto start = pos;
-        while(!input[start..pos].endsWith(s))
-            pos++;
-        if(returned)
-            return input[start..pos];
-        else
-            return input[start..(pos-s.length)];
+        begin = pos;
     }
     
-    CharacterType[] readBalanced(dstring begin, dstring end, bool returned)
+    CharacterType[] get() const
     {
-        auto start = pos;
-        int count = 1;
-        while(count > 0)
-        {
-            pos++;
-            if(input[start..pos].endsWith(begin))
-                count++;
-            else if(input[start..pos].endsWith(end))
-                count--;
-        }
-        if(returned)
-            return input[start..pos];
-        else
-            return input[start..(pos-end.length)];
+        return input[begin..pos];
     }
     
-    auto testAndEat(dchar c)
+    void dropWhile(string s)
+    {
+        while(pos < input.length && s.indexOf(input[pos]) != -1)
+            pos++;
+    }
+    
+    bool testAndAdvance(char c)
     {
         if(input[pos] == c)
         {
@@ -114,13 +88,39 @@ struct SliceLexer(T)
         return false;
     }
     
-    void skip(dstring s)
+    void advanceUntil(char c, bool included)
     {
-        while(pos < input.length)
-            if(s.indexOf(input[pos]) != -1)
-                pos++;
-            else
-                break;
+        while(input[pos] != c)
+            pos++;
+        if(included)
+            pos++;
+    }
+    
+    int advanceUntilEither(char c1, char c2)
+    {
+        while(input[pos] != c1 && input[pos] != c2)
+            pos++;
+        
+        if(input[pos++] == c1)
+            return 0;
+        else
+            return 1;
+    }
+    
+    int advanceUntilAny(char c1, char c2, char c3)
+    {
+        while(input[pos] != c1 && input[pos] != c2 && input[pos] != c3)
+            pos++;
+        
+        if(input[pos] == c1)
+        {
+            pos++;
+            return 0;
+        }
+        else if(input[pos++] == c2)
+            return 1;
+        else
+            return 2;
     }
 }
 
@@ -137,6 +137,7 @@ struct RangeLexer(T)
     alias InputType = T;
     
     T input;
+    Appender!(CharacterType[]) app;
     
     void setSource(T input)
     {
@@ -158,70 +159,75 @@ struct RangeLexer(T)
         return input.empty;
     }
     
-    CharacterType[] readUntil(dchar c, bool included, bool returned)
+    void start()
     {
-        auto app = appender!(CharacterType[])();
-        while(input.front != c)
-        {
-            app.put(input.front);
-            input.popFront();
-        }
-        if(returned)
-            app.put(input.front);
-        if(included)
-            input.popFront();
+        app = appender!(CharacterType[])();
+    }
+    
+    CharacterType[] get() const
+    {
         return app.data;
     }
-    CharacterType[] readUntil(dstring s, bool returned)
+    
+    void dropWhile(string s)
     {
-        auto app = appender!(CharacterType[])();
-        while(!app.data.endsWith(s))
-        {
-            app.put(input.front);
+        while(!input.empty && s.indexOf(input.front) != -1)
             input.popFront();
-        }
-        if(returned)
-            return app.data;
-        else
-            return app.data[0..($-s.length)];
     }
     
-    CharacterType[] readBalanced(dstring begin, dstring end, bool returned)
-    {
-        auto app = appender!(CharacterType[])();
-        int count = 1;
-        while(count > 0)
-        {
-            app.put(input.front);
-            input.popFront();
-            if(app.data.endsWith(begin))
-                count++;
-            else if(app.data.endsWith(end))
-                count--;
-        }
-        if(returned)
-            return app.data;
-        else
-            return app.data[0..($-end.length)];
-    }
-    
-    auto testAndEat(dchar c)
+    bool testAndAdvance(char c)
     {
         if(input.front == c)
         {
+            app.put(input.front);
             input.popFront();
             return true;
         }
         return false;
     }
     
-    void skip(dstring s)
+    void advanceUntil(char c, bool included)
     {
-        while(!input.empty())
-            if(s.indexOf(input.front) != -1)
-                input.popFront();
-            else
-                break;
+        while(input.front != c)
+        {
+            app.put(input.front);
+            input.popFront();
+        }
+        if(included)
+        {
+            app.put(input.front);
+            input.popFront();
+        }
+    }
+    
+    int advanceUntilEither(char c1, char c2)
+    {
+        do
+        {
+            app.put(input.front);
+            input.popFront();
+        } while(app.data[$-1] != c1 && app.data[$-1] != c2);
+        
+        if(app.data[$-1] == c1)
+            return 0;
+        else
+            return 1;
+    }
+    
+    int advanceUntilAny(char c1, char c2, char c3)
+    {
+        do
+        {
+            app.put(input.front);
+            input.popFront();
+        } while(app.data[$-1] != c1 && app.data[$-1] != c2 && app.data[$-1] != c3);
+        
+        if(app.data[$-1] == c1)
+            return 0;
+        else if(app.data[$-1] == c2)
+            return 1;
+        else
+            return 2;
     }
 }
 
@@ -260,7 +266,7 @@ struct Parser(L, bool preserveSpaces = false)
     bool empty()
     {
         static if(!preserveSpaces)
-            lexer.skip(" \r\n\t");
+            lexer.dropWhile(" \r\n\t");
             
         return lexer.empty;
     }
@@ -289,79 +295,136 @@ struct Parser(L, bool preserveSpaces = false)
     private void fetchNext()
     {
         static if(!preserveSpaces)
-            lexer.skip(" \r\n\t");
+            lexer.dropWhile(" \r\n\t");
             
         if(lexer.empty)
             throw new EndOfStreamException();
         
+        lexer.start();
+        
         // text element
-        if(!lexer.testAndEat('<'))
+        if(!lexer.testAndAdvance('<'))
         {
+            lexer.advanceUntil('<', false);
+            next.content = lexer.get();
             next.kind = NodeType.Kind.TEXT;
-            next.content = lexer.readUntil('<', false, false);
-            static if(!preserveSpaces)
-                next.content = stripRight(next.content);
         }
         
         // tag end
-        else if(lexer.testAndEat('/'))
+        else if(lexer.testAndAdvance('/'))
         {
-            next.content = lexer.readUntil('>', true, false);
+            lexer.advanceUntil('>', true);
+            next.content = lexer.get()[2..($-1)];
             next.kind = NodeType.Kind.END_TAG;
         }
         // processing instruction
-        else if(lexer.testAndEat('?'))
+        else if(lexer.testAndAdvance('?'))
         {
-            next.content = lexer.readUntil("?>", false);
+            do
+                while(lexer.advanceUntilEither('"', '?') == 0)
+                    lexer.advanceUntil('"', true);
+            while(!lexer.testAndAdvance('>'));
+            
+            next.content = lexer.get()[2..($-2)];
             next.kind = NodeType.Kind.PROCESSING;
         }
         // tag start
-        else if(!lexer.testAndEat('!'))
+        else if(!lexer.testAndAdvance('!'))
         {
-            next.content = lexer.readUntil('>', true, false);
+            while(lexer.advanceUntilEither('"', '>') == 0)
+                lexer.advanceUntil('"', true);
+                    
+            next.content = lexer.get[1..($-1)];
             if(next.content[$-1] == '/')
+            {
+                next.content = lexer.get()[0..($-1)];
                 next.kind = NodeType.Kind.EMPTY_TAG;
+            }
             else
                 next.kind = NodeType.Kind.START_TAG;
         }
         
         // cdata or conditional
-        else if(lexer.testAndEat('['))
+        else if(lexer.testAndAdvance('['))
         {
-            next.content = lexer.readUntil('[', true, true);
+            lexer.advanceUntil('[', true);
             // cdata
-            if(next.content == "CDATA[")
+            if(lexer.get()[3..$] == "CDATA[")
             {
-                next.content = lexer.readUntil("]]>", false);
+                do
+                    lexer.advanceUntil(']', true);
+                while(!lexer.testAndAdvance(']') || !lexer.testAndAdvance('>'));
+                
+                next.content = lexer.get()[9..($-3)];
                 next.kind = NodeType.Kind.CDATA;
             }
             // conditional
             else
             {
-                next.content ~= lexer.readBalanced("<![", "]]>", false);
+                int count = 1;
+                do
+                {
+                    lexer.advanceUntilEither('[', '>');
+                    if(lexer.get()[($-3)..$] == "<![")
+                        count++;
+                    else if(lexer.get()[($-3)..$] == "]]>")
+                        count--;
+                }
+                while(count > 0);
+                
+                next.content = lexer.get()[3..($-3)];
                 next.kind = NodeType.Kind.CONDITIONAL;
             }
         }
         // comment
-        else if(lexer.testAndEat('-'))
+        else if(lexer.testAndAdvance('-'))
         {
-            lexer.testAndEat('-'); // second '-'
-            next.content = lexer.readUntil("-->", false);
+            lexer.testAndAdvance('-'); // second '-'
+            do
+                lexer.advanceUntil('-', true);
+            while(!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
+            next.content = lexer.get()[4..($-3)];
             next.kind = NodeType.Kind.COMMENT;
         }
-        // declaration
+        // declaration or doctype
         else
         {
-            next.content = lexer.readUntil('>', true, false);
-            next.kind = NodeType.Kind.DECLARATION;
+            while(lexer.advanceUntilAny('"', '[', '>') == 0)
+                lexer.advanceUntil('"', true);
+                
+            // doctype
+            if(lexer.get()[2..9] == "DOCTYPE")
+            {
+                // inline dtd
+                if(lexer.get()[$-1] == '[')
+                {
+                    while(lexer.advanceUntilEither('<', ']') == 0)
+                        while(lexer.advanceUntilEither('"', '>') == 0)
+                            lexer.advanceUntil('"', true);
+                    lexer.advanceUntil('>', true);
+                }
+                next.content = lexer.get()[9..($-1)];
+                next.kind = NodeType.Kind.DOCTYPE;
+            }
+            else
+            {
+                if(lexer.get()[$-1] == '[')
+                    while(lexer.advanceUntilEither('"', '>') == 0)
+                        lexer.advanceUntil('"', true);
+                
+                next.content = lexer.get()[2..($-1)];
+                next.kind = NodeType.Kind.DECLARATION;
+            }
         }
         
         ready = true;
     }
 }
 
-unittest
+/*unittest
 {
+    import std.stdio;
+    
     string xml = q{
     <?xml encoding="utf-8" ?>
     <aaa>
@@ -376,8 +439,66 @@ unittest
     </aaa>
     };
     writeln(xml);
-    auto parser = Parser!(SliceLexer!string)();
-    parser.setSource(xml);
-    foreach(e; parser)
-        writeln(e);
+    
+    {
+        writeln("SliceLexer:");
+        auto parser = Parser!(SliceLexer!string)();
+        parser.setSource(xml);
+        foreach(e; parser)
+        {
+            writeln(e);
+        }
+    }
+    {
+        writeln("RangeLexer:");
+        auto parser = Parser!(RangeLexer!string)();
+        parser.setSource(xml);
+        foreach(e; parser)
+        {
+            writeln(e);
+        }
+    }
+}*/
+
+unittest
+{
+    import std.stdio;
+    import std.file;
+    import std.conv;
+    import core.time;
+    
+    immutable int tests = 4;
+    
+    {
+        writeln("SliceLexer:");
+        auto parser = Parser!(SliceLexer!string)();
+        for(int i = 0; i < tests; i++)
+        {
+            auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
+            MonoTime before = MonoTime.currTime;
+            parser.setSource(data);
+            foreach(e; parser)
+            {
+            }
+            MonoTime after = MonoTime.currTime;
+            Duration elapsed = after - before;
+            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
+        }
+    }
+    {
+        writeln("RangeLexer:");
+        auto parser = Parser!(RangeLexer!string)();
+        for(int i = 0; i < tests; i++)
+        {
+            auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
+            MonoTime before = MonoTime.currTime;
+            parser.setSource(data);
+            foreach(e; parser)
+            {
+            }
+            MonoTime after = MonoTime.currTime;
+            Duration elapsed = after - before;
+            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
+        }
+    }
 }
