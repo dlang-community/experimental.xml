@@ -63,27 +63,30 @@ struct SliceLexer(T)
         return pos >= input.length;
     }
     
-    CharacterType[] readUntil(dchar c, bool included)
+    CharacterType[] readUntil(dchar c, bool included, bool returned)
     {
         auto start = pos;
         while(input[pos] != c)
             pos++;
         if(included)
             pos++;
-        return input[start..(pos-1)];
+        if(returned)
+            return input[start..pos];
+        else
+            return input[start..(pos-1)];
     }
-    CharacterType[] readUntil(dstring s, bool included)
+    CharacterType[] readUntil(dstring s, bool returned)
     {
         auto start = pos;
         while(!input[start..pos].endsWith(s))
             pos++;
-        if(included)
+        if(returned)
             return input[start..pos];
         else
             return input[start..(pos-s.length)];
     }
     
-    CharacterType[] readBalanced(dstring begin, dstring end, bool included)
+    CharacterType[] readBalanced(dstring begin, dstring end, bool returned)
     {
         auto start = pos;
         int count = 1;
@@ -95,7 +98,7 @@ struct SliceLexer(T)
             else if(input[start..pos].endsWith(end))
                 count--;
         }
-        if(included)
+        if(returned)
             return input[start..pos];
         else
             return input[start..(pos-end.length)];
@@ -155,7 +158,7 @@ struct RangeLexer(T)
         return input.empty;
     }
     
-    CharacterType[] readUntil(dchar c, bool included)
+    CharacterType[] readUntil(dchar c, bool included, bool returned)
     {
         auto app = appender!(CharacterType[])();
         while(input.front != c)
@@ -163,11 +166,13 @@ struct RangeLexer(T)
             app.put(input.front);
             input.popFront();
         }
+        if(returned)
+            app.put(input.front);
         if(included)
             input.popFront();
         return app.data;
     }
-    CharacterType[] readUntil(dstring s, bool included)
+    CharacterType[] readUntil(dstring s, bool returned)
     {
         auto app = appender!(CharacterType[])();
         while(!app.data.endsWith(s))
@@ -175,13 +180,13 @@ struct RangeLexer(T)
             app.put(input.front);
             input.popFront();
         }
-        if(included)
+        if(returned)
             return app.data;
         else
             return app.data[0..($-s.length)];
     }
     
-    CharacterType[] readBalanced(dstring begin, dstring end, bool included)
+    CharacterType[] readBalanced(dstring begin, dstring end, bool returned)
     {
         auto app = appender!(CharacterType[])();
         int count = 1;
@@ -194,7 +199,7 @@ struct RangeLexer(T)
             else if(app.data.endsWith(end))
                 count--;
         }
-        if(included)
+        if(returned)
             return app.data;
         else
             return app.data[0..($-end.length)];
@@ -293,7 +298,7 @@ struct Parser(L, bool preserveSpaces = false)
         if(!lexer.testAndEat('<'))
         {
             next.kind = NodeType.Kind.TEXT;
-            next.content = lexer.readUntil('<', false);
+            next.content = lexer.readUntil('<', false, false);
             static if(!preserveSpaces)
                 next.content = stripRight(next.content);
         }
@@ -301,19 +306,19 @@ struct Parser(L, bool preserveSpaces = false)
         // tag end
         else if(lexer.testAndEat('/'))
         {
-            next.content = lexer.readUntil('>', true);
+            next.content = lexer.readUntil('>', true, false);
             next.kind = NodeType.Kind.END_TAG;
         }
         // processing instruction
         else if(lexer.testAndEat('?'))
         {
-            next.content = lexer.readUntil("?>", true);
+            next.content = lexer.readUntil("?>", false);
             next.kind = NodeType.Kind.PROCESSING;
         }
         // tag start
         else if(!lexer.testAndEat('!'))
         {
-            next.content = lexer.readUntil('>', true);
+            next.content = lexer.readUntil('>', true, false);
             if(next.content[$-1] == '/')
                 next.kind = NodeType.Kind.EMPTY_TAG;
             else
@@ -323,9 +328,9 @@ struct Parser(L, bool preserveSpaces = false)
         // cdata or conditional
         else if(lexer.testAndEat('['))
         {
-            next.content = lexer.readUntil('[', true);
+            next.content = lexer.readUntil('[', true, true);
             // cdata
-            if(next.content == "CDATA")
+            if(next.content == "CDATA[")
             {
                 next.content = lexer.readUntil("]]>", false);
                 next.kind = NodeType.Kind.CDATA;
@@ -347,7 +352,7 @@ struct Parser(L, bool preserveSpaces = false)
         // declaration
         else
         {
-            next.content = lexer.readUntil('>', true);
+            next.content = lexer.readUntil('>', true, false);
             next.kind = NodeType.Kind.DECLARATION;
         }
         
@@ -355,17 +360,19 @@ struct Parser(L, bool preserveSpaces = false)
     }
 }
 
-int main()
+unittest
 {
     string xml = q{
-    <? xml encoding="utf-8" ?>
+    <?xml encoding="utf-8" ?>
     <aaa>
+        <! ANYTHING HERE>
         <bbb>
             <!-- lol -->
             Lots of Text!
             On multiple lines!
         </bbb>
         <![CDATA[ Ciaone! ]]>
+        <![conditional[ lalalala ]]>
     </aaa>
     };
     writeln(xml);
@@ -373,5 +380,4 @@ int main()
     parser.setSource(xml);
     foreach(e; parser)
         writeln(e);
-    return 0;
 }
