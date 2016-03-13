@@ -1,13 +1,29 @@
 
 module experimental.xml.lexer;
 
-import interfaces;
+import experimental.xml.interfaces;
 
 import core.exception;
 import std.array;
 import std.range.primitives;
 import std.string;
 import std.traits;
+
+pure bool fastEqual(T, S)(T[] t, S[] s)
+{
+    for(auto i = 0; i < t.length; i++)
+        if(t[i] != s[i])
+            return false;
+    return true;
+}
+
+pure nothrow int fastIndexOf(T, S)(T[] t, S s)
+{
+    for(int i = 0; i < t.length; i++)
+        if(t[i] == s)
+            return i;
+    return -1;
+}
 
 class EndOfStreamException: Exception
 {
@@ -74,7 +90,7 @@ struct SliceLexer(T)
     
     void dropWhile(string s)
     {
-        while(pos < input.length && s.indexOf(input[pos]) != -1)
+        while(pos < input.length && fastIndexOf(s, input[pos]) != -1)
             pos++;
     }
     
@@ -90,37 +106,23 @@ struct SliceLexer(T)
     
     void advanceUntil(char c, bool included)
     {
-        while(input[pos] != c)
-            pos++;
+        auto adv = fastIndexOf(input[pos..$], c);
+        if(adv != -1)
+            pos += adv;
+        else
+            pos = input.length;
         if(included)
             pos++;
     }
     
-    int advanceUntilEither(char c1, char c2)
+    int advanceUntilAny(string s, bool included)
     {
-        while(input[pos] != c1 && input[pos] != c2)
+        int res;
+        while((res = fastIndexOf(s, input[pos])) == -1)
             pos++;
-        
-        if(input[pos++] == c1)
-            return 0;
-        else
-            return 1;
-    }
-    
-    int advanceUntilAny(char c1, char c2, char c3)
-    {
-        while(input[pos] != c1 && input[pos] != c2 && input[pos] != c3)
+        if(included)
             pos++;
-        
-        if(input[pos] == c1)
-        {
-            pos++;
-            return 0;
-        }
-        else if(input[pos++] == c2)
-            return 1;
-        else
-            return 2;
+        return res;
     }
 }
 
@@ -171,7 +173,7 @@ struct RangeLexer(T)
     
     void dropWhile(string s)
     {
-        while(!input.empty && s.indexOf(input.front) != -1)
+        while(!input.empty && fastIndexOf(s, input.front) != -1)
             input.popFront();
     }
     
@@ -200,34 +202,20 @@ struct RangeLexer(T)
         }
     }
     
-    int advanceUntilEither(char c1, char c2)
+    int advanceUntilAny(string s, bool included)
     {
-        do
+        int res;
+        while((res = fastIndexOf(s, input.front)) == -1)
         {
             app.put(input.front);
-            input.popFront();
-        } while(app.data[$-1] != c1 && app.data[$-1] != c2);
-        
-        if(app.data[$-1] == c1)
-            return 0;
-        else
-            return 1;
-    }
-    
-    int advanceUntilAny(char c1, char c2, char c3)
-    {
-        do
+            input.popFront;
+        }
+        if(included)
         {
             app.put(input.front);
-            input.popFront();
-        } while(app.data[$-1] != c1 && app.data[$-1] != c2 && app.data[$-1] != c3);
-        
-        if(app.data[$-1] == c1)
-            return 0;
-        else if(app.data[$-1] == c2)
-            return 1;
-        else
-            return 2;
+            input.popFront;
+        }
+        return res;
     }
 }
 
@@ -282,6 +270,8 @@ struct Parser(L, bool preserveSpaces = false)
             {
                 if(lexer.empty)
                     throw new UnexpectedEndOfStreamException();
+                else
+                    throw exc;
             }
         return next;
     }
@@ -296,7 +286,7 @@ struct Parser(L, bool preserveSpaces = false)
     {
         static if(!preserveSpaces)
             lexer.dropWhile(" \r\n\t");
-            
+        
         if(lexer.empty)
             throw new EndOfStreamException();
         
@@ -306,8 +296,8 @@ struct Parser(L, bool preserveSpaces = false)
         if(!lexer.testAndAdvance('<'))
         {
             lexer.advanceUntil('<', false);
-            next.content = lexer.get();
             next.kind = NodeType.Kind.TEXT;
+            next.content = lexer.get();
         }
         
         // tag end
@@ -320,28 +310,38 @@ struct Parser(L, bool preserveSpaces = false)
         // processing instruction
         else if(lexer.testAndAdvance('?'))
         {
+            int c;
             do
-                while(lexer.advanceUntilEither('"', '?') == 0)
-                    lexer.advanceUntil('"', true);
+                while((c = lexer.advanceUntilAny("\"'?", true)) < 2)
+                    if(c == 0)
+                        lexer.advanceUntil('"', true);
+                    else
+                        lexer.advanceUntil('\'', true);
             while(!lexer.testAndAdvance('>'));
-            
             next.content = lexer.get()[2..($-2)];
             next.kind = NodeType.Kind.PROCESSING;
         }
         // tag start
         else if(!lexer.testAndAdvance('!'))
         {
-            while(lexer.advanceUntilEither('"', '>') == 0)
-                lexer.advanceUntil('"', true);
+            int c;
+            while((c = lexer.advanceUntilAny("\"'/>", true)) < 2)
+                if(c == 0)
+                    lexer.advanceUntil('"', true);
+                else
+                    lexer.advanceUntil('\'', true);
                     
-            next.content = lexer.get[1..($-1)];
-            if(next.content[$-1] == '/')
+            if(c == 2)
             {
-                next.content = lexer.get()[0..($-1)];
+                lexer.advanceUntil('>', true); // should be the first character after '/'
+                next.content = lexer.get()[1..($-2)];
                 next.kind = NodeType.Kind.EMPTY_TAG;
             }
             else
+            {
+                next.content = lexer.get()[1..($-1)];
                 next.kind = NodeType.Kind.START_TAG;
+            }
         }
         
         // cdata or conditional
@@ -349,12 +349,11 @@ struct Parser(L, bool preserveSpaces = false)
         {
             lexer.advanceUntil('[', true);
             // cdata
-            if(lexer.get()[3..$] == "CDATA[")
+            if(fastEqual(lexer.get()[3..$], "CDATA["))
             {
                 do
                     lexer.advanceUntil(']', true);
                 while(!lexer.testAndAdvance(']') || !lexer.testAndAdvance('>'));
-                
                 next.content = lexer.get()[9..($-3)];
                 next.kind = NodeType.Kind.CDATA;
             }
@@ -364,14 +363,13 @@ struct Parser(L, bool preserveSpaces = false)
                 int count = 1;
                 do
                 {
-                    lexer.advanceUntilEither('[', '>');
-                    if(lexer.get()[($-3)..$] == "<![")
-                        count++;
-                    else if(lexer.get()[($-3)..$] == "]]>")
+                    lexer.advanceUntilAny("[>", true);
+                    if(lexer.get()[($-3)..$] == "]]>")
                         count--;
+                    else if(lexer.get()[($-3)..$] == "<![")
+                        count++;
                 }
                 while(count > 0);
-                
                 next.content = lexer.get()[3..($-3)];
                 next.kind = NodeType.Kind.CONDITIONAL;
             }
@@ -389,18 +387,47 @@ struct Parser(L, bool preserveSpaces = false)
         // declaration or doctype
         else
         {
-            while(lexer.advanceUntilAny('"', '[', '>') == 0)
-                lexer.advanceUntil('"', true);
+            int c;
+            while((c = lexer.advanceUntilAny("\"'[>", true)) < 2)
+                if(c == 0)
+                    lexer.advanceUntil('"', true);
+                else
+                    lexer.advanceUntil('\'', true);
                 
             // doctype
-            if(lexer.get()[2..9] == "DOCTYPE")
+            if(fastEqual(lexer.get()[2..9], "DOCTYPE"))
             {
                 // inline dtd
-                if(lexer.get()[$-1] == '[')
+                if(c == 2)
                 {
-                    while(lexer.advanceUntilEither('<', ']') == 0)
-                        while(lexer.advanceUntilEither('"', '>') == 0)
-                            lexer.advanceUntil('"', true);
+                    while(lexer.advanceUntilAny("<]", true) == 0)
+                        // comment
+                        if(lexer.testAndAdvance('-'))
+                            do
+                                lexer.advanceUntil('-', true);
+                            while(!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
+                        // processing instruction
+                        else if(lexer.testAndAdvance('?'))
+                        {
+                            int cc;
+                            do
+                                while((cc = lexer.advanceUntilAny("\"'?", true)) < 2)
+                                    if(cc == 0)
+                                        lexer.advanceUntil('"', true);
+                                    else
+                                        lexer.advanceUntil('\'', true);
+                            while(!lexer.testAndAdvance('>'));
+                        }
+                        // entity, notation or attlist
+                        else
+                        {
+                            int cc;
+                            while((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
+                                if(cc == 0)
+                                    lexer.advanceUntil('"', true);
+                                else
+                                    lexer.advanceUntil('\'', true);
+                        }
                     lexer.advanceUntil('>', true);
                 }
                 next.content = lexer.get()[9..($-1)];
@@ -408,10 +435,15 @@ struct Parser(L, bool preserveSpaces = false)
             }
             else
             {
-                if(lexer.get()[$-1] == '[')
-                    while(lexer.advanceUntilEither('"', '>') == 0)
-                        lexer.advanceUntil('"', true);
-                
+                if(c == 2)
+                {
+                    int cc;
+                    while((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
+                        if(cc == 0)
+                            lexer.advanceUntil('"', true);
+                        else
+                            lexer.advanceUntil('\'', true);
+                }
                 next.content = lexer.get()[2..($-1)];
                 next.kind = NodeType.Kind.DECLARATION;
             }
@@ -421,7 +453,7 @@ struct Parser(L, bool preserveSpaces = false)
     }
 }
 
-/*unittest
+unittest
 {
     import std.stdio;
     
@@ -429,7 +461,7 @@ struct Parser(L, bool preserveSpaces = false)
     <?xml encoding="utf-8" ?>
     <aaa>
         <! ANYTHING HERE>
-        <bbb>
+        <bbb att='>'>
             <!-- lol -->
             Lots of Text!
             On multiple lines!
@@ -458,7 +490,7 @@ struct Parser(L, bool preserveSpaces = false)
             writeln(e);
         }
     }
-}*/
+}
 
 unittest
 {

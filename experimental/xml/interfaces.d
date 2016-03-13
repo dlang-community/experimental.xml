@@ -29,8 +29,7 @@ template isLexer(L)
         cs = lexer.get();                   // CharacterType[] get() const;
         b = lexer.testAndAdvance(c);        // bool testAndEat(char)
         lexer.advanceUntil(c, b);           // void advanceUntil(char, bool)
-        lexer.advanceUntilEither(c, c);     // void advanceUntilEither(char, char)
-        lexer.advanceUntilAny(c, c, c);     // void advanceUntilAny(char, char, char)
+        lexer.advanceUntilAny(s, b);        // void advanceUntilAny(string, bool)
         lexer.dropWhile(s);                 // void drowWhile(string)
     }));
 }
