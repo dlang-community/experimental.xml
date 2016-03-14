@@ -79,6 +79,7 @@ template isLowLevelParser(P)
     {
         // The type of input handled by the parser; should depend on the underlying lexer
         alias InputType = P.InputType;  // type P.InputType
+        alias CharacterType = P.CharacterType // type P.CharacterType
         
         P parser;
         InputType input;

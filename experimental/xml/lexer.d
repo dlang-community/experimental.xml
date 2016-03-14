@@ -233,6 +233,7 @@ struct Parser(L, bool preserveSpaces = false)
     private NodeType next;
     
     alias InputType = L.InputType;
+    alias CharacterType = L.CharacterType;
 
     void setSource(InputType input)
     {
@@ -312,11 +313,7 @@ struct Parser(L, bool preserveSpaces = false)
         {
             int c;
             do
-                while((c = lexer.advanceUntilAny("\"'?", true)) < 2)
-                    if(c == 0)
-                        lexer.advanceUntil('"', true);
-                    else
-                        lexer.advanceUntil('\'', true);
+                lexer.advanceUntil('?', true);
             while(!lexer.testAndAdvance('>'));
             next.content = lexer.get()[2..($-2)];
             next.kind = NodeType.Kind.PROCESSING;
