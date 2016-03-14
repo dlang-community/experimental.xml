@@ -1,20 +1,30 @@
 
+/++
++   This module contains some traits that serve as interfaces
++   for some components of the library.
++/
+
 module experimental.xml.interfaces;
 
-/*
-*   LEXER INTERFACE
-*   The lexer provides methods to read sequences of characters from input
-*   It does not have any xml knowledge
-*   A specialized lexer should be used for each kind of input source (range, slice, ...)
-*/
-
+/++
++   Checks whether its argument fulfills all requirements to be used as XML lexer.
++
++   An XML lexer is the first component in the parsing chain. It masks from the parser
++   the shape of the input and the type of the characters in it.
++/
 template isLexer(L)
 {
     enum bool isLexer = is(typeof(
     (inout int = 0)
     {
-        alias C = L.CharacterType;          // type L.CharacterType
-        alias T = L.InputType;              // type L.InputType
+        /++
+        +   The type of a single character from the input.
+        +   The parser will deal with slices of this type.
+        +/
+        alias C = L.CharacterType;
+        
+        /++ The type of the input source. +/
+        alias T = L.InputType;
         
         L lexer;
         T source;
@@ -23,17 +33,68 @@ template isLexer(L)
         string s;
         C[] cs;
         
-        lexer.setSource(source);            // void setSource(InputType)
-        b = lexer.empty;                    // bool empty
-        lexer.start();                      // void start();
-        cs = lexer.get();                   // CharacterType[] get() const;
-        b = lexer.testAndAdvance(c);        // bool testAndEat(char)
-        lexer.advanceUntil(c, b);           // void advanceUntil(char, bool)
-        lexer.advanceUntilAny(s, b);        // void advanceUntilAny(string, bool)
-        lexer.dropWhile(s);                 // void drowWhile(string)
+        /++
+        +   void setSource(InputType);
+        +   Sets the input source for this lexer.
+        +/
+        lexer.setSource(source);
+        
+        /++
+        +   bool empty() const;
+        +   Checks whether there are more characters available.
+        +/
+        b = lexer.empty;
+        
+        /++
+        +   void start();
+        +   Sets the start of an input sequence,
+        +   that will be returned by a call to get().
+        +/
+        lexer.start();
+        
+        /++
+        +   CharacterType[] get() const;
+        +   Return the sequence of characters starting at the last call
+        +   to start() and ending at the actual position in the input.
+        +/
+        cs = lexer.get();
+        
+        /++
+        +   bool testAndAdvance(char)
+        +   Tests whether the current character equals to the given one.
+        +   If true, also advances the input to the next character.
+        +/
+        b = lexer.testAndAdvance(c);
+        
+        /++
+        +   void advanceUntil(char, bool)
+        +   Advances the input until it finds the given character.
+        +   The boolean argument specifies whether the lexer should also advance past the given character.
+        +/
+        lexer.advanceUntil(c, b);
+        
+        /++
+        +   void advanceUntilAny(string, bool)
+        +   Advances the input until it finds any character from the given string.
+        +   The boolean argument specifies whether the lexer should also advance past the character found.
+        +/
+        lexer.advanceUntilAny(s, b);
+        
+        /++
+        +   void dropWhile(string)
+        +   While the current input character is present in the given string, advance.
+        +   Characters advanced by this method may not be returned by get().
+        +/
+        lexer.dropWhile(s);
     }));
 }
 
+/++
++   Checks whether the given lexer is savable.
++
++   The method save should return an exact copy of the lexer
++   that can be advanced independently of the original.
++/
 template isSaveableLexer(L)
 {
     enum bool isSaveableLexer = isLexer!L && is(typeof(
@@ -41,54 +102,102 @@ template isSaveableLexer(L)
     {
         const L lexer1;
         
-        // Returns an independent copy of the lexer
-        L lexer2 = lexer1.save();           // L save() const;
+        /++
+        +   L save() const;
+        +   Return a copy of the lexer that can be advance independently of the original.
+        +/
+        L lexer2 = lexer1.save();
     }));
 }
 
-/*
-*   LOW LEVEL PARSER INTERFACE
-*   Provides dumb xml tokenization; the finest parsing is left to a higher level API
-*   Should not be specialized: the implementation shipped in lexer.d should be fine for all usages
-*   May also work for not-exactly-xml formats
-*/
-
-struct LowLevelNode(T)
+/++
++   The structure returned in output from the low level parser.
++   Represents an XML token, delimited by specific patterns, based on its kind.
++   This delimiters shall not be omitted from the content field.
++/
+struct XMLToken(T)
 {
+    /++ The content of the token +/
     T[] content;
+    
+    /++ Represents the kind of token +/
     enum Kind
     {
-        TEXT,               //
-        END_TAG,            // </  >
-        PROCESSING,         // <? ?>
-        START_TAG,          // <   >
-        EMPTY_TAG,          // <  />
-        CDATA,              // <![CDATA[   ]]>
-        CONDITIONAL,        // <![     [   ]]>
-        COMMENT,            // <!--        -->
-        DOCTYPE,            // <!DOCTYPE [ ] >
-        DECLARATION,        // <!  >
+        /++ A text element, without any specific delimiter +/
+        TEXT,
+        
+        /++ An end tag, delimited by `</` and `>` +/
+        END_TAG,
+        
+        /++ A processing instruction, delimited by `<?` and `?>` +/
+        PROCESSING,
+        
+        /++ A start tag, delimited by `<` and `>` +/
+        START_TAG,
+        
+        /++ An empty tag, delimited by `<` and `/>` +/
+        EMPTY_TAG,
+        
+        /++ A CDATA section, delimited by `<![CDATA` and `]]>` +/
+        CDATA,
+        
+        /++ A conditional section, delimited by `<![` and `]]>` +/
+        CONDITIONAL,
+        
+        /++ A comment, delimited by `<!--` and `-->` +/
+        COMMENT,
+        
+        /++ A doctype declaration, delimited by `<!DOCTYPE` and `>` +/
+        DOCTYPE,
+        
+        /++ Any kind of declaration, delimited by `<!` and `>` +/
+        DECLARATION,
     };
+    
+    /++ ditto +/
     Kind kind;
 }
 
+/++
++   Checks whether its argument fulfills all requirements to be used as XML lexer.
++
++   An XML lexer is the first component in the parsing chain. It masks from the parser
++   the shape of the input and the type of the characters in it. It must be an InputRange
++   of some instantiation of LowLevelNode.
++/
 template isLowLevelParser(P)
 {
-    enum bool isLowLevelParser = isInputRange!P && TemplateOf(ElementType!P, LowLevelNode) && is(typeof(
+    enum bool isLowLevelParser = isInputRange!P && TemplateOf(ElementType!P, XMLToken) && is(typeof(
     (inout int = 0)
     {
-        // The type of input handled by the parser; should depend on the underlying lexer
-        alias InputType = P.InputType;  // type P.InputType
-        alias CharacterType = P.CharacterType // type P.CharacterType
+        /++
+        +   The type of input this parser accepts,
+        +   i.e. the type of input the underlying lexer accepts.
+        +/
+        alias InputType = P.InputType;
+        
+        /++
+        +   The type of a single character from the input.
+        +   The parser will deal with slices of this type.
+        +/
+        alias CharacterType = P.CharacterType;
         
         P parser;
         InputType input;
         
-        // Initializes the parser with the input source
-        parser.setSource(input);        // void setSource(InputType);
+        /++
+        +   void setSource(InputType);
+        +   Initializes the parser (and the underlying lexer) with the given input.
+        +/
+        parser.setSource(input);
     }));
 }
 
+/++
++   Checks whether the given parser is savable.
++
++   Being an InputRange, the parser is savable if and only if it is also a ForwardRange.
++/
 template isSaveableLowLevelParser(P)
 {
     enum bool isSaveableLowLevelParser = isLowLevelParser!P && isForwardRange!P;

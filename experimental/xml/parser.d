@@ -1,29 +1,15 @@
 
-module experimental.xml.lexer;
+/++
++   This module implements the low level XML parser.
++   For documentation, see experimental.xml.interfaces.
++/
+
+module experimental.xml.parser;
 
 import experimental.xml.interfaces;
+import experimental.xml.faststrings;
 
 import core.exception;
-import std.array;
-import std.range.primitives;
-import std.string;
-import std.traits;
-
-pure bool fastEqual(T, S)(T[] t, S[] s)
-{
-    for(auto i = 0; i < t.length; i++)
-        if(t[i] != s[i])
-            return false;
-    return true;
-}
-
-pure nothrow int fastIndexOf(T, S)(T[] t, S s)
-{
-    for(int i = 0; i < t.length; i++)
-        if(t[i] == s)
-            return i;
-    return -1;
-}
 
 class EndOfStreamException: Exception
 {
@@ -41,192 +27,17 @@ class UnexpectedEndOfStreamException: Exception
     }
 }
 
-/*
-*   SLICE LEXER IMPLEMENTATION
-*   Pros: it should be fast and not require allocations
-*   Cons: it requires the input to be entirely loaded in memory
-*/
-
-struct SliceLexer(T)
-{
-    alias CharacterType = ElementEncodingType!T;
-    alias InputType = T;
-    
-    T input;
-    size_t pos;
-    size_t begin;
-    
-    void setSource(T input)
-    {
-        this.input = input;
-        pos = 0;
-    }
-    
-    static if(isForwardRange!T)
-    {
-        auto save() const
-        {
-            SliceLexer result;
-            result.input = input;
-            result.pos = pos;
-            return result;
-        }
-    }
-    
-    auto empty() const
-    {
-        return pos >= input.length;
-    }
-    
-    void start()
-    {
-        begin = pos;
-    }
-    
-    CharacterType[] get() const
-    {
-        return input[begin..pos];
-    }
-    
-    void dropWhile(string s)
-    {
-        while(pos < input.length && fastIndexOf(s, input[pos]) != -1)
-            pos++;
-    }
-    
-    bool testAndAdvance(char c)
-    {
-        if(input[pos] == c)
-        {
-            pos++;
-            return true;
-        }
-        return false;
-    }
-    
-    void advanceUntil(char c, bool included)
-    {
-        auto adv = fastIndexOf(input[pos..$], c);
-        if(adv != -1)
-            pos += adv;
-        else
-            pos = input.length;
-        if(included)
-            pos++;
-    }
-    
-    int advanceUntilAny(string s, bool included)
-    {
-        int res;
-        while((res = fastIndexOf(s, input[pos])) == -1)
-            pos++;
-        if(included)
-            pos++;
-        return res;
-    }
-}
-
-/*
-*   RANGE LEXER IMPLEMENTATION
-*   Pros: works with any InputRange, loads the input lazily
-*   Cons: does lots of memory allocations and slow appends
-*/
-
-struct RangeLexer(T)
-    if(isInputRange!T)
-{
-    alias CharacterType = ElementEncodingType!T;
-    alias InputType = T;
-    
-    T input;
-    Appender!(CharacterType[]) app;
-    
-    void setSource(T input)
-    {
-        this.input = input;
-    }
-    
-    static if(isForwardRange!T)
-    {
-        auto save() const
-        {
-            RangeLexer result;
-            result.input = input.save();
-            return result;
-        }
-    }
-    
-    bool empty() const
-    {
-        return input.empty;
-    }
-    
-    void start()
-    {
-        app = appender!(CharacterType[])();
-    }
-    
-    CharacterType[] get() const
-    {
-        return app.data;
-    }
-    
-    void dropWhile(string s)
-    {
-        while(!input.empty && fastIndexOf(s, input.front) != -1)
-            input.popFront();
-    }
-    
-    bool testAndAdvance(char c)
-    {
-        if(input.front == c)
-        {
-            app.put(input.front);
-            input.popFront();
-            return true;
-        }
-        return false;
-    }
-    
-    void advanceUntil(char c, bool included)
-    {
-        while(input.front != c)
-        {
-            app.put(input.front);
-            input.popFront();
-        }
-        if(included)
-        {
-            app.put(input.front);
-            input.popFront();
-        }
-    }
-    
-    int advanceUntilAny(string s, bool included)
-    {
-        int res;
-        while((res = fastIndexOf(s, input.front)) == -1)
-        {
-            app.put(input.front);
-            input.popFront;
-        }
-        if(included)
-        {
-            app.put(input.front);
-            input.popFront;
-        }
-        return res;
-    }
-}
-
-/*
-*   LOW LEVEL PARSER IMPLEMENTATION
-*/
-
+/+
++   The low level XML parser.
++   Params:
++       L              = the underlying lexer type
++       preserveSpaces = whether to emit tokens for spaces between tags and whether
++                        to preserve space characters at the beginning of text contents
++/
 struct Parser(L, bool preserveSpaces = false)
     if(isLexer!L)
 {
-    private alias NodeType = LowLevelNode!(L.CharacterType);
+    private alias NodeType = XMLToken!(L.CharacterType);
 
     private L lexer;
     private bool ready;
@@ -406,13 +217,8 @@ struct Parser(L, bool preserveSpaces = false)
                         // processing instruction
                         else if(lexer.testAndAdvance('?'))
                         {
-                            int cc;
                             do
-                                while((cc = lexer.advanceUntilAny("\"'?", true)) < 2)
-                                    if(cc == 0)
-                                        lexer.advanceUntil('"', true);
-                                    else
-                                        lexer.advanceUntil('\'', true);
+                                lexer.advanceUntil('?', true);
                             while(!lexer.testAndAdvance('>'));
                         }
                         // entity, notation or attlist
@@ -452,6 +258,7 @@ struct Parser(L, bool preserveSpaces = false)
 
 unittest
 {
+    import experimental.xml.lexer;
     import std.stdio;
     
     string xml = q{
@@ -491,6 +298,7 @@ unittest
 
 unittest
 {
+    import experimental.xml.lexer;
     import std.stdio;
     import std.file;
     import std.conv;
@@ -503,7 +311,7 @@ unittest
         auto parser = Parser!(SliceLexer!string)();
         for(int i = 0; i < tests; i++)
         {
-            auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
+            auto data = readText("tests/test_" ~ to!string(i) ~ ".xml");
             MonoTime before = MonoTime.currTime;
             parser.setSource(data);
             foreach(e; parser)
@@ -519,7 +327,7 @@ unittest
         auto parser = Parser!(RangeLexer!string)();
         for(int i = 0; i < tests; i++)
         {
-            auto data = readText("../../tests/test_" ~ to!string(i) ~ ".xml");
+            auto data = readText("tests/test_" ~ to!string(i) ~ ".xml");
             MonoTime before = MonoTime.currTime;
             parser.setSource(data);
             foreach(e; parser)
