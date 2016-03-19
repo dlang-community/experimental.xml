@@ -202,3 +202,18 @@ template isSaveableLowLevelParser(P)
 {
     enum bool isSaveableLowLevelParser = isLowLevelParser!P && isForwardRange!P;
 }
+
+/++
++   Enumeration of XML events/nodes, used by various components.
++/
+enum XMLKind
+{
+    DOCUMENT_START,
+    DOCUMENT_END,
+    ELEMENT_START,
+    ELEMENT_END,
+    ELEMENT_EMPTY,
+    TEXT,
+    COMMENT,
+    PROCESSING_INSTRUCTION,
+}
