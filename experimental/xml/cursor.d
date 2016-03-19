@@ -29,6 +29,12 @@ struct XMLCursor(P)
         parser.setSource(input);
     }
     
+    /++ Returns whether the cursor is at the end of the document. +/
+    bool documentEnd() const
+    {
+        return parser.empty();
+    }
+    
     /++ Advances to the first child of the current node. +/
     void enter();
     

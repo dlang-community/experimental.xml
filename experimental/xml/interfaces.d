@@ -208,8 +208,7 @@ template isSaveableLowLevelParser(P)
 +/
 enum XMLKind
 {
-    DOCUMENT_START,
-    DOCUMENT_END,
+    DOCUMENT,
     ELEMENT_START,
     ELEMENT_END,
     ELEMENT_EMPTY,

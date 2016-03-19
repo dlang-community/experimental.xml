@@ -8,7 +8,7 @@ import experimental.xml.cursor;
 
 /++
 +   Built on top of XMLCursor, the streaming parser adds to it the ability to 
-+   be used an InputRange of XML events starting from the current cursor position.
++   be used as an InputRange of XML events starting from the current cursor position.
 +   One can freely interleave the use of this component as Cursor and as an InputRange.
 +/
 struct StAXParser(T)
