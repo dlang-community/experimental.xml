@@ -12,7 +12,7 @@ import experimental.xml.cursor;
 +   One can freely interleave the use of this component as Cursor and as an InputRange.
 +/
 struct StAXParser(T)
-    if(isLowLevelParser!T)
+    if (isLowLevelParser!T)
 {
     /++
     +   The underlying XMLCursor methods are exposed, so that one can, for example,
@@ -57,14 +57,14 @@ struct StAXParser(T)
     }
     void popFront()
     {
-        if(hasChildren())
+        if (hasChildren())
             enter();
-        else if(hasSibling())
+        else if (hasSibling())
             next();
         else
             exit();
     }
     
-    static if(isSavableLowLevelParser!T)
+    static if (isSavableLowLevelParser!T)
         auto save() const;
 }

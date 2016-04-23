@@ -5,9 +5,9 @@ import experimental.xml.interfaces;
 import experimental.xml.cursor;
 
 class SAXParser(T, alias H)
-    if(isLowLevelParser!T)
+    if (isLowLevelParser!T)
 {
-    static if(__traits(isTemplate, H))
+    static if (__traits(isTemplate, H))
         alias HandlerType = H!(T.CharacterType[]);
     else
         alias HandlerType = H;
@@ -72,43 +72,43 @@ class SAXParser(T, alias H)
     +/
     void processDocument()
     {
-        while(!cursor.endDocument())
+        while (!cursor.endDocument())
         {
-            final switch(cursor.getKind())
+            final switch (cursor.getKind())
             {
                 case DOCUMENT:
-                    static if(__traits(compiles, handler.onDocument(this)))
+                    static if (__traits(compiles, handler.onDocument(this)))
                         handler.onDocument(this);
                     break;
                 case ELEMENT_START:
-                    static if(__traits(compiles, handler.onElementStart(this)))
+                    static if (__traits(compiles, handler.onElementStart(this)))
                         handler.onElementStart(this);
                     break;
                 case ELEMENT_END:
-                    static if(__traits(compiles, handler.onElementEnd(this)))
+                    static if (__traits(compiles, handler.onElementEnd(this)))
                         handler.onElementEnd(this);
                     break;
                 case ELEMENT_EMPTY:
-                    static if(__traits(compiles, handler.onElementEmpty(this)))
+                    static if (__traits(compiles, handler.onElementEmpty(this)))
                         handler.onElementEmpty(this);
                     break;
                 case TEXT:
-                    static if(__traits(compiles, handler.onText(this)))
+                    static if (__traits(compiles, handler.onText(this)))
                         handler.onText(this);
                     break;
                 case COMMENT:
-                    static if(__traits(compiles, handler.onComment(this)))
+                    static if (__traits(compiles, handler.onComment(this)))
                         handler.onComment(this);
                     break;
                 case PROCESSING_INSTRUCTION:
-                    static if(__traits(compiles, handler.onProcessingInstruction(this)))
+                    static if (__traits(compiles, handler.onProcessingInstruction(this)))
                         handler.onProcessingInstruction(this);
                     break;
             }
             
-            if(cursor.hasChildren())
+            if (cursor.hasChildren())
                 cursor.enter();
-            else if(!cursor.next())
+            else if (!cursor.next())
                 cursor.exit();
         }
     }

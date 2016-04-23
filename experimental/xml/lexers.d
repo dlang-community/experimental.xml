@@ -58,13 +58,13 @@ struct SliceLexer(T)
     
     void dropWhile(string s)
     {
-        while(pos < input.length && fastIndexOf(s, input[pos]) != -1)
+        while (pos < input.length && fastIndexOf(s, input[pos]) != -1)
             pos++;
     }
     
     bool testAndAdvance(char c)
     {
-        if(input[pos] == c)
+        if (input[pos] == c)
         {
             pos++;
             return true;
@@ -75,20 +75,20 @@ struct SliceLexer(T)
     void advanceUntil(char c, bool included)
     {
         auto adv = fastIndexOf(input[pos..$], c);
-        if(adv != -1)
+        if (adv != -1)
             pos += adv;
         else
             pos = input.length;
-        if(included)
+        if (included)
             pos++;
     }
     
     int advanceUntilAny(string s, bool included)
     {
         int res;
-        while((res = fastIndexOf(s, input[pos])) == -1)
+        while ((res = fastIndexOf(s, input[pos])) == -1)
             pos++;
-        if(included)
+        if (included)
             pos++;
         return res;
     }
@@ -98,7 +98,7 @@ struct SliceLexer(T)
 +   A lexer that takes an InputRange.
 +/
 struct RangeLexer(T)
-    if(isInputRange!T)
+    if (isInputRange!T)
 {
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
@@ -111,7 +111,7 @@ struct RangeLexer(T)
         this.input = input;
     }
     
-    static if(isForwardRange!T)
+    static if (isForwardRange!T)
     {
         auto save() const
         {
@@ -138,13 +138,13 @@ struct RangeLexer(T)
     
     void dropWhile(string s)
     {
-        while(!input.empty && fastIndexOf(s, input.front) != -1)
+        while (!input.empty && fastIndexOf(s, input.front) != -1)
             input.popFront();
     }
     
     bool testAndAdvance(char c)
     {
-        if(input.front == c)
+        if (input.front == c)
         {
             app.put(input.front);
             input.popFront();
@@ -155,12 +155,12 @@ struct RangeLexer(T)
     
     void advanceUntil(char c, bool included)
     {
-        while(input.front != c)
+        while (input.front != c)
         {
             app.put(input.front);
             input.popFront();
         }
-        if(included)
+        if (included)
         {
             app.put(input.front);
             input.popFront();
@@ -170,12 +170,12 @@ struct RangeLexer(T)
     int advanceUntilAny(string s, bool included)
     {
         int res;
-        while((res = fastIndexOf(s, input.front)) == -1)
+        while ((res = fastIndexOf(s, input.front)) == -1)
         {
             app.put(input.front);
             input.popFront;
         }
-        if(included)
+        if (included)
         {
             app.put(input.front);
             input.popFront;

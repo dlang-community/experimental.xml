@@ -12,7 +12,7 @@ import experimental.xml.cursor;
 +   skipping one layer of the hierarchy.
 +/
 struct DOMBuilder(T)
-    if(isLowLevelParser!T)
+    if (isLowLevelParser!T)
 {   
     /++
     +   The underlying XMLCursor methods are exposed, so that one can, for example,

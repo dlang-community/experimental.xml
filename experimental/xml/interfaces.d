@@ -6,6 +6,9 @@
 
 module experimental.xml.interfaces;
 
+import std.range.primitives;
+import std.traits;
+
 /++
 +   Checks whether its argument fulfills all requirements to be used as XML lexer.
 +
@@ -167,7 +170,7 @@ struct XMLToken(T)
 +/
 template isLowLevelParser(P)
 {
-    enum bool isLowLevelParser = isInputRange!P && TemplateOf(ElementType!P, XMLToken) && is(typeof(
+    enum bool isLowLevelParser = isInputRange!P && is(ElementType!P : XMLToken!(P.CharacterType)) && is(typeof(
     (inout int = 0)
     {
         /++
