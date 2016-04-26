@@ -1,8 +1,8 @@
 
-module experimental.xml.sax;
+module std.experimental.xml.sax;
 
-import experimental.xml.interfaces;
-import experimental.xml.cursor;
+import std.experimental.xml.interfaces;
+import std.experimental.xml.cursor;
 
 class SAXParser(T, alias H)
     if (isLowLevelParser!T)

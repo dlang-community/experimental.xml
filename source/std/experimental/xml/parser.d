@@ -4,10 +4,10 @@
 +   For documentation, see experimental.xml.interfaces.
 +/
 
-module experimental.xml.parser;
+module std.experimental.xml.parser;
 
-import experimental.xml.interfaces;
-import experimental.xml.faststrings;
+import std.experimental.xml.interfaces;
+import std.experimental.xml.faststrings;
 
 import core.exception;
 
@@ -258,7 +258,7 @@ struct Parser(L, bool preserveSpaces = false)
 
 /*unittest
 {
-    import experimental.xml.lexer;
+    import std.experimental.xml.lexers;
     import std.stdio;
     
     string xml = q{
@@ -295,48 +295,3 @@ struct Parser(L, bool preserveSpaces = false)
         }
     }
 }*/
-
-unittest
-{
-    import experimental.xml.lexer;
-    import std.stdio;
-    import std.file;
-    import std.conv;
-    import core.time;
-    
-    immutable int tests = 4;
-    
-    writeln("\n=== PARSER PERFORMANCE ===");
-    {
-        writeln("SliceLexer:");
-        auto parser = Parser!(SliceLexer!string)();
-        for (int i = 0; i < tests; i++)
-        {
-            auto data = readText("tests/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            parser.setSource(data);
-            foreach (e; parser)
-            {
-            }
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
-        }
-    }
-    {
-        writeln("RangeLexer:");
-        auto parser = Parser!(RangeLexer!string)();
-        for (int i = 0; i < tests; i++)
-        {
-            auto data = readText("tests/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            parser.setSource(data);
-            foreach (e; parser)
-            {
-            }
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
-        }
-    }
-}

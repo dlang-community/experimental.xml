@@ -4,7 +4,7 @@
 +   for some components of the library.
 +/
 
-module experimental.xml.interfaces;
+module std.experimental.xml.interfaces;
 
 import std.range.primitives;
 import std.traits;

@@ -1,10 +1,10 @@
 
 /++ This module implements a streaming XML parser.+/
 
-module experimental.xml.stax;
+module std.experimental.xml.stax;
 
-import experimental.xml.interfaces;
-import experimental.xml.cursor;
+import std.experimental.xml.interfaces;
+import std.experimental.xml.cursor;
 
 /++
 +   Built on top of XMLCursor, the streaming parser adds to it the ability to 

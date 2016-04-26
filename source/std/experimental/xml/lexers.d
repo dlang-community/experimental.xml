@@ -4,10 +4,10 @@
 +   The methods a lexer should implement are documented in experimental.xml.interfaces.
 +/
 
-module experimental.xml.lexer;
+module std.experimental.xml.lexers;
 
-import experimental.xml.interfaces;
-import experimental.xml.faststrings;
+import std.experimental.xml.interfaces;
+import std.experimental.xml.faststrings;
 
 import std.array;
 import std.range.primitives;

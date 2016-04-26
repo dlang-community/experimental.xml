@@ -1,8 +1,8 @@
 
-module experimental.xml.dom;
+module std.experimental.xml.dom;
 
-import experimental.xml.interfaces;
-import experimental.xml.cursor;
+import std.experimental.xml.interfaces;
+import std.experimental.xml.cursor;
 
 /++
 +   Built on top of XMLCursor, the DOM builder adds to it the ability to 

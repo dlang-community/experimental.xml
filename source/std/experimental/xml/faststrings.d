@@ -6,7 +6,7 @@
 +   inline assembly and SIMD instructions.
 +/
 
-module experimental.xml.faststrings;
+module std.experimental.xml.faststrings;
 
 pure bool fastEqual(T, S)(T[] t, S[] s)
 {
