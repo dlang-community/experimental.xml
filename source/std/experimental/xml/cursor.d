@@ -269,8 +269,10 @@ struct XMLCursor(P)
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG || kind == kind.PROCESSING)
+        {
             if (!attributesParsed)
                 parseAttributeList();
+        }
         else
             namespaces = [];
         return attributes;
@@ -284,8 +286,10 @@ struct XMLCursor(P)
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG)
+        {
             if (!attributesParsed)
                 parseAttributeList();
+        }
         else
             namespaces = [];
         return namespaces;

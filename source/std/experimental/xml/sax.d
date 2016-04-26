@@ -18,7 +18,7 @@ class SAXParser(T, alias H)
     /++
     +   Initializes this parser (and the underlying low level one) with the given input.
     +/
-    void setSource((XMLCursor!T).InputType input)
+    void setSource(typeof(XMLCursor!T).InputType input)
     {
         cursor.setSource(input);
     }

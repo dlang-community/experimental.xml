@@ -1,0 +1,14 @@
+# dub files
+dub.selections.json
+.dub/
+
+# compiled files
+*.a
+*.o
+*.obj
+*.lib
+
+# executables
+*.exe
+*.app
+*.out

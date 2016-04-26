@@ -66,5 +66,5 @@ struct StAXParser(T)
     }
     
     static if (isSavableLowLevelParser!T)
-        auto save() const;
+        typeof(this) save() const;
 }

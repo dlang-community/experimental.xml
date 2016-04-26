@@ -36,7 +36,7 @@ struct DOMBuilder(T)
     void buildRecursive();
     
     /++ Returns the DOM tree built by this builder. +/
-    DOMObject(StringType) getDOMTree() const;
+    DOMObject!StringType getDOMTree() const;
 }
 
 class DOMObject(S)
@@ -71,5 +71,5 @@ class Element(S): DOMObject!S
     
     Tuple!(S, "prefix", S, "name", S, "value")[] attributes;
     
-    (DOMObject!S)[] children;
+    typeof(DOMObject!S)[] children;
 }
