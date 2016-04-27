@@ -209,28 +209,34 @@ struct Parser(L, bool preserveSpaces = false)
                 if (c == 2)
                 {
                     while (lexer.advanceUntilAny("<]", true) == 0)
-                        // comment
-                        if (lexer.testAndAdvance('-'))
-                            do
-                                lexer.advanceUntil('-', true);
-                            while (!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
                         // processing instruction
-                        else if (lexer.testAndAdvance('?'))
+                        if (lexer.testAndAdvance('?'))
                         {
                             do
                                 lexer.advanceUntil('?', true);
                             while (!lexer.testAndAdvance('>'));
                         }
-                        // entity, notation or attlist
-                        else
+                        // entity, notation, attlist or comment
+                        else if(lexer.testAndAdvance('!'))
                         {
-                            int cc;
-                            while ((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
-                                if (cc == 0)
-                                    lexer.advanceUntil('"', true);
-                                else
-                                    lexer.advanceUntil('\'', true);
+                            if(lexer.testAndAdvance('-'))
+                            {
+                                do
+                                    lexer.advanceUntil('-', true);
+                                while (!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
+                            }
+                            else
+                            {
+                                int cc;
+                                while ((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
+                                    if (cc == 0)
+                                        lexer.advanceUntil('"', true);
+                                    else
+                                        lexer.advanceUntil('\'', true);
+                            }
                         }
+                        // if you're here, something is wrong...
+                        else assert(0);
                     lexer.advanceUntil('>', true);
                 }
                 next.content = lexer.get()[9..($-1)];

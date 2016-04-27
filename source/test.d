@@ -5,9 +5,11 @@ import std.experimental.xml.lexers;
 import std.experimental.xml.parser;
 import std.experimental.xml.cursor;
 
-import std.file: readText;
+import std.encoding: transcode, Latin1String;
+import std.file: read, readText;
 import std.path;
-import std.stdio;
+import std.stdio: write, writeln;
+import std.utf: UTFException;
 
 auto indexes = 
 [
@@ -105,7 +107,18 @@ void parseFile(string filename)
         while (cursor.next());
     }
 
+    string text;
+    try
+    {
+        text = readText(filename);
+    }
+    catch(UTFException)
+    {
+        auto raw = read(filename);
+        transcode(cast(Latin1String)raw, text);
+    }
+    
     auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
-    cursor.setSource(readText(filename));
+    cursor.setSource(text);
     inspectOneLevel(cursor);
 }
