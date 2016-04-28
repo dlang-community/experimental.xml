@@ -9,6 +9,9 @@
     "configurations":
     [
         {
+            "name": "library",
+        },
+        {
             "name": "benchmark",
             "targetType": "executable",
             "mainSourceFile": "source/benchmark.d",

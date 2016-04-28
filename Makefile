@@ -19,6 +19,9 @@ clean:
 	$(RM) std-experimental-xml
 	$(RM) lib*.a
 
+# alternative clean command - TODO: find a way to not list directories
+# ls | grep -viE "^*\..*$$" | grep -vi "Makefile" | xargs -d"\n" rm -f
+
 .PHONY: test
 test:
 	dub run -c test -b debug

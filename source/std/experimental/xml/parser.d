@@ -69,7 +69,7 @@ struct Parser(L, bool preserveSpaces = false)
         static if (!preserveSpaces)
             lexer.dropWhile(" \r\n\t");
             
-        return lexer.empty;
+        return !ready && lexer.empty;
     }
     
     auto front()

@@ -22,11 +22,20 @@ struct XMLCursor(P)
     /++ The type of sequences of CharacterType, as returned by this parser +/
     alias StringType = CharacterType[];
     
+    struct Attribute
+    {
+        StringType prefix, name, value;
+    }
+    struct NamespaceDeclaration
+    {
+        StringType prefix, namespace;
+    }
+    
     private P parser;
     private ElementType!P currentNode;
     private bool starting;
-    private Tuple!(StringType, StringType, StringType)[] attributes;
-    private Tuple!(StringType, "prefix", StringType, "namespace")[] namespaces;
+    private Attribute[] attributes;
+    private NamespaceDeclaration[] namespaces;
     private bool attributesParsed;
     
     private void advanceInput()
@@ -81,7 +90,7 @@ struct XMLCursor(P)
     void exit()
     {
         while (next()) {}
-        if(!documentEnd)
+        if (!documentEnd)
             advanceInput();
     }
     
@@ -139,6 +148,9 @@ struct XMLCursor(P)
             case currentNode.kind.START_TAG:
                 result = XMLKind.ELEMENT_START;
                 break;
+            case currentNode.kind.END_TAG:
+                result = XMLKind.ELEMENT_END;
+                break;
             case currentNode.kind.EMPTY_TAG:
                 result = XMLKind.ELEMENT_EMPTY;
                 break;
@@ -165,9 +177,16 @@ struct XMLCursor(P)
     +/
     StringType getName() const
     {
-        auto i = fastIndexOfAny(currentNode.content, " \r\n\t");
-        if (i > 0)
-            return currentNode.content[0..i];
+        int i;
+        if (currentNode.kind != currentNode.kind.TEXT && 
+            currentNode.kind != currentNode.kind.COMMENT &&
+            currentNode.kind != currentNode.kind.CDATA)
+        {
+            if ((i = fastIndexOfAny(currentNode.content, " \r\n\t")) >= 0)
+                return currentNode.content[0..i];
+            else
+                return currentNode.content[0..$];
+        }
         else
             return [];
     }
@@ -201,6 +220,7 @@ struct XMLCursor(P)
     
     private void parseAttributeList()
     {
+        attributesParsed = true;
         int nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
         if (nameEnd < 0)
             return;
@@ -266,9 +286,9 @@ struct XMLCursor(P)
             value = currentNode.content[(quote + 1)..attEnd];
             
             if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
-                namespaces ~= tuple!("prefix", "namespace")(name, value);
+                namespaces ~= NamespaceDeclaration(name, value);
             else
-                attributes ~= tuple(prefix, name, value);
+                attributes ~= Attribute(prefix, name, value);
             
             attStart = attEnd + 1;
             delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
@@ -280,7 +300,7 @@ struct XMLCursor(P)
     +   (prefix, name, value); if the current node is the document node, return the attributes
     +   of the xml declaration (encoding, version, ...); otherwise, return an empty array.
     +/
-    Tuple!(StringType, StringType, StringType)[] getAttributes()
+    Attribute[] getAttributes()
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG || kind == kind.PROCESSING)
@@ -297,7 +317,7 @@ struct XMLCursor(P)
     +   If the current node is an element, return a list of namespace bindings created in this element
     +   start tag, as an array of pairs (prefix, namespace); otherwise, return an empty array.
     +/
-    Tuple!(StringType, "prefix", StringType, "namespace")[] getNamespaceDefinitions()
+    NamespaceDeclaration[] getNamespaceDefinitions()
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG)
@@ -320,54 +340,124 @@ struct XMLCursor(P)
     }
 }
 
-/*unittest
+unittest
 {
+    import std.stdio;
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    import std.stdio;
     
     string xml = q{
-    <?xml encoding="utf-8" ?>
+    <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
         <myns:bbb myns:att='>'>
             <!-- lol -->
             Lots of Text!
             On multiple lines!
-        </bbb>
+        </myns:bbb>
         <![CDATA[ Ciaone! ]]>
+        <ccc/>
     </aaa>
     };
-    writeln(xml);
     
     auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
     cursor.setSource(xml);
     
-    void printNode()
-    {
-        writeln("\t Kind: ", cursor.getKind());
-        writeln("\t Name: ", cursor.getName());
-        writeln("\t Local Name: ", cursor.getLocalName());
-        writeln("\t Prefix: ", cursor.getPrefix());
-        writeln("\t Attributes: ", cursor.getAttributes());
-        writeln("\t Namespaces: ", cursor.getNamespaceDefinitions());
-        writeln("\t Text: ", cursor.getText());
-        writeln("---");
-    }
+    // <?xml encoding = "utf-8" ?>
+    assert(cursor.getKind() == XMLKind.DOCUMENT);
+    assert(cursor.getName() == "xml");
+    assert(cursor.getPrefix() == "");
+    assert(cursor.getLocalName() == "xml");
+    assert(cursor.getAttributes() == [cursor.Attribute("", "encoding", "utf-8")]);
+    assert(cursor.getNamespaceDefinitions() == []);
+    assert(cursor.hasChildren());
     
-    void inspectOneLevel()
-    {
-        do
-        {
-            printNode();
-            if (cursor.hasChildren())
-            {
-                cursor.enter();
-                inspectOneLevel();
-                cursor.exit();
-            }
-        }
-        while (cursor.next());
-    }
+    cursor.enter();
+        // <aaa xmlns:myns="something">
+        assert(cursor.getKind() == XMLKind.ELEMENT_START);
+        assert(cursor.getName() == "aaa");
+        assert(cursor.getPrefix() == "");
+        assert(cursor.getLocalName() == "aaa");
+        assert(cursor.getAttributes() == []);
+        assert(cursor.getNamespaceDefinitions() == [cursor.NamespaceDeclaration("myns", "something")]);
+        assert(cursor.hasChildren());
+        
+        cursor.enter();
+            // <myns:bbb myns:att='>'>
+            assert(cursor.getKind() == XMLKind.ELEMENT_START);
+            assert(cursor.getName() == "myns:bbb");
+            assert(cursor.getPrefix() == "myns");
+            assert(cursor.getLocalName() == "bbb");
+            assert(cursor.getAttributes() == [cursor.Attribute("myns", "att", ">")]);
+            assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.hasChildren());
+            
+            cursor.enter();
+                // <!-- lol -->
+                assert(cursor.getKind() == XMLKind.COMMENT);
+                assert(cursor.getName() == "");
+                assert(cursor.getPrefix() == "");
+                assert(cursor.getLocalName() == "");
+                assert(cursor.getAttributes() == []);
+                assert(cursor.getNamespaceDefinitions() == []);
+                assert(!cursor.hasChildren());
+                
+                assert(cursor.next());
+                // Lots of Text!
+                // On multiple lines!
+                assert(cursor.getKind() == XMLKind.TEXT);
+                assert(cursor.getName() == "");
+                assert(cursor.getPrefix() == "");
+                assert(cursor.getLocalName() == "");
+                assert(cursor.getAttributes() == []);
+                assert(cursor.getNamespaceDefinitions() == []);
+                assert(!cursor.hasChildren());
+                
+                assert(!cursor.next());
+            cursor.exit();
+            
+            // </myns:bbb>
+            assert(cursor.getKind() == XMLKind.ELEMENT_END);
+            assert(cursor.getName() == "myns:bbb");
+            assert(cursor.getPrefix() == "myns");
+            assert(cursor.getLocalName() == "bbb");
+            assert(cursor.getAttributes() == []);
+            assert(cursor.getNamespaceDefinitions() == []);
+            assert(!cursor.hasChildren());
+            
+            assert(cursor.next());
+            // <<![CDATA[ Ciaone! ]]>
+            assert(cursor.getKind() == XMLKind.TEXT);
+            assert(cursor.getName() == "");
+            assert(cursor.getPrefix() == "");
+            assert(cursor.getLocalName() == "");
+            assert(cursor.getAttributes() == []);
+            assert(cursor.getNamespaceDefinitions() == []);
+            assert(!cursor.hasChildren());
+            
+            assert(cursor.next());
+            // <ccc/>
+            assert(cursor.getKind() == XMLKind.ELEMENT_EMPTY);
+            assert(cursor.getName() == "ccc");
+            assert(cursor.getPrefix() == "");
+            assert(cursor.getLocalName() == "ccc");
+            assert(cursor.getAttributes() == []);
+            assert(cursor.getNamespaceDefinitions() == []);
+            assert(!cursor.hasChildren());
+            
+            assert(!cursor.next());
+        cursor.exit();
+        
+        // </aaa>
+        assert(cursor.getKind() == XMLKind.ELEMENT_END);
+        assert(cursor.getName() == "aaa");
+        assert(cursor.getPrefix() == "");
+        assert(cursor.getLocalName() == "aaa");
+        assert(cursor.getAttributes() == []);
+        assert(cursor.getNamespaceDefinitions() == []);
+        assert(!cursor.hasChildren());
+        
+        assert(!cursor.next());
+    cursor.exit();
     
-    inspectOneLevel();
-}*/
+    assert(cursor.documentEnd());
+}

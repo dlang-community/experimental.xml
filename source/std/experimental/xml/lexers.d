@@ -20,9 +20,9 @@ struct SliceLexer(T)
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
     
-    T input;
-    size_t pos;
-    size_t begin;
+    private T input;
+    private size_t pos;
+    private size_t begin;
     
     void setSource(T input)
     {
@@ -103,8 +103,8 @@ struct RangeLexer(T)
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
     
-    T input;
-    Appender!(CharacterType[]) app;
+    private T input;
+    private Appender!(CharacterType[]) app;
     
     void setSource(T input)
     {
