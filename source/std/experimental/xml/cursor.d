@@ -24,7 +24,6 @@ struct XMLCursor(P)
     
     private P parser;
     private ElementType!P currentNode;
-    private bool starting, exited;
     private Tuple!(StringType, StringType, StringType)[] attributes;
     private Tuple!(StringType, "prefix", StringType, "namespace")[] namespaces;
     private bool attributesParsed;
@@ -44,12 +43,8 @@ struct XMLCursor(P)
     void setSource(InputType input)
     {
         parser.setSource(input);
-        if (!documentEnd())
-        {
-            starting = true;
-            if (parser.front.kind == parser.front.kind.PROCESSING && fastEqual(parser.front.content[0..3], "xml"))
-                advanceInput();
-        }
+        if(!documentEnd)
+            advanceInput();
     }
     
     /++ Returns whether the cursor is at the end of the document. +/
@@ -61,12 +56,7 @@ struct XMLCursor(P)
     /++ Advances to the first child of the current node. +/
     void enter()
     {
-        if (starting)
-        {
-            starting = false;
-            advanceInput();
-        }
-        else if (hasChildren())
+        if (hasChildren())
             advanceInput();
     }
     
@@ -87,11 +77,12 @@ struct XMLCursor(P)
     {
         if(documentEnd)
             return false;
-        if (currentNode.kind != currentNode.kind.START_TAG)
+        else if (parser.front.kind == currentNode.kind.END_TAG)
+            return false;
+        else if (currentNode.kind != currentNode.kind.START_TAG)
         {
-            if (parser.front.kind == currentNode.kind.END_TAG)
-                return false;
             advanceInput();
+            return true;
         }
         else
         {
@@ -116,7 +107,7 @@ struct XMLCursor(P)
     /++ Returns whether the current node has children, and enter() can thus be used. +/
     bool hasChildren()
     {
-        return starting ||
+        return 
               (currentNode.kind == currentNode.kind.START_TAG && parser.front.kind != currentNode.kind.END_TAG);
     }
     
@@ -124,9 +115,7 @@ struct XMLCursor(P)
     XMLKind getKind() const
     {
         XMLKind result;
-        if (starting)
-            result = XMLKind.DOCUMENT;
-        else switch(currentNode.kind)
+        switch(currentNode.kind)
         {
             case currentNode.kind.START_TAG:
                 result = XMLKind.ELEMENT_START;

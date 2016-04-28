@@ -49,7 +49,7 @@ void main()
     }
     
     writeln("\n=== CURSOR PERFORMANCE ===");
-    void inspectOneLevel(T)(T cursor)
+    void inspectOneLevel(T)(ref T cursor)
     {
         do
         {

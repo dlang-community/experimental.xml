@@ -93,7 +93,7 @@ void main()
 
 void parseFile(string filename)
 {
-    void inspectOneLevel(T)(T cursor)
+    void inspectOneLevel(T)(ref T cursor)
     {
         do
         {
