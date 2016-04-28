@@ -49,6 +49,7 @@ struct Parser(L, bool preserveSpaces = false)
     void setSource(InputType input)
     {
         lexer.setSource(input);
+        ready = false;
     }
     
     static if (isSaveableLexer!L)

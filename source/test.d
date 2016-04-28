@@ -1,6 +1,7 @@
 
 module test;
 
+import std.experimental.xml.interfaces;
 import std.experimental.xml.lexers;
 import std.experimental.xml.parser;
 import std.experimental.xml.cursor;
@@ -17,9 +18,8 @@ auto indexes =
 ];
 
 /++
-+ Most tests are currently not working for two reasons:
-+ 1) We don't have any validation, so we accept all files that seem well formed;
-+ 2) std.file.readText rejects files with encoding iso-8859.
++ Most tests are currently not working for the following reasons:
++ - We don't have any validation, so we accept all files that seem well formed;
 +/
 void main()
 {
@@ -30,7 +30,13 @@ void main()
     foreach (i, index; indexes)
     {
         cursor.setSource(readText(index));
-        cursor.enter();
+        if (cursor.getKind() == XMLKind.DOCUMENT)
+            cursor.enter();
+        else
+        {
+            // indexes may be missing the xml-declaration;
+            // if that's the case, we must not use enter() initially;
+        }
         
         if (cursor.getName() != "TESTCASES")
             continue;

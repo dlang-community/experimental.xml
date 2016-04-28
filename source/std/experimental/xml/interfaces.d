@@ -212,6 +212,7 @@ template isSaveableLowLevelParser(P)
 enum XMLKind
 {
     DOCUMENT,
+    DOCTYPE,
     ELEMENT_START,
     ELEMENT_END,
     ELEMENT_EMPTY,

@@ -24,6 +24,7 @@ struct XMLCursor(P)
     
     private P parser;
     private ElementType!P currentNode;
+    private bool starting;
     private Tuple!(StringType, StringType, StringType)[] attributes;
     private Tuple!(StringType, "prefix", StringType, "namespace")[] namespaces;
     private bool attributesParsed;
@@ -44,7 +45,18 @@ struct XMLCursor(P)
     {
         parser.setSource(input);
         if(!documentEnd)
+        {
             advanceInput();
+            if(currentNode.kind == currentNode.kind.PROCESSING && fastEqual(currentNode.content[0..3], "xml"))
+                starting = true;
+            else
+            {
+                // document without xml declaration???
+                // we accept it, for now.
+                // assert(0);
+                starting = false;
+            }
+        }
     }
     
     /++ Returns whether the cursor is at the end of the document. +/
@@ -56,7 +68,12 @@ struct XMLCursor(P)
     /++ Advances to the first child of the current node. +/
     void enter()
     {
-        if (hasChildren())
+        if(starting)
+        {
+            starting = false;
+            advanceInput();
+        }
+        else if (hasChildren())
             advanceInput();
     }
     
@@ -75,15 +92,12 @@ struct XMLCursor(P)
     +/
     bool next()
     {
-        if(documentEnd)
+        if(documentEnd || starting)
             return false;
         else if (parser.front.kind == currentNode.kind.END_TAG)
             return false;
         else if (currentNode.kind != currentNode.kind.START_TAG)
-        {
             advanceInput();
-            return true;
-        }
         else
         {
             int count = 1;
@@ -107,7 +121,7 @@ struct XMLCursor(P)
     /++ Returns whether the current node has children, and enter() can thus be used. +/
     bool hasChildren()
     {
-        return 
+        return starting ||
               (currentNode.kind == currentNode.kind.START_TAG && parser.front.kind != currentNode.kind.END_TAG);
     }
     
@@ -115,8 +129,13 @@ struct XMLCursor(P)
     XMLKind getKind() const
     {
         XMLKind result;
-        switch(currentNode.kind)
+        if(starting)
+            return XMLKind.DOCUMENT;
+        else switch(currentNode.kind)
         {
+            case currentNode.kind.DOCTYPE:
+                result = XMLKind.DOCTYPE;
+                break;
             case currentNode.kind.START_TAG:
                 result = XMLKind.ELEMENT_START;
                 break;
@@ -182,9 +201,9 @@ struct XMLCursor(P)
     
     private void parseAttributeList()
     {
-        import std.stdio;
-        
         int nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
+        if (nameEnd < 0)
+            return;
         int attStart = nameEnd;
         int delta = fastIndexOfNeither(currentNode.content[nameEnd..$], " \r\n\t>");
         while (delta != -1)
@@ -211,20 +230,27 @@ struct XMLCursor(P)
                 }
                 sep = attStart + delta;
             }
+            
             name = currentNode.content[attStart..sep];
+            delta = fastIndexOfAny(name, " \r\n\t");
+            if (delta >= 0)
+                name = name[0..delta];
             
             int attEnd;
-            if (sep + 1 < currentNode.content.length)
+            int quote;
+            delta = (sep + 1 < currentNode.content.length) ? fastIndexOfNeither(currentNode.content[sep + 1..$], " \r\n\t") : -1;
+            if (delta >= 0)
             {
-                if (currentNode.content[sep + 1] == '"' || currentNode.content[sep + 1] == '\'')
+                quote = sep + 1 + delta;
+                if (currentNode.content[quote] == '"' || currentNode.content[quote] == '\'')
                 {
-                    delta = fastIndexOf(currentNode.content[(sep + 2)..$], currentNode.content[sep + 1]);
+                    delta = fastIndexOf(currentNode.content[(quote + 1)..$], currentNode.content[quote]);
                     if(delta == -1)
                     {
                         // attribute quotes never closed???
                         assert(0);
                     }
-                    attEnd = sep + 2 + delta;
+                    attEnd = quote + 1 + delta;
                 }
                 else
                 {
@@ -237,7 +263,7 @@ struct XMLCursor(P)
                 // attribute without value???
                 assert(0);
             }
-            value = currentNode.content[(sep + 2)..attEnd];
+            value = currentNode.content[(quote + 1)..attEnd];
             
             if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
                 namespaces ~= tuple!("prefix", "namespace")(name, value);
