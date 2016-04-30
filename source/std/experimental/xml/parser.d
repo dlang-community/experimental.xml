@@ -79,7 +79,7 @@ struct Parser(L, bool preserveSpaces = false)
             {
                 fetchNext();
             }
-            catch(AssertError exc)
+            catch (AssertError exc)
             {
                 if (lexer.empty)
                     throw new UnexpectedEndOfStreamException();
@@ -161,8 +161,8 @@ struct Parser(L, bool preserveSpaces = false)
             if (fastEqual(lexer.get()[3..$], "CDATA["))
             {
                 do
-                    lexer.advanceUntil(']', true);
-                while (!lexer.testAndAdvance(']') || !lexer.testAndAdvance('>'));
+                    lexer.advanceUntil('>', true);
+                while (!fastEqual(lexer.get()[($-3)..$], "]]>"));
                 next.content = lexer.get()[9..($-3)];
                 next.kind = NodeType.Kind.CDATA;
             }
@@ -188,8 +188,8 @@ struct Parser(L, bool preserveSpaces = false)
         {
             lexer.testAndAdvance('-'); // second '-'
             do
-                lexer.advanceUntil('-', true);
-            while (!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
+                lexer.advanceUntil('>', true);
+            while (!fastEqual(lexer.get()[($-3)..$], "-->"));
             next.content = lexer.get()[4..($-3)];
             next.kind = NodeType.Kind.COMMENT;
         }
@@ -218,13 +218,13 @@ struct Parser(L, bool preserveSpaces = false)
                             while (!lexer.testAndAdvance('>'));
                         }
                         // entity, notation, attlist or comment
-                        else if(lexer.testAndAdvance('!'))
+                        else if (lexer.testAndAdvance('!'))
                         {
-                            if(lexer.testAndAdvance('-'))
+                            if (lexer.testAndAdvance('-'))
                             {
                                 do
-                                    lexer.advanceUntil('-', true);
-                                while (!lexer.testAndAdvance('-') || !lexer.testAndAdvance('>'));
+                                    lexer.advanceUntil('>', true);
+                                while (!fastEqual(lexer.get()[($-3)..$], "-->"));
                             }
                             else
                             {

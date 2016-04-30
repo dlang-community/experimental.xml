@@ -53,10 +53,10 @@ struct XMLCursor(P)
     void setSource(InputType input)
     {
         parser.setSource(input);
-        if(!documentEnd)
+        if (!documentEnd)
         {
             advanceInput();
-            if(currentNode.kind == currentNode.kind.PROCESSING && fastEqual(currentNode.content[0..3], "xml"))
+            if (currentNode.kind == currentNode.kind.PROCESSING && fastEqual(currentNode.content[0..3], "xml"))
                 starting = true;
             else
             {
@@ -77,7 +77,7 @@ struct XMLCursor(P)
     /++ Advances to the first child of the current node. +/
     void enter()
     {
-        if(starting)
+        if (starting)
         {
             starting = false;
             advanceInput();
@@ -101,12 +101,14 @@ struct XMLCursor(P)
     +/
     bool next()
     {
-        if(documentEnd || starting)
-            return false;
-        else if (parser.front.kind == currentNode.kind.END_TAG)
+        if (documentEnd || starting)
             return false;
         else if (currentNode.kind != currentNode.kind.START_TAG)
+        {
+            if (parser.front.kind == currentNode.kind.END_TAG)
+                return false;
             advanceInput();
+        }
         else
         {
             int count = 1;
@@ -118,11 +120,11 @@ struct XMLCursor(P)
                 else if (currentNode.kind == currentNode.kind.END_TAG)
                     count--;
             }
-            if(documentEnd)
+            if (documentEnd)
+                return false;
+            if (parser.front.kind == currentNode.kind.END_TAG)
                 return false;
             advanceInput();
-            if (currentNode.kind == currentNode.kind.END_TAG)
-                return false;
         }
         return true;
     }
@@ -138,7 +140,7 @@ struct XMLCursor(P)
     XMLKind getKind() const
     {
         XMLKind result;
-        if(starting)
+        if (starting)
             return XMLKind.DOCUMENT;
         else switch(currentNode.kind)
         {
@@ -265,7 +267,7 @@ struct XMLCursor(P)
                 if (currentNode.content[quote] == '"' || currentNode.content[quote] == '\'')
                 {
                     delta = fastIndexOf(currentNode.content[(quote + 1)..$], currentNode.content[quote]);
-                    if(delta == -1)
+                    if (delta == -1)
                     {
                         // attribute quotes never closed???
                         assert(0);
