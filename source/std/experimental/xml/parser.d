@@ -263,42 +263,65 @@ struct Parser(L, bool preserveSpaces = false)
     }
 }
 
-/*unittest
+unittest
 {
     import std.experimental.xml.lexers;
-    import std.stdio;
+    import std.string: splitLines;
     
     string xml = q{
-    <?xml encoding="utf-8" ?>
+    <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
-        <! ANYTHING HERE>
-        <myns:bbb att='>'>
+        <myns:bbb myns:att='>'>
             <!-- lol -->
             Lots of Text!
             On multiple lines!
-        </bbb>
+        </myns:bbb>
         <![CDATA[ Ciaone! ]]>
-        <![conditional[ lalalala ]]>
+        <ccc/>
     </aaa>
     };
-    writeln(xml);
     
-    {
-        writeln("SliceLexer:");
-        auto parser = Parser!(SliceLexer!string)();
-        parser.setSource(xml);
-        foreach (e; parser)
-        {
-            writeln(e);
-        }
-    }
-    {
-        writeln("RangeLexer:");
-        auto parser = Parser!(RangeLexer!string)();
-        parser.setSource(xml);
-        foreach (e; parser)
-        {
-            writeln(e);
-        }
-    }
-}*/
+    auto parser = Parser!(SliceLexer!string)();
+    parser.setSource(xml);
+    
+    alias Kind = typeof(parser.front.kind);
+    
+    assert(parser.front.kind == Kind.PROCESSING);
+    assert(parser.front.content == "xml encoding = \"utf-8\" ");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.START_TAG);
+    assert(parser.front.content == "aaa xmlns:myns=\"something\"");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.START_TAG);
+    assert(parser.front.content == "myns:bbb myns:att='>'");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.COMMENT);
+    assert(parser.front.content == " lol ");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.TEXT);
+    // use splitlines so the unittest does not depend on the newline policy of this file
+    assert(parser.front.content.splitLines == ["Lots of Text!", "            On multiple lines!", "        "]);
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.END_TAG);
+    assert(parser.front.content == "myns:bbb");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.CDATA);
+    assert(parser.front.content == " Ciaone! ");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.EMPTY_TAG);
+    assert(parser.front.content == "ccc");
+    parser.popFront();
+    
+    assert(parser.front.kind == Kind.END_TAG);
+    assert(parser.front.content == "aaa");
+    parser.popFront();
+    
+    assert(parser.empty);
+}

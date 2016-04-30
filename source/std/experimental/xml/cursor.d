@@ -342,7 +342,6 @@ struct XMLCursor(P)
 
 unittest
 {
-    import std.stdio;
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     

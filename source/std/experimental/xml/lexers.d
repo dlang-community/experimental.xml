@@ -183,3 +183,52 @@ struct RangeLexer(T)
         return res;
     }
 }
+
+unittest
+{
+    void testLexer(T)(T.InputType delegate(string) conv)
+    {
+        string xml = q{
+        <?xml encoding = "utf-8" ?>
+        <aaa xmlns:myns="something">
+            <myns:bbb myns:att='>'>
+                <!-- lol -->
+                Lots of Text!
+                On multiple lines!
+            </myns:bbb>
+            <![CDATA[ Ciaone! ]]>
+            <ccc/>
+        </aaa>
+        };
+        
+        T lexer;
+        lexer.setSource(conv(xml));
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntilAny(":>", true);
+        assert(lexer.get() == "<?xml encoding = \"utf-8\" ?>");
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntilAny("=:", false);
+        assert(lexer.get() == "<aaa xmlns");
+        
+        lexer.start();
+        lexer.advanceUntil('>', true);
+        assert(lexer.get() == ":myns=\"something\">");
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntil('\'', true);
+        assert(lexer.testAndAdvance('>'));
+        lexer.advanceUntil('>', false);
+        assert(lexer.testAndAdvance('>'));
+        assert(lexer.get() == "<myns:bbb myns:att='>'>");
+        
+        assert(!lexer.empty);
+    }
+    
+    testLexer!(SliceLexer!string)(x => x);
+    testLexer!(RangeLexer!string)(x => x);
+}
