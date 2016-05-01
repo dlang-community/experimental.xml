@@ -22,6 +22,19 @@ struct XMLCursor(P)
     /++ The type of sequences of CharacterType, as returned by this parser +/
     alias StringType = CharacterType[];
     
+    /++ The type of the error handler that can be installed on this cursor +/
+    alias ErrorHandler = void delegate(ref typeof(this), Error);
+    
+    /++
+    + Enumeration of non-fatal errors that applications can intercept by setting
+    + an handler on this cursor.
+    +/
+    enum Error
+    {
+        MISSING_XML_DECLARATION,
+        INVALID_ATTRIBUTE_SYNTAX,
+    }
+    
     struct Attribute
     {
         StringType prefix, name, value;
@@ -37,6 +50,16 @@ struct XMLCursor(P)
     private Attribute[] attributes;
     private NamespaceDeclaration[] namespaces;
     private bool attributesParsed;
+    import std.functional: toDelegate;
+    private ErrorHandler handler;
+    
+    private void callHandler(ref typeof(this) cur, Error err)
+    {
+        if (handler != null)
+            handler(cur, err);
+        else
+            assert(0);
+    }
     
     private void advanceInput()
     {
@@ -45,6 +68,16 @@ struct XMLCursor(P)
         attributesParsed = false;
         attributes = [];
         namespaces = [];
+    }
+    
+    /++
+    +   Overrides the current error handler with a new one.
+    +   It will be called whenever a non-fatal error occurs.
+    +   The default handler abort parsing by throwing an exception.
+    +/
+    void setErrorHandler(ErrorHandler handler)
+    {
+        this.handler = handler;
     }
     
     /++
@@ -61,8 +94,7 @@ struct XMLCursor(P)
             else
             {
                 // document without xml declaration???
-                // we accept it, for now.
-                // assert(0);
+                callHandler(this, Error.MISSING_XML_DECLARATION);
                 starting = false;
             }
         }
@@ -173,9 +205,9 @@ struct XMLCursor(P)
     }
     
     /++
-    +   If the current node is an element, return its complete name;
+    +   If the current node is an element or a doctype, return its complete name;
     +   it it is a processing instruction, return its target;
-    +   otherwise, the result is unspecified.
+    +   otherwise, return an empty string;
     +/
     StringType getName() const
     {
@@ -184,13 +216,13 @@ struct XMLCursor(P)
             currentNode.kind != currentNode.kind.COMMENT &&
             currentNode.kind != currentNode.kind.CDATA)
         {
-            if ((i = fastIndexOfAny(currentNode.content, " \r\n\t")) >= 0)
-                return currentNode.content[0..i];
+            int nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+            if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
+                return currentNode.content[nameStart..i];
             else
-                return currentNode.content[0..$];
+                return currentNode.content[nameStart..$];
         }
-        else
-            return [];
+        return [];
     }
     
     /++
@@ -200,11 +232,15 @@ struct XMLCursor(P)
     StringType getLocalName() const
     {
         auto name = getName();
-        int colon = fastIndexOf(name, ':');
-        if (colon != -1)
-            return name[(colon+1)..$];
-        else
-            return name;
+        if (currentNode.kind == currentNode.kind.START_TAG || currentNode.kind == currentNode.kind.END_TAG)
+        {
+            int colon = fastIndexOf(name, ':');
+            if (colon != -1)
+                return name[(colon+1)..$];
+            else
+                return name;
+        }
+        return name;
     }
     
     /++
@@ -237,7 +273,7 @@ struct XMLCursor(P)
             if (delta == -1)
             {
                 // attribute without value nor prefix???
-                assert(0);
+                callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
             }
             int sep = attStart + delta;
             if (currentNode.content[sep] == ':')
@@ -248,7 +284,8 @@ struct XMLCursor(P)
                 if (delta == -1)
                 {
                     // attribute without value???
-                    assert(0);
+                    callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
+                    return;
                 }
                 sep = attStart + delta;
             }
@@ -270,20 +307,22 @@ struct XMLCursor(P)
                     if (delta == -1)
                     {
                         // attribute quotes never closed???
-                        assert(0);
+                        callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
+                        return;
                     }
                     attEnd = quote + 1 + delta;
                 }
                 else
                 {
-                    // value not surrounded by quotes
-                    assert(0);
+                    callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
+                    return;
                 }
             }
             else
             {
                 // attribute without value???
-                assert(0);
+                callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
+                return;
             }
             value = currentNode.content[(quote + 1)..attEnd];
             
@@ -334,9 +373,36 @@ struct XMLCursor(P)
     
     /++
     +   Return the text content of a CDATA section, a comment or a text node;
-    +   in all other cases, the result in unspecified.
+    +   the content of a processing instruction or a doctype;
+    +   returns an empty string in all other cases.
     +/
     StringType getText() const
+    {
+        switch (currentNode.kind)
+        {
+            case currentNode.kind.TEXT:
+            case currentNode.kind.CDATA:
+            case currentNode.kind.COMMENT:
+                return currentNode.content;
+            case currentNode.kind.DOCTYPE:
+            case currentNode.kind.PROCESSING:
+            {
+                int nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+                if (nameStart < 0)
+                    assert(0);
+                int nameEnd = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t");
+                // xml declaration does not have any content
+                if(fastEqual(currentNode.content[nameStart..nameEnd], "xml"))
+                    return [];
+                return currentNode.content[nameEnd..$];
+            }
+            default:
+                return [];
+        }
+    }
+    
+    /++ Returns the entire text of the current node. +/
+    StringType getAll() const
     {
         return currentNode.content;
     }
@@ -346,6 +412,7 @@ unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
+    import std.string: splitLines;
     
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -370,6 +437,7 @@ unittest
     assert(cursor.getLocalName() == "xml");
     assert(cursor.getAttributes() == [cursor.Attribute("", "encoding", "utf-8")]);
     assert(cursor.getNamespaceDefinitions() == []);
+    assert(cursor.getText() == []);
     assert(cursor.hasChildren());
     
     cursor.enter();
@@ -380,6 +448,7 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
         assert(cursor.getNamespaceDefinitions() == [cursor.NamespaceDeclaration("myns", "something")]);
+        assert(cursor.getText() == []);
         assert(cursor.hasChildren());
         
         cursor.enter();
@@ -390,6 +459,7 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes() == [cursor.Attribute("myns", "att", ">")]);
             assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getText() == []);
             assert(cursor.hasChildren());
             
             cursor.enter();
@@ -400,6 +470,7 @@ unittest
                 assert(cursor.getLocalName() == "");
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
+                assert(cursor.getText() == " lol ");
                 assert(!cursor.hasChildren());
                 
                 assert(cursor.next());
@@ -411,6 +482,8 @@ unittest
                 assert(cursor.getLocalName() == "");
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
+                // use splitlines so the unittest does not depend on the newline policy of this file
+                assert(cursor.getText().splitLines == ["Lots of Text!", "            On multiple lines!", "        "]);
                 assert(!cursor.hasChildren());
                 
                 assert(!cursor.next());
@@ -423,6 +496,7 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getText() == []);
             assert(!cursor.hasChildren());
             
             assert(cursor.next());
@@ -433,6 +507,7 @@ unittest
             assert(cursor.getLocalName() == "");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getText() == " Ciaone! ");
             assert(!cursor.hasChildren());
             
             assert(cursor.next());
@@ -443,6 +518,7 @@ unittest
             assert(cursor.getLocalName() == "ccc");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getText() == []);
             assert(!cursor.hasChildren());
             
             assert(!cursor.next());
@@ -455,6 +531,7 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
         assert(cursor.getNamespaceDefinitions() == []);
+        assert(cursor.getText() == []);
         assert(!cursor.hasChildren());
         
         assert(!cursor.next());

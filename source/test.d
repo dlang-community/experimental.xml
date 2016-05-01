@@ -8,6 +8,7 @@ import std.experimental.xml.cursor;
 
 import std.encoding: transcode, Latin1String;
 import std.file: read, readText;
+import std.functional: toDelegate;
 import std.path;
 import std.stdio: write, writeln;
 import std.utf: UTFException;
@@ -182,6 +183,13 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
     return result;
 }
 
+// callback used to ignore missing xml declaration, while throwing on invalid attributes
+void uselessCallback(T)(ref T cur, T.Error err)
+{
+    if (err != T.Error.MISSING_XML_DECLARATION)
+        assert(0);
+}
+
 /++
 + Most tests are currently not working for the following reasons:
 + - We don't have any validation, so we accept all files that seem well formed;
@@ -190,11 +198,14 @@ void main()
 {
     auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
     
+    // If an index is not well-formed, just tell us but continue parsing
+    cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
+    
     auto results = Results();
     foreach (i, index; indexes)
     {
         writeln(i, " -- ", index);
-    
+        
         cursor.setSource(readText(index));
         if (cursor.getKind() == XMLKind.DOCUMENT)
             cursor.enter();
@@ -239,6 +250,8 @@ void parseFile(string filename)
     }
     
     auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    // lots of tests do not have an xml declaration
+    cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
     cursor.setSource(text);
     inspectOneLevel(cursor);
 }
