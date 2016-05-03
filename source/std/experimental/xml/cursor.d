@@ -50,7 +50,6 @@ struct XMLCursor(P)
     private Attribute[] attributes;
     private NamespaceDeclaration[] namespaces;
     private bool attributesParsed;
-    import std.functional: toDelegate;
     private ErrorHandler handler;
     
     private void callHandler(ref typeof(this) cur, Error err)
@@ -211,12 +210,12 @@ struct XMLCursor(P)
     +/
     StringType getName() const
     {
-        int i;
+        ptrdiff_t i;
         if (currentNode.kind != currentNode.kind.TEXT && 
             currentNode.kind != currentNode.kind.COMMENT &&
             currentNode.kind != currentNode.kind.CDATA)
         {
-            int nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+            auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
             if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
                 return currentNode.content[nameStart..i];
             else
@@ -234,7 +233,7 @@ struct XMLCursor(P)
         auto name = getName();
         if (currentNode.kind == currentNode.kind.START_TAG || currentNode.kind == currentNode.kind.END_TAG)
         {
-            int colon = fastIndexOf(name, ':');
+            auto colon = fastIndexOf(name, ':');
             if (colon != -1)
                 return name[(colon+1)..$];
             else
@@ -249,7 +248,7 @@ struct XMLCursor(P)
     +/
     StringType getPrefix() const
     {
-        int colon = fastIndexOf(getName(), ':');
+        auto colon = fastIndexOf(getName(), ':');
         if (colon != -1)
             return currentNode.content[0..colon];
         else
@@ -259,11 +258,11 @@ struct XMLCursor(P)
     private void parseAttributeList()
     {
         attributesParsed = true;
-        int nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
+        auto nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
         if (nameEnd < 0)
             return;
-        int attStart = nameEnd;
-        int delta = fastIndexOfNeither(currentNode.content[nameEnd..$], " \r\n\t>");
+        auto attStart = nameEnd;
+        auto delta = fastIndexOfNeither(currentNode.content[nameEnd..$], " \r\n\t>");
         while (delta != -1)
         {
             CharacterType[] prefix, name, value;
@@ -275,7 +274,7 @@ struct XMLCursor(P)
                 // attribute without value nor prefix???
                 callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
             }
-            int sep = attStart + delta;
+            auto sep = attStart + delta;
             if (currentNode.content[sep] == ':')
             {
                 prefix = currentNode.content[attStart..sep];
@@ -295,8 +294,8 @@ struct XMLCursor(P)
             if (delta >= 0)
                 name = name[0..delta];
             
-            int attEnd;
-            int quote;
+            size_t attEnd;
+            size_t quote;
             delta = (sep + 1 < currentNode.content.length) ? fastIndexOfNeither(currentNode.content[sep + 1..$], " \r\n\t") : -1;
             if (delta >= 0)
             {
@@ -387,10 +386,10 @@ struct XMLCursor(P)
             case currentNode.kind.DOCTYPE:
             case currentNode.kind.PROCESSING:
             {
-                int nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+                auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
                 if (nameStart < 0)
                     assert(0);
-                int nameEnd = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t");
+                auto nameEnd = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t");
                 // xml declaration does not have any content
                 if(fastEqual(currentNode.content[nameStart..nameEnd], "xml"))
                     return [];

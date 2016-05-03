@@ -16,7 +16,7 @@ in
 }
 body
 {
-    for (auto i = 0; i < t.length; i++)
+    foreach (i; 0 .. t.length)
         if (t[i] != s[i])
             return false;
     return true;
@@ -30,9 +30,9 @@ unittest
 }
 
 /++ Returns the index of the first occurrence of a value in a slice. +/
-pure int fastIndexOf(T, S)(T[] t, S s)
+pure ptrdiff_t fastIndexOf(T, S)(T[] t, S s)
 {
-    for (int i = 0; i < t.length; i++)
+    foreach (i; 0 .. t.length)
         if (t[i] == s)
             return i;
     return -1;
@@ -47,9 +47,9 @@ unittest
 + Returns the index of the first occurrence of any of the values in the second
 + slice inside the first one.
 +/
-pure int fastIndexOfAny(T, S)(T[] t, S[] s)
+pure ptrdiff_t fastIndexOfAny(T, S)(T[] t, S[] s)
 {
-    for (int i = 0; i < t.length; i++)
+    foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) != -1)
             return i;
     return -1;
@@ -64,9 +64,9 @@ unittest
 + Returns the index of the first occurrence of a value of the first slice that
 + does not appear in the second.
 +/
-pure int fastIndexOfNeither(T, S)(T[] t, S[] s)
+pure ptrdiff_t fastIndexOfNeither(T, S)(T[] t, S[] s)
 {
-    for (int i = 0; i < t.length; i++)
+    foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) == -1)
             return i;
     return -1;

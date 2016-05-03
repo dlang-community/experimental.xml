@@ -83,9 +83,9 @@ struct SliceLexer(T)
             pos++;
     }
     
-    int advanceUntilAny(string s, bool included)
+    size_t advanceUntilAny(string s, bool included)
     {
-        int res;
+        ptrdiff_t res;
         while ((res = fastIndexOf(s, input[pos])) == -1)
             pos++;
         if (included)
@@ -167,9 +167,9 @@ struct RangeLexer(T)
         }
     }
     
-    int advanceUntilAny(string s, bool included)
+    size_t advanceUntilAny(string s, bool included)
     {
-        int res;
+        size_t res;
         while ((res = fastIndexOf(s, input.front)) == -1)
         {
             app.put(input.front);

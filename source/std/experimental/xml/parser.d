@@ -123,7 +123,7 @@ struct Parser(L, bool preserveSpaces = false)
         // processing instruction
         else if (lexer.testAndAdvance('?'))
         {
-            int c;
+            size_t c;
             do
                 lexer.advanceUntil('?', true);
             while (!lexer.testAndAdvance('>'));
@@ -133,7 +133,7 @@ struct Parser(L, bool preserveSpaces = false)
         // tag start
         else if (!lexer.testAndAdvance('!'))
         {
-            int c;
+            size_t c;
             while ((c = lexer.advanceUntilAny("\"'/>", true)) < 2)
                 if (c == 0)
                     lexer.advanceUntil('"', true);
@@ -196,7 +196,7 @@ struct Parser(L, bool preserveSpaces = false)
         // declaration or doctype
         else
         {
-            int c;
+            size_t c;
             while ((c = lexer.advanceUntilAny("\"'[>", true)) < 2)
                 if (c == 0)
                     lexer.advanceUntil('"', true);
@@ -228,7 +228,7 @@ struct Parser(L, bool preserveSpaces = false)
                             }
                             else
                             {
-                                int cc;
+                                size_t cc;
                                 while ((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
                                     if (cc == 0)
                                         lexer.advanceUntil('"', true);
@@ -247,7 +247,7 @@ struct Parser(L, bool preserveSpaces = false)
             {
                 if (c == 2)
                 {
-                    int cc;
+                    size_t cc;
                     while ((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
                         if (cc == 0)
                             lexer.advanceUntil('"', true);
