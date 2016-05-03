@@ -24,4 +24,6 @@ that resemble XML without being fully compatible with it;
 - a cursor API represents the first high-level facility of the library; it allows
 to advance in the document structure, querying nodes for their properties and
 skipping them when not needed;
+- a validating cursor wraps a cursor, performing validations while advancing in
+the structure; validations are plugged-in at compilation time;
 - more higher-level API (e.g. DOM building) will be implemented as soon as possible.
