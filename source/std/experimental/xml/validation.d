@@ -198,3 +198,58 @@ unittest
     
     assert(count == 2);
 }
+
+pure nothrow @nogc @safe bool isValidXMLCharacter10(dchar c)
+{
+    return c == '\r' || c == '\n' || c == '\t'
+        || (0x20 <= c && c <= 0xD7FF)
+        || (0xE000 <= c && c <= 0xFFFD)
+        || (0x10000 <= c && c <= 0x10FFFF);
+}
+
+pure nothrow @nogc @safe bool isValidXMLCharacter11(dchar c)
+{
+    return (1 <= c && c <= 0xD7FF)
+        || (0xE000 <= c && c <= 0xFFFD)
+        || (0x10000 <= c && c <= 0x10FFFF);
+}
+
+pure nothrow @nogc @safe bool isValidXMLNameStart(dchar c)
+{
+    return c == ':'
+        || ('A' <= c && c <= 'Z')
+        || c == '_'
+        || ('a' <= c && c <= 'z')
+        || (0xC0 <= c && c <= 0x2FF && c != 0xD7 && c != 0xF7)
+        || (0x370 <= c && c <= 0x1FFF && c != 0x37E)
+        || c == 0x200C
+        || c == 0x200D
+        || (0x2070 <= c && c <= 0x218F)
+        || (0x2C00 <= c && c <= 0x2FEF)
+        || (0x3001 <= c && c <= 0xD7FF)
+        || (0xF900 <= c && c <= 0xFDCF)
+        || (0xFDF0 <= c && c <= 0xEFFFF && c != 0xFFFE && c != 0xFFFF);
+}
+
+pure nothrow @nogc @safe bool isValidXMLNameChar(dchar c)
+{
+    return isValidXMLNameStart(c)
+        || c == '-'
+        || c == '.'
+        || ('0' <= c && c <= '9')
+        || c == 0xB7
+        || (0x300 <= c && c <= 0x36F)
+        || (0x203F <= c && c <= 2040);
+}
+
+pure nothrow @nogc @safe bool isValidXMLPublicIdCharacter(dchar c)
+{
+    import std.string: indexOf;
+    return c == ' '
+        || c == '\n'
+        || c == '\r'
+        || ('a' <= c && c <= 'z')
+        || ('A' <= c && c <= 'Z')
+        || ('0' <= c && c <= '9')
+        || "-'()+,./:=?;!*#@$_%".indexOf(c) != -1;
+}

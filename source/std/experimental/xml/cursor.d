@@ -35,20 +35,11 @@ struct XMLCursor(P)
         INVALID_ATTRIBUTE_SYNTAX,
     }
     
-    struct Attribute
-    {
-        StringType prefix, name, value;
-    }
-    struct NamespaceDeclaration
-    {
-        StringType prefix, namespace;
-    }
-    
     private P parser;
     private ElementType!P currentNode;
     private bool starting;
-    private Attribute[] attributes;
-    private NamespaceDeclaration[] namespaces;
+    private Attribute!StringType[] attributes;
+    private NamespaceDeclaration!StringType[] namespaces;
     private bool attributesParsed;
     private ErrorHandler handler;
     
@@ -326,9 +317,9 @@ struct XMLCursor(P)
             value = currentNode.content[(quote + 1)..attEnd];
             
             if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
-                namespaces ~= NamespaceDeclaration(name, value);
+                namespaces ~= NamespaceDeclaration!StringType(name, value);
             else
-                attributes ~= Attribute(prefix, name, value);
+                attributes ~= Attribute!StringType(prefix, name, value);
             
             attStart = attEnd + 1;
             delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
@@ -340,7 +331,7 @@ struct XMLCursor(P)
     +   (prefix, name, value); if the current node is the document node, return the attributes
     +   of the xml declaration (encoding, version, ...); otherwise, return an empty array.
     +/
-    Attribute[] getAttributes()
+    auto getAttributes()
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG || kind == kind.PROCESSING)
@@ -357,7 +348,7 @@ struct XMLCursor(P)
     +   If the current node is an element, return a list of namespace bindings created in this element
     +   start tag, as an array of pairs (prefix, namespace); otherwise, return an empty array.
     +/
-    NamespaceDeclaration[] getNamespaceDefinitions()
+    auto getNamespaceDefinitions()
     {
         auto kind = currentNode.kind;
         if (kind == kind.START_TAG)
@@ -434,7 +425,7 @@ unittest
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes() == [cursor.Attribute("", "encoding", "utf-8")]);
+    assert(cursor.getAttributes() == [Attribute!string("", "encoding", "utf-8")]);
     assert(cursor.getNamespaceDefinitions() == []);
     assert(cursor.getText() == []);
     assert(cursor.hasChildren());
@@ -446,7 +437,7 @@ unittest
         assert(cursor.getPrefix() == "");
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
-        assert(cursor.getNamespaceDefinitions() == [cursor.NamespaceDeclaration("myns", "something")]);
+        assert(cursor.getNamespaceDefinitions() == [NamespaceDeclaration!string("myns", "something")]);
         assert(cursor.getText() == []);
         assert(cursor.hasChildren());
         
@@ -456,7 +447,7 @@ unittest
             assert(cursor.getName() == "myns:bbb");
             assert(cursor.getPrefix() == "myns");
             assert(cursor.getLocalName() == "bbb");
-            assert(cursor.getAttributes() == [cursor.Attribute("myns", "att", ">")]);
+            assert(cursor.getAttributes() == [Attribute!string("myns", "att", ">")]);
             assert(cursor.getNamespaceDefinitions() == []);
             assert(cursor.getText() == []);
             assert(cursor.hasChildren());

@@ -9,6 +9,8 @@ module std.experimental.xml.interfaces;
 import std.range.primitives;
 import std.traits;
 
+// LEVEL 1: LEXERS
+
 /++
 +   Checks whether its argument fulfills all requirements to be used as XML lexer.
 +
@@ -113,6 +115,8 @@ template isSaveableLexer(L)
     }));
 }
 
+// LEVEL 2: PARSERS
+
 /++
 +   The structure returned in output from the low level parser.
 +   Represents an XML token, delimited by specific patterns, based on its kind.
@@ -206,6 +210,8 @@ template isSaveableLowLevelParser(P)
     enum bool isSaveableLowLevelParser = isLowLevelParser!P && isForwardRange!P;
 }
 
+// LEVEL 3: CURSORS
+
 /++
 +   Enumeration of XML events/nodes, used by various components.
 +/
@@ -219,4 +225,65 @@ enum XMLKind
     TEXT,
     COMMENT,
     PROCESSING_INSTRUCTION,
+}
+
+struct Attribute(StringType)
+{
+    StringType prefix, name, value;
+}
+
+struct NamespaceDeclaration(StringType)
+{
+    StringType prefix, namespace;
+}
+    
+
+template isXMLCursor(CursorType)
+{
+    enum bool isXMLCursor = is(typeof(
+    (inout int = 0)
+    {
+        /++
+        +   The type of input accepted by this parser,
+        +   i.e., the one accepted by the underlying low level parser.
+        +/
+        alias T = CursorType.InputType;
+        
+        alias S = CursorType.StringType;
+        
+        CursorType cursor;
+        T input;
+        bool b;
+        
+        cursor.setSource(input);
+        b = cursor.documentEnd;
+        b = cursor.next;
+        b = cursor.hasChildren;
+        cursor.enter;
+        cursor.exit;
+        XMLKind kind = cursor.getKind;
+        auto s = cursor.getName;
+        s = cursor.getLocalName;
+        s = cursor.getPrefix;
+        s = cursor.getText;
+        s = cursor.getAll;
+        Attribute!S[] atts = cursor.getAttributes;
+        NamespaceDeclaration!S[] ns = cursor.getNamespaceDefinitions;
+    }
+    ));
+}
+
+template isSaveableXMLCursor(CursorType)
+{
+    enum bool isSaveableXMLCursor = isXMLCursor!CursorType && is(typeof(
+    (inout int = 0)
+    {
+        const CursorType cursor1;
+        
+        /++
+        +   L save() const;
+        +   Return a copy of the lexer that can be advance independently of the original.
+        +/
+        CursorType cursor2 = cursor1.save();
+    }));
 }

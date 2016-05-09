@@ -76,9 +76,14 @@ struct SliceLexer(T)
     {
         auto adv = fastIndexOf(input[pos..$], c);
         if (adv != -1)
+        {
             pos += adv;
+        }
         else
+        {
             pos = input.length;
+        }
+        
         if (included)
             pos++;
     }
