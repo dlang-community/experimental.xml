@@ -189,6 +189,50 @@ struct RangeLexer(T)
     }
 }
 
+auto withInput(T)(auto ref T input)
+{
+    struct Chain
+    {
+        alias Type = T;
+        auto finalize()
+        {
+            return input;
+        }
+    }
+    return Chain();
+}
+
+auto lex(T)(auto ref T input)
+{
+    static if (__traits(compiles, SliceLexer!(T.Type)))
+    {
+        struct Chain
+        {
+            alias Type = SliceLexer!(T.Type);
+            auto finalize()
+            {
+                return Type(input.finalize, 0, 0);
+            }
+        }
+    }
+    else if (__traits(compiles, RangeLexer!(T.Type)))
+    {
+        struct Chain
+        {
+            alias Type = RangeLexer!(T.Type);
+            auto finalize()
+            {
+                return Type(input.finalize, Appender!(Type.CharacterType[])());
+            }
+        }
+    }
+    else
+    {
+        static assert(0);
+    }
+    return chain;
+}
+
 unittest
 {
     void testLexer(T)(T.InputType delegate(string) conv)

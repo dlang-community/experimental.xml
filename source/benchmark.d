@@ -1,6 +1,8 @@
 
 module benchmark;
 
+import genxml;
+
 import std.experimental.xml.lexers;
 import std.experimental.xml.parser;
 import std.experimental.xml.cursor;
@@ -8,47 +10,61 @@ import std.experimental.xml.cursor;
 import std.stdio;
 import std.file;
 import std.conv;
-import core.time;
 
-immutable int tests = 4;
+auto getTestFiles()
+{
+    import std.algorithm: count;
+    version(RANDOM_BENCHMARK)
+    {
+        if (!exists("random-benchmark") || dirEntries("random-benchmark", SpanMode.shallow).count == 0)
+            createRandomBenchmarks("random-benchmark");
+        return dirEntries("random-benchmark", SpanMode.shallow);
+    }
+    else
+    {
+        return dirEntries("benchmark", SpanMode.shallow);
+    }
+}
+
+void performTests(void delegate(string) dg)
+{
+    import core.time;
+    auto i = 1;
+    foreach(string test; getTestFiles)
+    {
+        auto data = readText(test);
+        MonoTime before = MonoTime.currTime;
+        dg(data);
+        MonoTime after = MonoTime.currTime;
+        Duration elapsed = after - before;
+        writeln("test ", i++,": \t", elapsed, "\t(", data.length, " characters)");
+    }
+}
 
 void main()
 {
     writeln("\n=== PARSER PERFORMANCE ===");
-    {
-        writeln("SliceLexer:");
+    
+    writeln("SliceLexer:");
+    performTests((data) {
         auto parser = Parser!(SliceLexer!string)();
-        for (int i = 0; i < tests; i++)
+        parser.setSource(data);
+        foreach (e; parser)
         {
-            auto data = readText("benchmark/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            parser.setSource(data);
-            foreach (e; parser)
-            {
-            }
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
         }
-    }
-    {
-        writeln("RangeLexer:");
+    });
+    
+    writeln("RangeLexer:");
+    performTests((data) {
         auto parser = Parser!(RangeLexer!string)();
-        for (int i = 0; i < tests; i++)
+        parser.setSource(data);
+        foreach (e; parser)
         {
-            auto data = readText("benchmark/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            parser.setSource(data);
-            foreach (e; parser)
-            {
-            }
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
         }
-    }
+    });
     
     writeln("\n=== CURSOR PERFORMANCE ===");
+    
     void inspectOneLevel(T)(ref T cursor)
     {
         do
@@ -62,32 +78,20 @@ void main()
         }
         while (cursor.next());
     }
-    {
-        writeln("SliceLexer:");
+    
+    writeln("SliceLexer:");
+    performTests((data) {
         auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
-        for (int i = 0; i < tests; i++)
-        {
-            auto data = readText("benchmark/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            cursor.setSource(data);
-            inspectOneLevel(cursor);
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
-        }
-    }
-    {
-        writeln("RangeLexer:");
+        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
+        cursor.setSource(data);
+        inspectOneLevel(cursor);
+    });
+    
+    writeln("RangeLexer:");
+    performTests((data) {
         auto cursor = XMLCursor!(Parser!(RangeLexer!string))();
-        for (int i = 0; i < tests; i++)
-        {
-            auto data = readText("benchmark/test_" ~ to!string(i) ~ ".xml");
-            MonoTime before = MonoTime.currTime;
-            cursor.setSource(data);
-            inspectOneLevel(cursor);
-            MonoTime after = MonoTime.currTime;
-            Duration elapsed = after - before;
-            writeln("test ", i,": \t", elapsed, "\t(", data.length, " characters)");
-        }
-    }
+        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
+        cursor.setSource(data);
+        inspectOneLevel(cursor);
+    });
 }

@@ -7,8 +7,30 @@
 
 module std.experimental.dom;
 
-// COMMENTED BECAUSE IT IS INCOMPLETE
-/*
+/+ WORK IN PROGRESS! DO NOT DECOMMENT!
+
+// START OF PRIVATE HELPERS
+
+mixin template ChildOf(T)
+{
+    private T superParent;
+    alias superParent this;
+}
+
+mixin template HasChild(T, Tags...)
+{
+    ref T opCast(P: T)()
+    {
+        foreach (tag; Tags)
+            if (kind == tag)
+                return *(cast(T*)&this);
+        assert (0, "Invalid downcast");
+    }
+}
+
+// END OF PRIVATE HELPERS
+
+import std.typecons: Nullable, RefCounted;
 import std.variant: Variant;
 alias DOMUserData = Variant;
 
@@ -36,10 +58,12 @@ enum DocumentPosition
     CONTAINED_BY,
     IMPLEMENTATION_SPECIFIC
 }
-class Node(StringType)
+
+alias Node(StringType) = Nullable!(RefCounted!(_Node!StringType));
+struct _Node(StringType)
 {
     // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
-    public abstract
+    public
     {
         @property StringType    baseUri()         const;
         @property StringType    namespaceUri()    const;
@@ -74,7 +98,7 @@ class Node(StringType)
     // REQUIRED BY THE STANDARD; IMPLEMENTED HERE, CAN BE OVERRIDDEN
     public
     {
-        @property NamedNodeMap attributes() const { return null; }
+        //@property NamedNodeMap attributes() const { return null; }
         @property StringType localName() const { return null; }
         @property StringType nodeValue() const { return null; }
         @property void nodeValue(StringType newValue) {}
@@ -96,7 +120,7 @@ class Node(StringType)
             appendChild(ownerDocument.createTextNode(newValue));
         }
         
-        Node insertBefore(in Node newChild, in Node refChild)
+        Node!StringType insertBefore(in Node!StringType newChild, in Node!StringType refChild)
         {
             if (newChild.ownerDocument !is ownerDocument)
                 throw new DOMException(ErrorCode.WRONG_DOCUMENT);
@@ -117,7 +141,7 @@ class Node(StringType)
                 _firstChild = newChild;
             return newChild;
         }
-        Node replaceChild(in Node newChild, in Node oldChild)
+        Node!StringType replaceChild(in Node!StringType newChild, in Node!StringType oldChild)
         {
             if (newChild.ownerDocument !is ownerDocument)
                 throw new DOMException(ErrorCode.WRONG_DOCUMENT);
@@ -146,7 +170,7 @@ class Node(StringType)
                 _lastChild = newChild;
             return oldChild;
         }
-        Node appendChild(in Node newChild)
+        Node!StringType appendChild(in Node!StringType newChild)
         {
             if (newChild.ownerDocument !is ownerDocument)
                 throw new DOMException(ErrorCode.WRONG_DOCUMENT);
@@ -164,25 +188,25 @@ class Node(StringType)
             lastChild = newChild;
         }
         
-        Node cloneNode(in bool deep) const;
+        /*Node cloneNode(in bool deep) const;
         void normalize();
         
         boolean isSupported(in string feature, in string version_);
         
-        DocumentPosition compareDocumentPosition(in Node other) const;
+        DocumentPosition compareDocumentPosition(in Node!StringType other) const;
         StringType lookupPrefix(in StringType namespaceUri);
         bool isDefaultNamespace(in StringType prefix) const;
         bool isEqualNode(in Node arg) const;
         Object getFeature(in string feature, in string version_);
         DOMUserData setUserData(in string key, in DOMUserData data, in UserDataHandler handler);
-        DOMUserData getUserData(in string key);
+        DOMUserData getUserData(in string key);*/
     }
     // REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
-    public final
+    public
     {
-        @property NodeList!StringType childNodes() const
+        @property auto childNodes() const
         {
-            return new class NodeList!StringType
+            struct NodeList
             {
                 Node item(in size_t index) const
                 {
@@ -205,14 +229,15 @@ class Node(StringType)
                     return result;
                 }
                 Node opIndex(size_t i) const { return item(i); }
-            };
+            }
+            return NodeList();
         }
-        @property Node firstChild() const { return _firstChild; }
-        @property Node lastChild() const { return _lastChild; }
-        @property Node nextSibling() const { return _nextSibling; }
-        const Document ownerDocument;
-        @property Node parentNode() const { return _parentNode; }
-        @property Node previousSibling() const { return _previousSibling; }
+        @property Node!StringType firstChild() const { return _firstChild; }
+        @property Node!StringType lastChild() const { return _lastChild; }
+        @property Node!StringType nextSibling() const { return _nextSibling; }
+        const Document!StringType ownerDocument;
+        @property Node!StringType parentNode() const { return _parentNode; }
+        @property Node!StringType previousSibling() const { return _previousSibling; }
         
         bool hasAttributes() const
         {
@@ -252,20 +277,10 @@ class Node(StringType)
     {
         void remove()
         {
-            if (parentNode !is null)
+            if (parentNode.isInitialized)
                 parentNode.removeChild(this);
         }
     }
-}
-
-interface NodeList(StringType)
-{
-    // INTERFACE REQUIRED BY SPECIFICATION
-    Node!StringType item(in size_t index) const;
-    @property size_t length() const;
-    
-    // ADDITIONAL FUNCTIONALITY NOT REQUIRED BY THE SPECIFICATION
-    Node!StringType opIndex(in size_t index) const;
 }
 
 enum ExceptionCode
@@ -293,12 +308,16 @@ class DOMException: Exception
     ExceptionCode code;
     this(ExceptionCode code)
     {
+        super("");
         this.code = code;
     }
 }
 
-class Attr(StringType): Node!StringType
+alias Attr(StringType) = Nullable!(RefCounted!(_Attr!StringType));
+struct _Attr(StringType)
 {
+    mixin ChildOf!_Node;
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -332,7 +351,7 @@ class Attr(StringType): Node!StringType
         }
     }
     // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
-    public override
+    public
     {
         @property auto localName() const
         {
@@ -364,8 +383,11 @@ class Attr(StringType): Node!StringType
     }
 }
 
-class CharacterData(StringType): Node!StringType
+alias CharacterData(StringType) = Nullable!(RefCounted!(_CharacterData!StringType));
+struct _CharacterData(StringType)
 {
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -409,7 +431,7 @@ class CharacterData(StringType): Node!StringType
         }
     }
     // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
-    public override
+    public
     {
         @property auto nodeValue() const { return data; }
         @property void nodeValue(StringType newValue) { data = newValue; }
@@ -431,17 +453,24 @@ class CharacterData(StringType): Node!StringType
     }
 }
 
-class Comment(StringType): CharacterData!StringType {}
-
-class Text(StringType): CharacterData!StringType
+alias Comment(StringType) = Nullable!(RefCounted!(_Comment!StringType));
+struct _Comment(StringType)
 {
+    mixin ChildOf!(_CharacterData!StringType);
+}
+
+alias Text(StringType) = Nullable!(RefCounted!(_Text!StringType));
+class _Text(StringType)
+{
+    mixin ChildOf!(_CharacterData!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
         @property auto isElementContentWhitespace() const { return _isElementContentWhitespace; }
-        @property auto wholeText() const;
-        Text replaceWholeText(StringType newContent);
-        Text splitText(size_t offset)
+        @property StringType wholeText() const;
+        Text!StringType replaceWholeText(StringType newContent);
+        Text!StringType splitText(size_t offset)
         {
             if (offset > length)
                 throw new DOMException(ErrorCode.INDEX_SIZE);
@@ -460,10 +489,17 @@ class Text(StringType): CharacterData!StringType
     }
 }
 
-class CDATASection(StringType): Text!StringType {}
-
-class ProcessingInstruction(StringType): Node!StringType
+alias CDATASection(StringType) = Nullable!(RefCounted!(_CDATASection!StringType));
+struct _CDATASection(StringType)
 {
+    mixin ChildOf!(_CharacterData!StringType);
+}
+
+alias ProcessingInstruction(StringType) = Nullable!(RefCounted!(_ProcessingInstruction!StringType));
+struct _ProcessingInstruction(StringType)
+{
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -472,10 +508,17 @@ class ProcessingInstruction(StringType): Node!StringType
     }
 }
 
-class EntityReference(StringType): Node!StringType {}
-
-class Entity(StringType): Node!StringType
+alias EntityReference(StringType) = Nullable!(RefCounted!(_EntityReference!StringType));
+struct _EntityReference(StringType)
 {
+    mixin ChildOf!(_Node!StringType);
+}
+
+alias Entity(StringType) = Nullable!(RefCounted!(_Entity!StringType));
+struct _Entity(StringType)
+{
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -488,8 +531,11 @@ class Entity(StringType): Node!StringType
     }
 }
 
-class Notation(StringType): Node!StringType
+alias Notation(StringType) = Nullable!(RefCounted!(_Notation!StringType));
+struct _Notation(StringType)
 {
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -498,14 +544,17 @@ class Notation(StringType): Node!StringType
     }
 }
 
-class DocumentType(StringType): Node!StringType
+alias DocumentType(StringType) = Nullable!(RefCounted!(_DocumentType!StringType));
+struct _DocumentType(StringType)
 {
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
         const StringType name;
-        const NamedNodeMap entities;
-        const NamedNodeMap notations
+        /*const NamedNodeMap entities;
+        const NamedNodeMap notations;*/
         const StringType publicId;
         const StringType systemId;;
         const StringType internalSubset;
@@ -514,6 +563,8 @@ class DocumentType(StringType): Node!StringType
 
 class Element(StringType): Node!StringType
 {
+    mixin ChildOf!(_Node!StringType);
+    
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
@@ -534,8 +585,8 @@ class Element(StringType): Node!StringType
         void removeAttributeNS(in StringType namespaceUri, in StringType localName);
         Attr removeAttributeNode(in Attr oldAttr);
         
-        NodeList getElementsByTagName(in StringType name) const;
-        NodeList getElementsByTagNameNS(in StringType namespaceUri, in StringType localName) const;
+        /*NodeList getElementsByTagName(in StringType name) const;
+        NodeList getElementsByTagNameNS(in StringType namespaceUri, in StringType localName) const;*/
         
         bool hasAttribute(in StringType name) const;
         bool hasAttributeNS(in StringType namespaceUri, in StringType localName) const;
@@ -572,7 +623,13 @@ struct NamedNodeMap(StringType)
     // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
     public
     {
-        Node getNamedItem
     }
 }
-*/
+
+unittest
+{
+    Node!string node;
+    auto element = cast(Element!string)node;
+}
+
++/

@@ -398,6 +398,20 @@ struct XMLCursor(P)
     }
 }
 
+auto asCursor(T)(auto ref T input)
+    if(isLowLevelParser!(T.Type))
+{
+    struct Chain
+    {
+        alias Type = XMLCursor!(T.Type);
+        auto finalize()
+        {
+            return Type(input.finalize(), typeof(Type.currentNode)(), false, [], [], false, null);
+        }
+    }
+    return Chain();
+}
+
 unittest
 {
     import std.experimental.xml.lexers;

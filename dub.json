@@ -5,7 +5,7 @@
     "homepage": "https://github.com/lodo1995/experimental.xml",
     "targetType": "library",
     "version": "0.1.0",
-    "excludedSourceFiles": ["source/benchmark.d", "source/test.d"],
+    "excludedSourceFiles": ["source/benchmark.d", "source/test.d", "source/genxml.d"],
     "configurations":
     [
         {
@@ -15,6 +15,13 @@
             "name": "benchmark",
             "targetType": "executable",
             "mainSourceFile": "source/benchmark.d",
+        },
+        {
+            "name": "random-benchmark",
+            "targetType": "executable",
+            "mainSourceFile": "source/benchmark.d",
+            "sourceFiles": ["source/genxml.d"],
+            "versions": ["RANDOM_BENCHMARK"],
         },
         {
             "name": "test",

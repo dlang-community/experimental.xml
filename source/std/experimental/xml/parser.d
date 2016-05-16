@@ -263,6 +263,20 @@ struct Parser(L, bool preserveSpaces = false)
     }
 }
 
+auto parse(T)(auto ref T input)
+    if (isLexer!(T.Type))
+{
+    struct Chain
+    {
+        alias Type = Parser!T;
+        auto finalize()
+        {
+            return Type(input.finalize(), false, Type.NodeType);
+        }
+    }
+    return Chain();
+}
+
 unittest
 {
     import std.experimental.xml.lexers;
