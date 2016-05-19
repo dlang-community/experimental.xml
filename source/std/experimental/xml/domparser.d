@@ -1,5 +1,5 @@
 
-module std.experimental.xml.dom;
+module std.experimental.xml.domparser;
 
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
