@@ -62,7 +62,8 @@ class DOMException: Exception
     ExceptionCode code;
     this(ExceptionCode code)
     {
-        super("");
+        import std.conv: to;
+        super(to!string(code));
         this.code = code;
     }
 }

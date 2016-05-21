@@ -11,6 +11,13 @@ import std.stdio;
 import std.file;
 import std.conv;
 
+void doNotOptimize(T)(auto ref T result)
+{
+    import std.process: thisProcessID;
+    if (thisProcessID == 1)
+        writeln(result);
+}
+
 auto getTestFiles()
 {
     import std.algorithm: count;
@@ -52,6 +59,7 @@ void main()
         foreach (e; parser)
         {
         }
+        doNotOptimize(parser);
     });
     
     writeln("RangeLexer:");
@@ -61,6 +69,7 @@ void main()
         foreach (e; parser)
         {
         }
+        doNotOptimize(parser);
     });
     
     writeln("\n=== CURSOR PERFORMANCE ===");
@@ -69,6 +78,7 @@ void main()
     {
         do
         {
+            doNotOptimize(cursor.getAttributes());
             if (cursor.hasChildren())
             {
                 cursor.enter();
@@ -85,6 +95,7 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
+        doNotOptimize(cursor);
     });
     
     writeln("RangeLexer:");
@@ -93,5 +104,6 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
+        doNotOptimize(cursor);
     });
 }
