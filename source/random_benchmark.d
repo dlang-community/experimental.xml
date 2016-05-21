@@ -1,5 +1,7 @@
 
-module benchmark;
+module random_benchmark;
+
+import genxml;
 
 import std.experimental.xml.lexers;
 import std.experimental.xml.parser;
@@ -18,14 +20,21 @@ void doNotOptimize(T)(auto ref T result)
 
 auto getTestFiles()
 {
-    return dirEntries("benchmark", SpanMode.shallow);
+    import std.algorithm: count;
+    if (!exists("random-benchmark") || dirEntries("random-benchmark", SpanMode.shallow).count == 0)
+    {
+        writeln("Generating test files...");
+        createRandomBenchmarks("random-benchmark");
+    }
+    return dirEntries("random-benchmark", SpanMode.shallow);
 }
 
+typeof(getTestFiles()) testFiles;
 void performTests(void delegate(string) dg)
 {
     import core.time;
     auto i = 1;
-    foreach(string test; getTestFiles)
+    foreach(string test; testFiles)
     {
         auto data = readText(test);
         MonoTime before = MonoTime.currTime;
@@ -38,6 +47,7 @@ void performTests(void delegate(string) dg)
 
 void main()
 {
+    testFiles = getTestFiles;
     writeln("\n=== PARSER PERFORMANCE ===");
     
     writeln("SliceLexer:");
