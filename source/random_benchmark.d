@@ -21,6 +21,7 @@ void doNotOptimize(T)(auto ref T result)
 auto getTestFiles()
 {
     import std.algorithm: count;
+    import std.array: array;
     if (!exists("random-benchmark") || dirEntries("random-benchmark", SpanMode.shallow).count == 0)
     {
         writeln("Generating test files...");
@@ -29,12 +30,11 @@ auto getTestFiles()
     return dirEntries("random-benchmark", SpanMode.shallow);
 }
 
-typeof(getTestFiles()) testFiles;
 void performTests(void delegate(string) dg)
 {
     import core.time;
     auto i = 1;
-    foreach(string test; testFiles)
+    foreach(string test; getTestFiles)
     {
         auto data = readText(test);
         MonoTime before = MonoTime.currTime;
@@ -47,7 +47,7 @@ void performTests(void delegate(string) dg)
 
 void main()
 {
-    testFiles = getTestFiles;
+    getTestFiles;
     writeln("\n=== PARSER PERFORMANCE ===");
     
     writeln("SliceLexer:");
@@ -56,8 +56,8 @@ void main()
         parser.setSource(data);
         foreach (e; parser)
         {
+            doNotOptimize(e);
         }
-        doNotOptimize(parser);
     });
     
     writeln("RangeLexer:");
@@ -66,8 +66,8 @@ void main()
         parser.setSource(data);
         foreach (e; parser)
         {
+            doNotOptimize(e);
         }
-        doNotOptimize(parser);
     });
     
     writeln("\n=== CURSOR PERFORMANCE ===");
@@ -93,7 +93,6 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
-        doNotOptimize(cursor);
     });
     
     writeln("RangeLexer:");
@@ -102,6 +101,5 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
-        doNotOptimize(cursor);
     });
 }

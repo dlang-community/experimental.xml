@@ -35,6 +35,48 @@ struct GenXmlConfig
     ulong maxTextLen = 30;
     ulong minSpaceLen = 0;
     ulong maxSpaceLen = 1;
+    
+    string prettyPrint(uint ind = 0)
+    {
+        auto result = appender!string();
+        
+        void putRange(string name, ulong start, ulong stop)
+        {
+            indent(result, ind);
+            result.put(name);
+            indent(result, 32 - name.length);
+            result.put("[");
+            result.put(to!string(start));
+            result.put("..");
+            result.put(to!string(stop));
+            result.put("]\n");
+        }
+        void putProbability(string name, double prob)
+        {
+            indent(result, ind);
+            result.put(name);
+            indent(result, 36 - name.length);
+            result.put(to!string(to!int(prob * 100)));
+            result.put("%\n");
+        }
+        
+        putRange("tree depth:", minDepth, maxDepth);
+        putRange("number of childs:", minChilds, maxChilds);
+        putRange("number of attributes", minAttributeNum, maxAttributeNum);
+        putProbability("self-closing tag percentage:", openClose);
+        putProbability("text node probability:", textNodes);
+        putProbability("CDATA section probability:", cdataNodes);
+        putProbability("processing instruction probability:", piNodes);
+        putProbability("comment node probability:", commentNodes);
+        putProbability("empty lines probability:", emptyLines);
+        putRange("tag length: ", minTagLen, maxTagLen);
+        putRange("attribute key length:", minAttributeKey, maxAttributeKey);
+        putRange("attribute value length:", minAttributeValue, maxAttributeValue);
+        putRange("text/CDATA/comment length:", minTextLen, maxTextLen);
+        putRange("random spaces range:", minSpaceLen, maxSpaceLen);
+        
+        return result.data;
+    }
 }
 
 GenXmlConfig M100 = { minDepth:         6,
@@ -43,6 +85,13 @@ GenXmlConfig M100 = { minDepth:         6,
                       maxChilds:        9,
                       minAttributeNum:  0,
                       maxAttributeNum:  5};
+
+GenXmlConfig M10 = { minDepth:         4,
+                     maxDepth:        12,
+                     minChilds:        2,
+                     maxChilds:        7,
+                     minAttributeNum:  0,
+                     maxAttributeNum:  4};
 
 Random random;
 

@@ -46,8 +46,8 @@ void main()
         parser.setSource(data);
         foreach (e; parser)
         {
+            doNotOptimize(e);
         }
-        doNotOptimize(parser);
     });
     
     writeln("RangeLexer:");
@@ -56,8 +56,8 @@ void main()
         parser.setSource(data);
         foreach (e; parser)
         {
+            doNotOptimize(e);
         }
-        doNotOptimize(parser);
     });
     
     writeln("\n=== CURSOR PERFORMANCE ===");
@@ -83,7 +83,6 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
-        doNotOptimize(cursor);
     });
     
     writeln("RangeLexer:");
@@ -92,6 +91,5 @@ void main()
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
-        doNotOptimize(cursor);
     });
 }
