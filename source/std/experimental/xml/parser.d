@@ -204,7 +204,7 @@ struct Parser(L, bool preserveSpaces = false)
                     lexer.advanceUntil('\'', true);
                 
             // doctype
-            if (fastEqual(lexer.get()[2..9], "DOCTYPE"))
+            if (lexer.get.length>= 9 && fastEqual(lexer.get()[2..9], "DOCTYPE"))
             {
                 // inline dtd
                 if (c == 2)
