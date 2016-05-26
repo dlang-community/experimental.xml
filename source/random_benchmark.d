@@ -24,9 +24,12 @@ enum BenchmarkConfig theBenchmark = {
         "Cursor_RangeLexer": ComponentConfig("to!string", "cursorTest!RangeLexer"),
     ],
     configurations: [
+        "K100": K100,
         "M10": M10,
         "M100": M100,
     ],
+    filesPerConfig: 3,
+    runsPerFile: 5,
 };
 
 enum GenXmlConfig M100 = { minDepth:         6,
@@ -42,6 +45,13 @@ enum GenXmlConfig M10 = { minDepth:         5,
                           maxChilds:        8,
                           minAttributeNum:  0,
                           maxAttributeNum:  4};
+                          
+enum GenXmlConfig K100 = { minDepth:         4,
+                           maxDepth:        11,
+                           minChilds:        3,
+                           maxChilds:        6,
+                           minAttributeNum:  1,
+                           maxAttributeNum:  3};
 
 // FUNCTIONS USED FOR TESTING
 
@@ -100,8 +110,8 @@ void main()
 
 struct BenchmarkConfig
 {
-    uint runsPerFile = 5;
-    uint filesPerConfig = 3;
+    uint runsPerFile;
+    uint filesPerConfig;
     ComponentConfig[string] components;
     GenXmlConfig[string] configurations;
 }
@@ -193,9 +203,10 @@ ulong performed_tests;
 auto testFile(string name, uint runs, Duration delegate(string) fun)
 {
     FileResults results;
+    auto input = readText(name);
     foreach (run; 0..runs)
     {
-        auto time = fun(readText(name));
+        auto time = fun(input);
         results.times ~= time;
         results.speeds ~= (cast(double)getSize(name)) / time.total!"usecs";
         stderr.writef("\r%d out of %d tests performed", ++performed_tests, total_tests);
@@ -291,7 +302,6 @@ void printTimesForConfiguration(BenchmarkConfig benchmark, ComponentResults[stri
     import std.range: repeat, take;
     auto component_width = max(results.byKey.map!"a.length".minCount[0], 8);
     auto std_width = 16;
-    auto big_width = 24;
     
     string formatDuration(Duration d)
     {
@@ -300,9 +310,9 @@ void printTimesForConfiguration(BenchmarkConfig benchmark, ComponentResults[stri
         if (millis < 1000)
             return format("%3u ms", millis);
         else if (millis < 10000)
-            return format("%.2f  s", millis/1000.0);
+            return format("%.2f s", millis/1000.0);
         else if (millis < 100000)
-            return format("%.1f  s", millis/1000.0);
+            return format("%.1f s", millis/1000.0);
         else
             return to!string(millis/1000) ~ " s";
     }
@@ -314,9 +324,11 @@ void printTimesForConfiguration(BenchmarkConfig benchmark, ComponentResults[stri
         {
             auto res = results[component].configResults[config].fileResults[file].timeStat;
             write(center("min: " ~ formatDuration(res.min), std_width));
-            write(center("max: " ~ formatDuration(res.max), std_width));
             write(center("avg: " ~ formatDuration(res.mean), std_width));
-            writeln(center("deviation: " ~ formatDuration(res.deviation), big_width));
+            write(center("max: " ~ formatDuration(res.max), std_width));
+            write(center("median: " ~ formatDuration(res.median), std_width + 3));
+            writeln(center("deviation: " ~ formatDuration(res.deviation), std_width + 6));
+            writeln(results[component].configResults[config].fileResults[file].times);
             write(repeat(' ').take(component_width+3));
         }
     }
@@ -331,6 +343,7 @@ void printSpeedsForConfiguration(BenchmarkConfig benchmark, ComponentResults[str
 
     auto component_width = max(results.byKey.map!"a.length".minCount[0], 13);
     auto speed_column_width = 8UL;
+    auto large_column_width = 12;
     auto spaces = repeat(' ');
     auto lines = repeat('-');
     auto boldLines = repeat('=');
@@ -341,7 +354,25 @@ void printSpeedsForConfiguration(BenchmarkConfig benchmark, ComponentResults[str
         write(center("file " ~ to!string(i+1), 3*speed_column_width + 2));
     }
     writeln();
+    write(spaces.take(component_width));
+    foreach (i; 0..benchmark.filesPerConfig)
+    {
+        write("|");
+        write(lines.take(3*speed_column_width + 2));
+    }
+    writeln();
     write(center("Speeds (MB/s)", component_width));
+    foreach (i; 0..benchmark.filesPerConfig)
+    {
+        write("|");
+        write(center("min", speed_column_width));
+        write("|");
+        write(center("avg", speed_column_width));
+        write("|");
+        write(center("max", speed_column_width));
+    }
+    writeln();
+    write(spaces.take(component_width));
     foreach (i; 0..benchmark.filesPerConfig)
     {
         write("|");
@@ -352,11 +383,9 @@ void printSpeedsForConfiguration(BenchmarkConfig benchmark, ComponentResults[str
     foreach (i; 0..benchmark.filesPerConfig)
     {
         write("|");
-        write(center("min", speed_column_width));
+        write(center("median", large_column_width));
         write("|");
-        write(center("avg", speed_column_width));
-        write("|");
-        write(center("max", speed_column_width));
+        write(center("deviation", large_column_width + 1));
     }
     writeln();
     foreach (component; results.byKey)
@@ -386,7 +415,9 @@ void printSpeedsForConfiguration(BenchmarkConfig benchmark, ComponentResults[str
         {
             auto fres = results[component].configResults[config].fileResults[file];
             write("|");
-            write(center(format("deviation: %6.2f", fres.speedStat.deviation), 3*speed_column_width + 2));
+            write(center(format("%6.2f", fres.speedStat.median), large_column_width));
+            write("|");
+            write(center(format("%6.2f", fres.speedStat.deviation), large_column_width + 1));
         }
         writeln();
     }
@@ -424,8 +455,18 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
         formatted ~= measure;
         formatted.center(columnWidth).write;
     }
+    void writeAttribute(string attr, string measure = " ")()
+    {
+        foreach(name; config.getConfigFiles(maxFiles))
+        {
+            if (filestats[name] != FileStats.init)
+                mixin("writeSized(filestats[name]." ~ attr ~ ", \"" ~ measure ~ "\");");
+            else
+                center("-", columnWidth).write;
+        }
+    }
     
-    write("                     ");
+    write("\n  names:             ");
     foreach(name; config.getConfigFiles(maxFiles))
         name.pathSplitter.back.stripExtension.center(columnWidth).write;
         
@@ -434,18 +475,10 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
         writeSized(name.getSize(), "B");
         
     write("\n  raw text content:  ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].textChars, "B");
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("textChars", "B");
         
     write("\n  useless spacing:   ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].spaces, "B");
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("spaces", "B");
             
     write("\n  total nodes:       ");
     foreach(name; config.getConfigFiles(maxFiles))
@@ -459,39 +492,19 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
             center("-", columnWidth).write;
             
     write("\n  element nodes:     ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].elements);
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("elements");
             
     write("\n  attribute nodes:   ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].attributes);
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("attributes", "B");
             
     write("\n  text nodes:        ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].textNodes);
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("textNodes", "B");
             
     write("\n  cdata nodes:       ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].cdataNodes);
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("cdataNodes", "B");
             
     write("\n  comment nodes:     ");
-    foreach(name; config.getConfigFiles(maxFiles))
-        if (filestats[name] != FileStats.init)
-            writeSized(filestats[name].comments);
-        else
-            center("-", columnWidth).write;
+    writeAttribute!("comments", "B");
     writeln();
 }
 
@@ -503,10 +516,9 @@ void printResultsByConfiguration(BenchmarkConfig benchmark, FileStats[string] fi
         writeln("\n=== CONFIGURATION " ~ to!string(i) ~ ": " ~ config ~ " ===\n");
         writeln("Timings:\n");
         printTimesForConfiguration(benchmark, results, config);
-        writeln("Speeds:\n");
         printSpeedsForConfiguration(benchmark, results, config);
         writeln("\nConfiguration Parameters:");
-        benchmark.configurations[config].prettyPrint(2).writeln;
+        benchmark.configurations[config].prettyPrint(2).write;
         writeln("\nFile Statistics (only for newly created files):");
         printFilesForConfiguration(config, benchmark.filesPerConfig, filestats);
     }

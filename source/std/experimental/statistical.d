@@ -81,24 +81,21 @@ struct PreciseStatisticData(alias Printer, alias Reader)
                     _max = val;
             }
         }
+        
         auto _mean = _total/count;
-        int i = 0;
         _variance = cast(parent.InternalType)0;
         foreach(t; data)
-        {
-            auto val = Reader(t);
-            i++;
-            
-            if (count%2 && i == count/2 + 1)
-                _median = val;
-            else if (count%2 == 1 && i == count/2)
-                _median = val;
-            else if (count%2 == 1 && i == count/2 + 1)
-                _median = (_median + val)/2;
-                
-            _variance += (val - _mean)^^2;
-        }
+            _variance += (Reader(t) - _mean)^^2;
         _variance /= count;
+        
+        import std.algorithm: topNCopy, SortOutput, map;
+        auto firstHalf = new parent.InternalType[count/2 + 1];
+        topNCopy(data.map!((x) => Reader(x)), firstHalf, SortOutput.yes);
+        if (count % 2)
+            _median = firstHalf[$-1];
+            
+        else
+            _median = (firstHalf[$-2] + firstHalf[$-1]) / 2;
     }
 }
 
@@ -131,6 +128,7 @@ struct FastStatisticData(alias Printer, alias Reader)
                 if (val > _max)
                     _max = val;
             }
+            // TODO: implement single-pass estimators for median and variance
         }
     }
 }
