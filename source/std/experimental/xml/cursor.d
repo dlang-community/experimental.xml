@@ -416,7 +416,9 @@ unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    import std.string: splitLines;
+    import std.string: lineSplitter, strip;
+    import std.algorithm: map;
+    import std.array: array;
     
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -486,8 +488,8 @@ unittest
                 assert(cursor.getLocalName() == "");
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
-                // use splitlines so the unittest does not depend on the newline policy of this file
-                assert(cursor.getText().splitLines == ["Lots of Text!", "            On multiple lines!", "        "]);
+                // split and strip so the unittest does not depend on the newline policy of this file
+                assert(cursor.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!", "On multiple lines!", ""]);
                 assert(!cursor.hasChildren());
                 
                 assert(!cursor.next());

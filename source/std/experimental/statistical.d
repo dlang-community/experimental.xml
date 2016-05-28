@@ -108,8 +108,11 @@ struct FastStatisticData(alias Printer, alias Reader)
     alias parent this;
     
     this(U)(U data)
-        if (is(ElementType!U : T) && isInputRange!U)
+        if (is(ElementType!U : parent.InputType) && isInputRange!U)
     {
+        auto _mean = cast(parent.InternalType)0;
+        _variance = _mean;
+        _median = _mean;
         foreach(t; data)
         {
             auto val = Reader(t);
@@ -128,7 +131,11 @@ struct FastStatisticData(alias Printer, alias Reader)
                 if (val > _max)
                     _max = val;
             }
-            // TODO: implement single-pass estimators for median and variance
+            auto delta = val - _mean;
+            _mean += delta / count;
+            _variance += delta * (x - mean);
         }
+        variance /= count - 1;
+        // TODO: implement single pass median calculation using the P^^2 algorithm
     }
 }
