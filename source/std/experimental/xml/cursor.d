@@ -7,7 +7,7 @@ import std.experimental.xml.faststrings;
 import std.range.primitives;
 import std.typecons;
 
-struct XMLCursor(P)
+struct XMLCursor(P, bool conflateCDATA = true)
     if (isLowLevelParser!P)
 {
     /++
@@ -42,6 +42,17 @@ struct XMLCursor(P)
     private NamespaceDeclaration!StringType[] namespaces;
     private bool attributesParsed;
     private ErrorHandler handler;
+    
+    public this(this)
+    {
+        parser = parser.save;
+    }
+    public auto save()
+    {
+        XMLCursor result = this;
+        result.parser = parser.save;
+        return result;
+    }
     
     private void callHandler(ref typeof(this) cur, Error err)
     {
@@ -78,15 +89,16 @@ struct XMLCursor(P)
         parser.setSource(input);
         if (!documentEnd)
         {
-            advanceInput();
-            if (currentNode.kind == currentNode.kind.PROCESSING && fastEqual(currentNode.content[0..3], "xml"))
-                starting = true;
+            if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && fastEqual(parser.front.content[0..3], "xml"))
+                advanceInput();
             else
             {
                 // document without xml declaration???
                 callHandler(this, Error.MISSING_XML_DECLARATION);
-                starting = false;
+                currentNode.kind = XMLKind.PROCESSING_INSTRUCTION;
+                currentNode.content = "xml version = \"1.0\"";
             }
+            starting = true;
         }
     }
     
@@ -125,9 +137,9 @@ struct XMLCursor(P)
     {
         if (documentEnd || starting)
             return false;
-        else if (currentNode.kind != currentNode.kind.START_TAG)
+        else if (currentNode.kind != XMLKind.ELEMENT_START)
         {
-            if (parser.front.kind == currentNode.kind.END_TAG)
+            if (parser.front.kind == XMLKind.ELEMENT_END)
                 return false;
             advanceInput();
         }
@@ -137,14 +149,14 @@ struct XMLCursor(P)
             while (count > 0)
             {
                 advanceInput();
-                if (currentNode.kind == currentNode.kind.START_TAG)
+                if (currentNode.kind == XMLKind.ELEMENT_START)
                     count++;
-                else if (currentNode.kind == currentNode.kind.END_TAG)
+                else if (currentNode.kind == XMLKind.ELEMENT_END)
                     count--;
             }
             if (documentEnd)
                 return false;
-            if (parser.front.kind == currentNode.kind.END_TAG)
+            if (parser.front.kind == XMLKind.ELEMENT_END)
                 return false;
             advanceInput();
         }
@@ -155,43 +167,20 @@ struct XMLCursor(P)
     bool hasChildren()
     {
         return starting ||
-              (currentNode.kind == currentNode.kind.START_TAG && parser.front.kind != currentNode.kind.END_TAG);
+              (currentNode.kind == XMLKind.ELEMENT_START && parser.front.kind != XMLKind.ELEMENT_END);
     }
     
     /++ Returns the kind of the current node. +/
     XMLKind getKind() const
     {
-        XMLKind result;
         if (starting)
             return XMLKind.DOCUMENT;
-        else switch(currentNode.kind)
-        {
-            case currentNode.kind.DOCTYPE:
-                result = XMLKind.DOCTYPE;
-                break;
-            case currentNode.kind.START_TAG:
-                result = XMLKind.ELEMENT_START;
-                break;
-            case currentNode.kind.END_TAG:
-                result = XMLKind.ELEMENT_END;
-                break;
-            case currentNode.kind.EMPTY_TAG:
-                result = XMLKind.ELEMENT_EMPTY;
-                break;
-            case currentNode.kind.TEXT:
-            case currentNode.kind.CDATA:
-                result = XMLKind.TEXT;
-                break;
-            case currentNode.kind.COMMENT:
-                result = XMLKind.COMMENT;
-                break;
-            case currentNode.kind.PROCESSING:
-                result = XMLKind.PROCESSING_INSTRUCTION;
-                break;
-            default:
-                break;
-        }
-        return result;
+            
+        static if (conflateCDATA)
+            if (currentNode.kind == XMLKind.CDATA)
+                return XMLKind.TEXT;
+                
+        return currentNode.kind;
     }
     
     /++
@@ -202,11 +191,13 @@ struct XMLCursor(P)
     StringType getName() const
     {
         ptrdiff_t i;
-        if (currentNode.kind != currentNode.kind.TEXT && 
-            currentNode.kind != currentNode.kind.COMMENT &&
-            currentNode.kind != currentNode.kind.CDATA)
+        if (currentNode.kind != XMLKind.TEXT && 
+            currentNode.kind != XMLKind.COMMENT &&
+            currentNode.kind != XMLKind.CDATA)
         {
             auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+            if (nameStart < 0)
+                return [];
             if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
                 return currentNode.content[nameStart..i];
             else
@@ -222,7 +213,7 @@ struct XMLCursor(P)
     StringType getLocalName() const
     {
         auto name = getName();
-        if (currentNode.kind == currentNode.kind.START_TAG || currentNode.kind == currentNode.kind.END_TAG)
+        if (currentNode.kind == XMLKind.ELEMENT_START || currentNode.kind == XMLKind.ELEMENT_END)
         {
             auto colon = fastIndexOf(name, ':');
             if (colon != -1)
@@ -334,7 +325,7 @@ struct XMLCursor(P)
     auto getAttributes()
     {
         auto kind = currentNode.kind;
-        if (kind == kind.START_TAG || kind == kind.PROCESSING)
+        if (kind == XMLKind.ELEMENT_START || kind == XMLKind.PROCESSING_INSTRUCTION)
         {
             if (!attributesParsed)
                 parseAttributeList();
@@ -351,7 +342,7 @@ struct XMLCursor(P)
     auto getNamespaceDefinitions()
     {
         auto kind = currentNode.kind;
-        if (kind == kind.START_TAG)
+        if (kind == XMLKind.ELEMENT_START)
         {
             if (!attributesParsed)
                 parseAttributeList();
@@ -370,12 +361,12 @@ struct XMLCursor(P)
     {
         switch (currentNode.kind)
         {
-            case currentNode.kind.TEXT:
-            case currentNode.kind.CDATA:
-            case currentNode.kind.COMMENT:
+            case XMLKind.TEXT:
+            case XMLKind.CDATA:
+            case XMLKind.COMMENT:
                 return currentNode.content;
-            case currentNode.kind.DOCTYPE:
-            case currentNode.kind.PROCESSING:
+            case XMLKind.DOCTYPE:
+            case XMLKind.PROCESSING_INSTRUCTION:
             {
                 auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
                 if (nameStart < 0)
@@ -488,7 +479,7 @@ unittest
                 assert(cursor.getLocalName() == "");
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
-                // split and strip so the unittest does not depend on the newline policy of this file
+                // split and strip so the unittest does not depend on the newline policy or indentation of this file
                 assert(cursor.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!", "On multiple lines!", ""]);
                 assert(!cursor.hasChildren());
                 

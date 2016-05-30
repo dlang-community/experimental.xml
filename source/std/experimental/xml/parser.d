@@ -109,7 +109,7 @@ struct Parser(L, bool preserveSpaces = false)
         if (!lexer.testAndAdvance('<'))
         {
             lexer.advanceUntil('<', false);
-            next.kind = NodeType.Kind.TEXT;
+            next.kind = XMLKind.TEXT;
             next.content = lexer.get();
         }
         
@@ -118,7 +118,7 @@ struct Parser(L, bool preserveSpaces = false)
         {
             lexer.advanceUntil('>', true);
             next.content = lexer.get()[2..($-1)];
-            next.kind = NodeType.Kind.END_TAG;
+            next.kind = XMLKind.ELEMENT_END;
         }
         // processing instruction
         else if (lexer.testAndAdvance('?'))
@@ -128,7 +128,7 @@ struct Parser(L, bool preserveSpaces = false)
                 lexer.advanceUntil('?', true);
             while (!lexer.testAndAdvance('>'));
             next.content = lexer.get()[2..($-2)];
-            next.kind = NodeType.Kind.PROCESSING;
+            next.kind = XMLKind.PROCESSING_INSTRUCTION;
         }
         // tag start
         else if (!lexer.testAndAdvance('!'))
@@ -144,12 +144,12 @@ struct Parser(L, bool preserveSpaces = false)
             {
                 lexer.advanceUntil('>', true); // should be the first character after '/'
                 next.content = lexer.get()[1..($-2)];
-                next.kind = NodeType.Kind.EMPTY_TAG;
+                next.kind = XMLKind.ELEMENT_EMPTY;
             }
             else
             {
                 next.content = lexer.get()[1..($-1)];
-                next.kind = NodeType.Kind.START_TAG;
+                next.kind = XMLKind.ELEMENT_START;
             }
         }
         
@@ -164,7 +164,7 @@ struct Parser(L, bool preserveSpaces = false)
                     lexer.advanceUntil('>', true);
                 while (!fastEqual(lexer.get()[($-3)..$], "]]>"));
                 next.content = lexer.get()[9..($-3)];
-                next.kind = NodeType.Kind.CDATA;
+                next.kind = XMLKind.CDATA;
             }
             // conditional
             else
@@ -180,7 +180,7 @@ struct Parser(L, bool preserveSpaces = false)
                 }
                 while (count > 0);
                 next.content = lexer.get()[3..($-3)];
-                next.kind = NodeType.Kind.CONDITIONAL;
+                next.kind = XMLKind.CONDITIONAL;
             }
         }
         // comment
@@ -191,7 +191,7 @@ struct Parser(L, bool preserveSpaces = false)
                 lexer.advanceUntil('>', true);
             while (!fastEqual(lexer.get()[($-3)..$], "-->"));
             next.content = lexer.get()[4..($-3)];
-            next.kind = NodeType.Kind.COMMENT;
+            next.kind = XMLKind.COMMENT;
         }
         // declaration or doctype
         else
@@ -241,7 +241,7 @@ struct Parser(L, bool preserveSpaces = false)
                     lexer.advanceUntil('>', true);
                 }
                 next.content = lexer.get()[9..($-1)];
-                next.kind = NodeType.Kind.DOCTYPE;
+                next.kind = XMLKind.DOCTYPE;
             }
             else
             {
@@ -255,7 +255,7 @@ struct Parser(L, bool preserveSpaces = false)
                             lexer.advanceUntil('\'', true);
                 }
                 next.content = lexer.get()[2..($-1)];
-                next.kind = NodeType.Kind.DECLARATION;
+                next.kind = XMLKind.DECLARATION;
             }
         }
         
@@ -298,42 +298,42 @@ unittest
     auto parser = Parser!(SliceLexer!string)();
     parser.setSource(xml);
     
-    alias Kind = typeof(parser.front.kind);
+    alias XMLKind = typeof(parser.front.kind);
     
-    assert(parser.front.kind == Kind.PROCESSING);
+    assert(parser.front.kind == XMLKind.PROCESSING_INSTRUCTION);
     assert(parser.front.content == "xml encoding = \"utf-8\" ");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.START_TAG);
+    assert(parser.front.kind == XMLKind.ELEMENT_START);
     assert(parser.front.content == "aaa xmlns:myns=\"something\"");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.START_TAG);
+    assert(parser.front.kind == XMLKind.ELEMENT_START);
     assert(parser.front.content == "myns:bbb myns:att='>'");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.COMMENT);
+    assert(parser.front.kind == XMLKind.COMMENT);
     assert(parser.front.content == " lol ");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.TEXT);
+    assert(parser.front.kind == XMLKind.TEXT);
     // use splitlines so the unittest does not depend on the newline policy of this file
     assert(parser.front.content.splitLines == ["Lots of Text!", "            On multiple lines!", "        "]);
     parser.popFront();
     
-    assert(parser.front.kind == Kind.END_TAG);
+    assert(parser.front.kind == XMLKind.ELEMENT_END);
     assert(parser.front.content == "myns:bbb");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.CDATA);
+    assert(parser.front.kind == XMLKind.CDATA);
     assert(parser.front.content == " Ciaone! ");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.EMPTY_TAG);
+    assert(parser.front.kind == XMLKind.ELEMENT_EMPTY);
     assert(parser.front.content == "ccc");
     parser.popFront();
     
-    assert(parser.front.kind == Kind.END_TAG);
+    assert(parser.front.kind == XMLKind.ELEMENT_END);
     assert(parser.front.content == "aaa");
     parser.popFront();
     

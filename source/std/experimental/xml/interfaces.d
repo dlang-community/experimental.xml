@@ -118,6 +118,45 @@ template isSaveableLexer(L)
 // LEVEL 2: PARSERS
 
 /++
++   Enumeration of XML events/nodes, used by various components.
++/
+enum XMLKind
+{
+    /++ An entire document, starting with an <?xml ?> declaration +/
+    DOCUMENT,
+    
+    /++ A doctype declaration, delimited by `<!DOCTYPE` and `>` +/
+    DOCTYPE,
+    
+    /++ A start tag, delimited by `<` and `>` +/
+    ELEMENT_START,
+    
+    /++ An end tag, delimited by `</` and `>` +/
+    ELEMENT_END,
+    
+    /++ An empty tag, delimited by `<` and `/>` +/
+    ELEMENT_EMPTY,
+    
+    /++ A text element, without any specific delimiter +/
+    TEXT,
+    
+    /++ A CDATA section, delimited by `<![CDATA` and `]]>` +/
+    CDATA,
+    
+    /++ A comment, delimited by `<!--` and `-->` +/
+    COMMENT,
+    
+    /++ A processing instruction, delimited by `<?` and `?>` +/
+    PROCESSING_INSTRUCTION,
+    
+    /++ Any kind of declaration, delimited by `<!` and `>` +/
+    DECLARATION,
+    
+    /++ A conditional section, delimited by `<![` and `]]>` +/
+    CONDITIONAL,
+}
+
+/++
 +   The structure returned in output from the low level parser.
 +   Represents an XML token, delimited by specific patterns, based on its kind.
 +   This delimiters shall not be omitted from the content field.
@@ -128,41 +167,7 @@ struct XMLToken(T)
     T[] content;
     
     /++ Represents the kind of token +/
-    enum Kind
-    {
-        /++ A text element, without any specific delimiter +/
-        TEXT,
-        
-        /++ An end tag, delimited by `</` and `>` +/
-        END_TAG,
-        
-        /++ A processing instruction, delimited by `<?` and `?>` +/
-        PROCESSING,
-        
-        /++ A start tag, delimited by `<` and `>` +/
-        START_TAG,
-        
-        /++ An empty tag, delimited by `<` and `/>` +/
-        EMPTY_TAG,
-        
-        /++ A CDATA section, delimited by `<![CDATA` and `]]>` +/
-        CDATA,
-        
-        /++ A conditional section, delimited by `<![` and `]]>` +/
-        CONDITIONAL,
-        
-        /++ A comment, delimited by `<!--` and `-->` +/
-        COMMENT,
-        
-        /++ A doctype declaration, delimited by `<!DOCTYPE` and `>` +/
-        DOCTYPE,
-        
-        /++ Any kind of declaration, delimited by `<!` and `>` +/
-        DECLARATION,
-    };
-    
-    /++ ditto +/
-    Kind kind;
+    XMLKind kind;
 }
 
 /++
@@ -211,21 +216,6 @@ template isSaveableLowLevelParser(P)
 }
 
 // LEVEL 3: CURSORS
-
-/++
-+   Enumeration of XML events/nodes, used by various components.
-+/
-enum XMLKind
-{
-    DOCUMENT,
-    DOCTYPE,
-    ELEMENT_START,
-    ELEMENT_END,
-    ELEMENT_EMPTY,
-    TEXT,
-    COMMENT,
-    PROCESSING_INSTRUCTION,
-}
 
 struct Attribute(StringType)
 {
