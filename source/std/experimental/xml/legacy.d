@@ -11,7 +11,7 @@ import std.experimental.xml.interfaces;
 
 class ElementParser
 {
-    private alias Cursor = XMLCursor!(Parser!(SliceLexer!string, false));
+    private alias Cursor = XMLCursor!(Parser!(SliceLexer!string), false);
 
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);
@@ -226,6 +226,22 @@ class Element: Item
         parser.parse;
     }
     
+    private this()
+    {
+    }
+    private void parse(ElementParser parser)
+    {
+        tag = new Tag(parser.tag.name);
+        foreach (k,v; parser.tag.attributes)
+            tag.attributes[k] = v;
+        parser.onText = (string s) { opOpAssign!"~"(new Text(s)); };
+        parser.onCData = (string s) { opOpAssign!"~"(new CData(s)); };
+        parser.onComment = (string s) { opOpAssign!"~"(new Comment(s)); };
+        parser.onPI = (string s) { opOpAssign!"~"(new ProcessingInstruction(s)); };
+        parser.onStartTag[null] = (ElementParser parser) { opOpAssign!"~"(new Element(parser)); };
+        parser.parse;
+    }
+    
     void opOpAssign(string s)(Text item)
         if (s == "~")
     {
@@ -311,12 +327,44 @@ class Document: Element
     {
         super(tag);
         prolog = "<?xml version=\"1.0\"?>";
+        epilog = "";
     }
     
     this(string s)
     {
         auto parser = new DocumentParser(s);
-        super(parser);
+        parser.onStartTag[null] = (ElementParser parser)
+        {
+            auto prologEnd = (parser.cursor.getAll.ptr - s.ptr) - 1;
+            prolog = s[0..prologEnd];
+            super.parse(parser);
+        };
         parser.parse;
     }
+}
+
+unittest
+{
+    
+    string xml = q{
+    <?xml encoding = "utf-8" ?>
+    <aaa xmlns:myns="something">
+        <myns:bbb myns:att='>'>
+            <!-- lol -->
+            Lots of Text!
+            On multiple lines!
+        </myns:bbb>
+        <![CDATA[ Ciaone! ]]>
+        <ccc/>
+    </aaa>
+    };
+    
+    auto dom = new Document(xml);
+    
+    import std.string: strip;
+    assert(dom.prolog.strip == "<?xml encoding = \"utf-8\" ?>");
+    assert(dom.tag.name == "aaa");
+    assert(dom.items.length == 3);
+    assert(dom.elements.length == 2);
+    assert(dom.cdatas.length == 1);
 }
