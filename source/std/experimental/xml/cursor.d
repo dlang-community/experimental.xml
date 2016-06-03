@@ -43,15 +43,18 @@ struct XMLCursor(P, bool conflateCDATA = true)
     private bool attributesParsed;
     private ErrorHandler handler;
     
-    public this(this)
+    static if (isSaveableLowLevelParser!P)
     {
-        parser = parser.save;
-    }
-    public auto save()
-    {
-        XMLCursor result = this;
-        result.parser = parser.save;
-        return result;
+        public this(this)
+        {
+            parser = parser.save;
+        }
+        public auto save()
+        {
+            XMLCursor result = this;
+            result.parser = parser.save;
+            return result;
+        }
     }
     
     private void callHandler(ref typeof(this) cur, Error err)

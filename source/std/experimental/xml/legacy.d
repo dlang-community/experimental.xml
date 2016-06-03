@@ -345,7 +345,6 @@ class Document: Element
 
 unittest
 {
-    
     string xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">

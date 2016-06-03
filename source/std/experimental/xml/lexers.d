@@ -11,6 +11,7 @@ import std.experimental.xml.faststrings;
 
 import std.array;
 import std.range.primitives;
+import std.traits: isArray;
 
 /++
 +   A lexer that takes a sliceable input.
@@ -189,6 +190,242 @@ struct RangeLexer(T)
     }
 }
 
+struct ForwardLexer(T)
+    if (isForwardRange!T)
+{
+    alias CharacterType = ElementEncodingType!T;
+    alias InputType = T;
+    
+    private T input;
+    private T input_start;
+    private size_t count;
+    private Appender!(CharacterType[]) app;
+    
+    void setSource(T input)
+    {
+        this.input = input;
+        this.input_start = input;
+    }
+    
+    auto save() const
+    {
+        ForwardLexer result;
+        result.input = input.save();
+        result.input_start = input.save();
+        result.count = count;
+        return result;
+    }
+    
+    bool empty() const
+    {
+        return input.empty;
+    }
+    
+    void start()
+    {
+        app = appender!(CharacterType[])();
+        input_start = input.save;
+        count = 0;
+    }
+    
+    CharacterType[] get()
+    {
+        import std.range: take;
+        auto diff = count - app.data.length;
+        if (diff)
+        {
+            app.reserve(diff);
+            app.put(input_start.take(diff));
+        }
+        return app.data;
+    }
+    
+    void dropWhile(string s)
+    {
+        while (!input.empty && fastIndexOf(s, input.front) != -1)
+            input.popFront();
+        input_start = input.save;
+    }
+    
+    bool testAndAdvance(char c)
+    {
+        if (input.front == c)
+        {
+            count++;
+            input.popFront();
+            return true;
+        }
+        return false;
+    }
+    
+    void advanceUntil(char c, bool included)
+    {
+        while (input.front != c)
+        {
+            count++;
+            input.popFront();
+        }
+        if (included)
+        {
+            count++;
+            input.popFront();
+        }
+    }
+    
+    size_t advanceUntilAny(string s, bool included)
+    {
+        size_t res;
+        while ((res = fastIndexOf(s, input.front)) == -1)
+        {
+            count++;
+            input.popFront;
+        }
+        if (included)
+        {
+            count++;
+            input.popFront;
+        }
+        return res;
+    }
+}
+
+struct BufferedLexer(T)
+    if (isInputRange!T && isArray!(ElementType!T))
+{
+    alias BufferType = ElementType!T;
+    alias CharacterType = ElementEncodingType!BufferType;
+    alias InputType = T;
+    
+    InputType buffers;
+    BufferType buffer;
+    size_t pos;
+    size_t begin;
+    Appender!(CharacterType[]) app;
+    bool onEdge;
+    
+    void setSource(T input)
+    {
+        this.buffers = input;
+        buffer = buffers.front;
+        buffers.popFront;
+    }
+    
+    static if (isForwardRange!T)
+    {
+        auto save() const
+        {
+            BufferedLexer result;
+            result.buffers = buffers.save();
+            result.buffer = buffer;
+            result.pos = pos;
+            result.begin = begin;
+            return result;
+        }
+    }
+    
+    bool empty()
+    {
+        return buffers.empty && pos >= buffer.length;
+    }
+    
+    void start()
+    {
+        app = appender!(CharacterType[])();
+        begin = pos;
+        onEdge = false;
+    }
+    
+    private void advance()
+    {
+        if (pos + 1 >= buffer.length)
+        {
+            if (onEdge)
+                app.put(buffer[pos]);
+            else
+            {
+                app.put(buffer[begin..$]);
+                onEdge = true;
+            }
+            buffer = buffers.front;
+            buffers.popFront;
+            begin = 0;
+            pos = 0;
+        }
+        else if (onEdge)
+            app.put(buffer[pos++]);
+        else
+            pos++;
+    }
+    private void advance(ptrdiff_t n)
+    {
+        foreach(i; 0..n)
+            advance();
+    }
+    private void advanceNextBuffer()
+    {
+        if (onEdge)
+            app.put(buffer[pos..$]);
+        else
+        {
+            app.put(buffer[begin..$]);
+            onEdge = true;
+        }
+        buffer = buffers.front;
+        buffers.popFront;
+        begin = 0;
+        pos = 0;
+    }
+    
+    CharacterType[] get() const
+    {
+        if (onEdge)
+            return app.data;
+        else
+            return buffer[begin..pos];
+    }
+    
+    void dropWhile(string s)
+    {
+        while (!empty && fastIndexOf(s, buffer[pos]) != -1)
+            advance();
+    }
+    
+    bool testAndAdvance(char c)
+    {
+        if (buffer[pos] == c)
+        {
+            advance();
+            return true;
+        }
+        return false;
+    }
+    
+    void advanceUntil(char c, bool included)
+    {
+        ptrdiff_t adv;
+        while ((adv = fastIndexOf(buffer[pos..$], c)) == -1)
+        {
+            advanceNextBuffer();
+        }
+        advance(adv);
+        
+        if (included)
+            advance();
+    }
+    
+    size_t advanceUntilAny(string s, bool included)
+    {
+        ptrdiff_t res;
+        while ((res = fastIndexOf(s, buffer[pos])) == -1)
+        {
+            advance();
+        }
+        if (included)
+            advance();
+        return res;
+    }
+}
+
 auto withInput(T)(auto ref T input)
 {
     struct Chain
@@ -232,9 +469,35 @@ auto lex(T)(auto ref T input)
     }
     return chain;
 }
-
+ 
+struct DumbBufferedReader
+{
+    string content;
+    size_t chunk_size;
+    
+    void popFront()
+    {
+        if (content.length > chunk_size)
+            content = content[chunk_size..$];
+        else
+            content = [];
+    }
+    string front() const
+    {
+        if (content.length >= chunk_size)
+            return content[0..chunk_size];
+        else
+            return content[0..$];
+    }
+    bool empty() const
+    {
+        return !content.length;
+    }
+}
+ 
 unittest
 {
+
     void testLexer(T)(T.InputType delegate(string) conv)
     {
         string xml = q{
@@ -278,6 +541,8 @@ unittest
         assert(!lexer.empty);
     }
     
-    testLexer!(SliceLexer!string)(x => x);
-    testLexer!(RangeLexer!string)(x => x);
+    //testLexer!(SliceLexer!string)(x => x);
+    //testLexer!(RangeLexer!string)(x => x);
+    //testLexer!(ForwardLexer!string)(x => x);
+    testLexer!(BufferedLexer!DumbBufferedReader)(x => DumbBufferedReader(x, 10));
 }

@@ -7,6 +7,7 @@ help:
 	@echo - clean-random-benchmark: deletes random benchmark files
 	@echo - help: shows this text
 	@echo - random-benchmark: builds the library and executes random benchmarks
+	@echo - random-benchmark-csv: as random-benchmark, but exports the results in CSV
 	@echo - test: builds and executes compliance tests
 	@echo - unittest: builds and executes unittests
 
@@ -23,14 +24,15 @@ clean:
 	
 .PHONY: clean-random-benchmark
 clean-random-benchmark:
-	$(RM) -rf random-benchmark
-
-# alternative clean command - TODO: find a way to not list directories
-# ls | grep -viE "^*\..*$$" | grep -vi "Makefile" | xargs -d"\n" rm -f
+	$(RM) -f random-benchmark/*.xml
 
 .PHONY: random-benchmark
 random-benchmark:
 	dub run -c random-benchmark -b release
+	
+.PHONY: random-benchmark-csv
+random-benchmark-csv:
+	dub run -c random-benchmark -b release -q -- csv >> random-benchmark/results.csv
 
 .PHONY: test
 test:
