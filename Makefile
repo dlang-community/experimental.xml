@@ -28,11 +28,11 @@ clean-random-benchmark:
 
 .PHONY: random-benchmark
 random-benchmark:
-	dub run -c random-benchmark -b release
+	@dub run -c random-benchmark -b release -q
 	
 .PHONY: random-benchmark-csv
 random-benchmark-csv:
-	dub run -c random-benchmark -b release -q -- csv >> random-benchmark/results.csv
+	@dub run -c random-benchmark -b release -q -- csv
 
 .PHONY: test
 test:

@@ -35,8 +35,8 @@ enum BenchmarkConfig theBenchmark = {
     configurations: [
         "K100": K100,
         "M1": M1,
-        //"M10": M10,
-        //"M100": M100,
+        "M10": M10,
+        "M100": M100,
     ],
     filesPerConfig: 3,
     runsPerFile: 5,
