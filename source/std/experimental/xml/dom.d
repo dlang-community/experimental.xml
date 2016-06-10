@@ -622,12 +622,49 @@ template DOM(StringType)
     struct _Document
     {
         mixin DerivedOf!_Node;
+        
+        // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
+        public
+        {
+            const DocumentType doctype;
+            const DOMImplementation implementation;
+            const Element documentElement;
+            
+            Element createElement()
+            {
+            }
+            Text createTextNode(StringType text)
+            {
+            }
+            Comment createComment(StringType text)
+            {
+            }
+            CDATASection createCDataSection(StringType text)
+            {
+            }
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data)
+            {
+            }
+            Attr createAttribute(StringType name)
+            {
+            }
+            EntityReference createEntityReference(StringType name)
+            {
+            }
+            //NodeList getElementsByTagName
+        }
     }
     
     @PolymorphicWrapper("DocumentFragment")
     struct _DocumentFragment
     {
         mixin DerivedOf!_Node;
+    }
+    
+    @PolymorphicWrapper("NodeList")
+    struct _NodeList
+    {
+        mixin BaseClass;
     }
 }
 

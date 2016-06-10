@@ -8,6 +8,8 @@ uint numberOfTests = 5;
 
 struct GenXmlConfig
 {
+    string name;
+    
     // tweak these for file size
     ulong minDepth;
     ulong maxDepth;

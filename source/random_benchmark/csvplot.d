@@ -113,11 +113,19 @@ void plot(ref string[] args)
     auto data = filter(args[2], where, kind);
     
     // EXTRACT NEEDED COLUMNS
+    string[] sortedJoinKeys = [];
+    string[] sortedCompareKeys = [];
     double[][string][string] output;
     foreach (entry; data)
     {
         auto joinKey = entry.getString(to!string(join));
         auto compareKey = entry.getString(to!string(compare));
+        
+        if (!sortedJoinKeys.canFind(joinKey))
+            sortedJoinKeys ~= joinKey;
+        if (!sortedCompareKeys.canFind(compareKey))
+            sortedCompareKeys ~= compareKey;
+            
         double[] line = [];
         if (show.canFind(Value.min))
             line ~= entry.min;
@@ -157,17 +165,6 @@ void plot(ref string[] args)
         if (show.canFind(Value.sigma))
             column["sigma"] = i++;
     }
-    
-    // JOIN AND COMPARE KEYS
-    string[] sortedJoinKeys = output.keys.sort;
-    string[] sortedCompareKeys = [];
-    foreach (value; output.byValue)
-    {
-        foreach (key; value.byKey)
-            if (!sortedCompareKeys.canFind(key))
-                sortedCompareKeys ~= key;
-    }
-    sortedCompareKeys = sortedCompareKeys.sort;
     
     // OUTPUT THE DATA
     writeln("$data << EOD");
@@ -306,21 +303,21 @@ Entry[] filter(string filename, string[Key] where, string kind)
         
         entry.timestamp = values.front; values.popFront;
         entry.component = values.front; values.popFront;
-        if (Key.timestamp in where && entry.timestamp != where[Key.timestamp])
+        if (Key.timestamp in where && !entry.timestamp.matches(where[Key.timestamp]))
             continue;
-        if (Key.component in where && entry.component != where[Key.component])
+        if (Key.component in where && !entry.component.matches(where[Key.component]))
             continue;
             
         if (kind != "P")
         {
             entry.configuration = values.front; values.popFront;
-            if (Key.configuration in where && entry.configuration != where[Key.configuration])
+            if (Key.configuration in where && !entry.configuration.matches(where[Key.configuration]))
                 continue;
         }
         if (kind == "F")
         {
             entry.file = values.front; values.popFront;
-            if (Key.file in where && entry.file != where[Key.file])
+            if (Key.file in where && !entry.file.matches(where[Key.file]))
                 continue;
         }
         entry.min = to!double(values.front); values.popFront;
@@ -340,4 +337,13 @@ bool containsAll(T)(T[] haystack, T[] needles)
         if(!haystack.canFind(needle))
             return false;
     return true;
+}
+
+bool matches(string target, string re)
+{
+    if (target == re)
+        return true;
+    
+    import std.regex;
+    return matchFirst(target, "^" ~ re ~ "$").hit == target;
 }
