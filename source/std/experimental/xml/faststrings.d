@@ -16,10 +16,12 @@ in
 }
 body
 {
-    foreach (i; 0 .. t.length)
+    /*foreach (i; 0 .. t.length)
         if (t[i] != s[i])
             return false;
-    return true;
+    return true;*/
+    import core.stdc.string: memcmp;
+    return memcmp(t.ptr, s.ptr, t.length) == 0;
 }
 unittest
 {

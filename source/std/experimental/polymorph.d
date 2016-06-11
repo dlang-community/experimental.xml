@@ -59,25 +59,37 @@ struct PolymorphicRefCounted(NominalType, Types...)
                                 <= T._polymorph_template_range[1] - T._polymorph_template_range[0];
     }
 
-    private void* value;
+    private void* _p_value;
     private ref size_t typeIndexOfThis() const
     {
-        return (cast(size_t*)value)[0];
+        return (cast(size_t*)_p_value)[0];
     }
     
+    public this(TRC)(const auto ref TRC other)
+        if (is(TemplateArgsOf!(TRC)[1..$] == Types))
+    {
+        alias T = TemplateArgsOf!(TRC)[0];
+        static if (isDerivedOf!(T, NominalType))
+        {
+            _p_value = cast(void*)other._p_value;
+            if (!isNull)
+                refCountInc;
+        }
+        else static assert(0, "invalid constructor");
+    }
     public this(T)(const auto ref T val)
         if (isDerivedOf!(T, NominalType))
     {
-        value = malloc(16 + T.sizeof);
-        (cast(size_t*)value)[1] = 1;
+        _p_value = malloc(16 + T.sizeof);
+        (cast(size_t*)_p_value)[1] = 1;
         typeIndexOfThis = T._polymorph_template_id;
-        memcpy(&((cast(size_t*)value)[2]), &val, T.sizeof);
+        memcpy(&((cast(size_t*)_p_value)[2]), &val, T.sizeof);
     }
     private this(void* val)
     {
         if(!isNull)
             refCountDec;
-        value = val;
+        _p_value = val;
         if (!isNull)
             refCountInc;
     }
@@ -90,11 +102,11 @@ struct PolymorphicRefCounted(NominalType, Types...)
     {
         if (!isNull)
             refCountDec;
-        value = other.value;
+        _p_value = other._p_value;
         if (!isNull)
             refCountInc;
     }
-    public void opAssign(TRC)(auto ref TRC other)
+    public void opAssign(TRC)(const auto ref TRC other)
         if (is(TemplateArgsOf!(TRC)[1..$] == Types))
     {
         alias T = TemplateArgsOf!(TRC)[0];
@@ -102,7 +114,7 @@ struct PolymorphicRefCounted(NominalType, Types...)
         {
             if(!isNull)
                 refCountDec;
-            value = other.value;
+            _p_value = cast(void*)other._p_value;
             if (!isNull)
                 refCountInc;
         }
@@ -116,42 +128,42 @@ struct PolymorphicRefCounted(NominalType, Types...)
     
     private void refCountInc()
     {
-        (cast(size_t*)value)[1]++;
+        (cast(size_t*)_p_value)[1]++;
     }
     private void refCountDec()
     {
-        auto c = --((cast(size_t*)value)[1]);
+        auto c = --((cast(size_t*)_p_value)[1]);
         if (!c)
         {
-            free(value);
-            value = null;
+            free(_p_value);
+            _p_value = null;
         }
     }
     private size_t refCounter() const
     {
-        return (cast(size_t*)value)[1];
+        return (cast(size_t*)_p_value)[1];
     }
     
     auto isNull() const
     {
-        return value is null;
+        return _p_value is null;
     }
     auto opCast(T: bool)() const
     {
         return !isNull;
     }
     
-    auto opCast(TRC)()
+    auto opCast(TRC)() const
         if (is(TemplateArgsOf!(TRC)[1..$] == Types))
     {
         alias T = TemplateArgsOf!(TRC)[0];
         static if (isDerivedOf!(NominalType, T))
-            return PolymorphicRefCounted!(T, Types)(value);
+            return PolymorphicRefCounted!(T, Types)(cast(void*)_p_value);
         else static if (isDerivedOf!(T, NominalType))
         {
             auto id = typeIndexOfThis;
             if (T._polymorph_template_id || (T._polymorph_template_range[0] <= id && id <= T._polymorph_template_range[1]))
-                return PolymorphicRefCounted!(T, Types)(value);
+                return PolymorphicRefCounted!(T, Types)(cast(void*)_p_value);
             assert(0, "Invalid downcast");
         }
         else
@@ -166,19 +178,19 @@ struct PolymorphicRefCounted(NominalType, Types...)
     {
         if (isNull)
             assert(0, "Unwrapping null PolymorphicRefCounted");
-        return *cast(NominalType*)((cast(size_t*)value) + 2);
+        return *cast(NominalType*)((cast(size_t*)_p_value) + 2);
     }
     
     @property auto ref opDispatch(string s, T)(T t) const
-        if (__traits(compiles, mixin("cast(const(NominalType*))(cast(size_t*)value + 2)." ~ s ~ " = t")))
+        if (__traits(compiles, mixin("cast(const(NominalType*))(cast(size_t*)_p_value + 2)." ~ s ~ " = t")))
     {
-        auto nptr = cast(const(NominalType*))(cast(size_t*)value + 2);
+        auto nptr = cast(const(NominalType*))(cast(size_t*)_p_value + 2);
         static if (__traits(compiles, mixin("nptr." ~ s ~ " = t")))
         {
             auto id = typeIndexOfThis;
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
-                auto ptr = cast(const(Type*))(cast(size_t*)value + 2);
+                auto ptr = cast(const(Type*))(cast(size_t*)_p_value + 2);
                 static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
                     if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
                     {
@@ -191,14 +203,15 @@ struct PolymorphicRefCounted(NominalType, Types...)
     }
     
     @property auto ref opDispatch(string s, T)(T t)
+        if (__traits(compiles, mixin("cast(NominalType*)(cast(size_t*)_p_value + 2)." ~ s ~ " = t")))
     {
-        auto nptr = cast(NominalType*)(cast(size_t*)value + 2);
+        auto nptr = cast(NominalType*)(cast(size_t*)_p_value + 2);
         static if (__traits(compiles, mixin("nptr." ~ s ~ " = t")))
         {
             auto id = typeIndexOfThis;
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
-                auto ptr = cast(Type*)(cast(size_t*)value + 2);
+                auto ptr = cast(Type*)(cast(size_t*)_p_value + 2);
                 static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
                     if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
                     {
@@ -212,13 +225,13 @@ struct PolymorphicRefCounted(NominalType, Types...)
     
     auto ref opDispatch(string s, Args...)(Args args) const
     {
-        auto nptr = cast(const(NominalType*))(cast(size_t*)value + 2);
+        auto nptr = cast(const(NominalType*))(cast(size_t*)_p_value + 2);
         static if ((Args.length == 0 && __traits(compiles, mixin("nptr." ~ s))) || __traits(compiles, mixin("nptr." ~ s ~ "(args)")))
         {
             auto id = typeIndexOfThis;
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
-                auto ptr = cast(const(Type*))(cast(size_t*)value + 2);
+                auto ptr = cast(const(Type*))(cast(size_t*)_p_value + 2);
                 static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
                     if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
                     {
@@ -235,13 +248,13 @@ struct PolymorphicRefCounted(NominalType, Types...)
     
     auto ref opDispatch(string s, Args...)(Args args)
     {
-        auto nptr = cast(NominalType*)(cast(size_t*)value + 2);
+        auto nptr = cast(NominalType*)(cast(size_t*)_p_value + 2);
         static if ((Args.length == 0 && __traits(compiles, mixin("nptr." ~ s))) || __traits(compiles, mixin("nptr." ~ s ~ "(args)")))
         {
             auto id = typeIndexOfThis;
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
-                auto ptr = cast(Type*)(cast(size_t*)value + 2);
+                auto ptr = cast(Type*)(cast(size_t*)_p_value + 2);
                 static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
                     if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
                     {
@@ -265,7 +278,7 @@ struct PolymorphicRefCounted(NominalType, Types...)
     }
     
     /++
-    +   The null value of this type.
+    +   The null _p_value of this type.
     +/
     static enum auto Null = PolymorphicRefCounted(null);
 }

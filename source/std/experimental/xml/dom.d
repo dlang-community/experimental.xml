@@ -10,7 +10,7 @@ module std.experimental.xml.dom;
 import std.experimental.polymorph;
 
 import std.variant: Variant;
-alias DOMUserData = Variant;
+alias UserData = Variant;
 
 enum NodeType
 {
@@ -83,7 +83,7 @@ template DOM(StringType)
                                               _Notation, _ProcessingInstruction, _Text, _NodeList, _NamedNodeMap,
                                               _DOMImplementation, _DOMConfiguration);
                 
-    alias UserDataHandler = void delegate(UserDataOperation, StringType, DOMUserData, Node, Node);
+    alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
                               
     @PolymorphicWrapper("Node")
     struct _Node
@@ -135,15 +135,12 @@ template DOM(StringType)
             @property StringType prefix() const { return null; }
             @property void prefix(StringType newValue) {}
             
-            bool hasAttributes()
-            {
-                return !_attributes.isNull && _attributes.length > 0;
-            }
+            bool hasAttributes() const { return false; }
             
-            @property StringType textContent()
+            @property StringType textContent() const
             {
                 StringType result = [];
-                for (auto child = firstChild; !child.isNull; child = child.nextSibling)
+                for (Node child = cast(Node)firstChild; !child.isNull; child = child.nextSibling)
                     if (child.nodeType != NodeType.PROCESSING_INSTRUCTION && child.nodeType != NodeType.COMMENT)
                         result ~= child.textContent;
                 return result;
@@ -224,18 +221,30 @@ template DOM(StringType)
                 return newChild;
             }
             
-            Node cloneNode(bool deep);
+            Node cloneNode(bool deep) const;
             void normalize();
             
-            bool isSupported(string feature, string version_);
+            bool isSupported(string feature, string version_) const;
             
             DocumentPosition compareDocumentPosition(Node other);
             StringType lookupPrefix(StringType namespaceUri);
             bool isDefaultNamespace(StringType prefix);
             bool isEqualNode(Node arg);
             Object getFeature(string feature, string version_);
-            DOMUserData setUserData(string key, DOMUserData data, UserDataHandler handler);
-            DOMUserData getUserData(string key);
+            
+            UserData setUserData(string key, UserData data, UserDataHandler handler)
+            {
+                userData[key] = data;
+                if (handler)
+                    userDataHandlers[key] = handler;
+                return data;
+            }
+            UserData getUserData(string key)
+            {
+                if (key in userData)
+                    return userData[key];
+                return Variant(null);
+            }
         }
         // REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
         public
@@ -245,7 +254,7 @@ template DOM(StringType)
                 struct NodeList
                 {
                     Node parent;
-                    Node item(in size_t index)
+                    Node item(size_t index)
                     {
                         auto result = parent.firstChild;
                         for (size_t i = 0; i < index && !result.isNull; i++)
@@ -305,6 +314,8 @@ template DOM(StringType)
         }
         private Node _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
         private NamedNodeMap _attributes;
+        private UserData[string] userData;
+        private UserDataHandler[string] userDataHandlers;
         
         // NOT REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
         public
@@ -455,15 +466,15 @@ template DOM(StringType)
             @property auto textContent() const { return data; }
             @property void textContent(StringType newValue) { data = newValue; }
             
-            Node insertBefore(in Node newChild, in Node refChild)
+            Node insertBefore(Node newChild,  Node refChild)
             {
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
             }
-            Node replaceChild(in Node newChild, in Node oldChild)
+            Node replaceChild(Node newChild,  Node oldChild)
             {
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
             }
-            Node appendChild(in Node newChild)
+            Node appendChild(Node newChild)
             {
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
             }
@@ -590,29 +601,63 @@ template DOM(StringType)
             @property auto tagName() const { return _name; }
             @property auto schemaTypeInfo() const { return _schemaTypeInfo; }
             
-            StringType getAttribute(in StringType name) const;
-            StringType getAttributeNS(in StringType namespaceUri, in StringType localName) const;
-            Attr getAttributeNode(in StringType name) const;
-            Attr getAttributeNodeNS(in StringType namespaceUri, in StringType name) const;
+            StringType getAttribute(StringType name) const
+            {
+                return _attributes.getNamedItem(name).nodeValue;
+            }
+            StringType getAttributeNS(StringType namespaceUri,  StringType localName) const
+            {
+                return _attributes.getNamedItemNS(namespaceUri, localName).nodeValue;
+            }
+            Attr getAttributeNode(StringType name) const
+            {
+                return cast(Attr)_attributes.getNamedItem(name);
+            }
+            Attr getAttributeNodeNS(StringType namespaceUri,  StringType localName) const
+            {
+                return cast(Attr)_attributes.getNamedItemNS(namespaceUri, localName);
+            }
             
-            void setAttribute(in StringType name, in StringType value);
-            void setAttributeNS(in StringType namespaceUri, in StringType qualifiedName, in StringType value);
-            Attr setAttributeNode(in Attr newAttr);
-            Attr setAttributeNodeNS(in Attr newAttr);
+            void setAttribute(StringType name,  StringType value)
+            {
+                auto attr = ownerDocument.createAttribute(name);
+                attr.value = value;
+                _attributes.setNamedItem(cast(Node)attr);
+            }
+            void setAttributeNS(StringType namespaceUri,  StringType qualifiedName,  StringType value)
+            {
+                auto attr = ownerDocument.createAttributeNS(namespaceUri, qualifiedName);
+                attr.value = value;
+                _attributes.setNamedItemNS(cast(Node)attr);
+            }
+            Attr setAttributeNode(Attr newAttr)
+            {
+                return cast(Attr)_attributes.setNamedItem(cast(Node)newAttr);
+            }
+            Attr setAttributeNodeNS(Attr newAttr)
+            {
+                return cast(Attr)_attributes.setNamedItemNS(cast(Node)newAttr);
+            }
             
-            void removeAttribute(in StringType name);
-            void removeAttributeNS(in StringType namespaceUri, in StringType localName);
-            Attr removeAttributeNode(in Attr oldAttr);
+            void removeAttribute(StringType name)
+            {
+                _attributes.removeNamedItem(name);
+            }
+            void removeAttributeNS(StringType namespaceUri,  StringType localName)
+            {
+                _attributes.removeNamedItemNS(namespaceUri, localName);
+            }
+            Attr removeAttributeNode(Attr oldAttr);
             
-            NodeList getElementsByTagName(in StringType name) const;
-            NodeList getElementsByTagNameNS(in StringType namespaceUri, in StringType localName) const;
+            NodeList getElementsByTagName(StringType name) const;
+            NodeList getElementsByTagNameNS(StringType namespaceUri,  StringType localName) const;
             
-            bool hasAttribute(in StringType name) const;
-            bool hasAttributeNS(in StringType namespaceUri, in StringType localName) const;
+            bool hasAttribute(StringType name) const;
+            bool hasAttributeNS(StringType namespaceUri,  StringType localName) const;
             
-            void setIdAttribute(in StringType name, in bool isId);
-            void setIdAttributeNS(in StringType namespaceUri, in StringType localName, in bool isId);
-            void setIdAttributeNode(in Attr idAttr, in bool isId);
+            void setIdAttribute(StringType name,  bool isId);
+            void setIdAttributeNS(StringType namespaceUri,  StringType localName,  bool isId);
+            void setIdAttributeNode(Attr idAttr,  bool isId);
         }
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public
@@ -625,12 +670,17 @@ template DOM(StringType)
                 _name = newPrefix ~ localName;
                 _prefix_end = newPrefix.length;
             }
+            bool hasAttributes() const
+            {
+                return !_attributes.isNull && _attributes.length > 0;
+            }
         }
         private
         {
             StringType _name;
             size_t _prefix_end;
             TypeInfo _schemaTypeInfo;
+            NamedNodeMap _attributes;
         }
     }
 
@@ -647,14 +697,14 @@ template DOM(StringType)
             const Element documentElement;
             
             Element createElement(StringType tagName) { return assertAbstract!Element; }
-            Element createElementNS(StringType namespaceUri, StringType tagName) { return assertAbstract!Element; }
+            Element createElementNS(StringType namespaceUri, StringType qualifiedName) const { return assertAbstract!Element; }
             Text createTextNode(StringType text) const { return assertAbstract!Text; }
-            Comment createComment(StringType text) { return assertAbstract!Comment; }
-            CDATASection createCDataSection(StringType text) { return assertAbstract!CDATASection; }
-            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) { return assertAbstract!ProcessingInstruction; }
-            Attr createAttribute(StringType name) { return assertAbstract!Attr; }
-            Attr createAttributeNS(StringType namespaceUri, StringType name) { return assertAbstract!Attr; }
-            EntityReference createEntityReference(StringType name) { return assertAbstract!EntityReference; }
+            Comment createComment(StringType text) const { return assertAbstract!Comment; }
+            CDATASection createCDataSection(StringType text) const { return assertAbstract!CDATASection; }
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const { return assertAbstract!ProcessingInstruction; }
+            Attr createAttribute(StringType name) const { return assertAbstract!Attr; }
+            Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName) const { return assertAbstract!Attr; }
+            EntityReference createEntityReference(StringType name) const { return assertAbstract!EntityReference; }
             
             NodeList getElementsByTagName(StringType tagName) { return assertAbstract!NodeList; }
             NodeList getElementsByTagNameNS(StringType namespaceUri, StringType tagName) { return assertAbstract!NodeList; }
@@ -707,14 +757,14 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD
         public
         {
-            ulong length() { return assertAbstract!ulong; }
-            Node item(ulong index) { return assertAbstract!Node; }
+            ulong length() const { return assertAbstract!ulong; }
+            Node item(ulong index) const { return assertAbstract!Node; }
             
-            Node getNamedItem(StringType name) { return assertAbstract!Node; }
+            Node getNamedItem(StringType name) const { return assertAbstract!Node; }
             Node setNamedItem(Node arg) { return assertAbstract!Node; }
             Node removeNamedItem(StringType name) { return assertAbstract!Node; }
             
-            Node getNamedItemNS(StringType namespaceUri, StringType localName) { return assertAbstract!Node; }
+            Node getNamedItemNS(StringType namespaceUri, StringType localName) const { return assertAbstract!Node; }
             Node setNamedItemNS(Node arg) { return assertAbstract!Node; }
             Node removeNamedItemNS(StringType namespaceUri, StringType localName) { return assertAbstract!Node; }
         }
