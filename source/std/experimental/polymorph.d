@@ -170,6 +170,7 @@ struct PolymorphicRefCounted(NominalType, Types...)
     }
     
     @property auto ref opDispatch(string s, T)(T t) const
+        if (__traits(compiles, mixin("cast(const(NominalType*))(cast(size_t*)value + 2)." ~ s ~ " = t")))
     {
         auto nptr = cast(const(NominalType*))(cast(size_t*)value + 2);
         static if (__traits(compiles, mixin("nptr." ~ s ~ " = t")))

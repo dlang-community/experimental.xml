@@ -2,7 +2,7 @@
 /++
 +   An implementation of the W3C DOM Level 3 specification.
 +   It tries to differ as little as practically possible from the specification,
-+   while also adding some useful and more idiomatic construct.
++   while also adding some useful and more idiomatic constructs.
 +/
 
 module std.experimental.xml.dom;
@@ -34,7 +34,15 @@ enum DocumentPosition
     FOLLOWING,
     CONTAINS,
     CONTAINED_BY,
-    IMPLEMENTATION_SPECIFIC
+    IMPLEMENTATION_SPECIFIC,
+}
+enum UserDataOperation
+{
+    NODE_CLONED,
+    NODE_IMPORTED,
+    NODE_DELETED,
+    NODE_RENAMED,
+    NODE_ADOPTED,
 }
 
 enum ExceptionCode
@@ -72,7 +80,11 @@ template DOM(StringType)
 {
     mixin MakePolymorphicRefCountedHierarchy!(_Node, _Attr, _CDATASection, _CharacterData, _Comment, _Document,
                                               _DocumentFragment, _DocumentType, _Element, _Entity, _EntityReference,
-                                              _Notation, _ProcessingInstruction, _Text);
+                                              _Notation, _ProcessingInstruction, _Text, _NodeList, _NamedNodeMap,
+                                              _DOMImplementation, _DOMConfiguration);
+                
+    alias UserDataHandler = void delegate(UserDataOperation, StringType, DOMUserData, Node, Node);
+                              
     @PolymorphicWrapper("Node")
     struct _Node
     {
@@ -116,14 +128,17 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; IMPLEMENTED HERE, CAN BE OVERRIDDEN
         public
         {
-            //@property NamedNodeMap attributes() const { return null; }
+            @property NamedNodeMap attributes() const { return NamedNodeMap.Null; }
             @property StringType localName() const { return null; }
             @property StringType nodeValue() const { return null; }
             @property void nodeValue(StringType newValue) {}
             @property StringType prefix() const { return null; }
             @property void prefix(StringType newValue) {}
             
-            bool hasAttributes() const { return false; }
+            bool hasAttributes()
+            {
+                return !_attributes.isNull && _attributes.length > 0;
+            }
             
             @property StringType textContent()
             {
@@ -137,7 +152,7 @@ template DOM(StringType)
             {
                 while (firstChild)
                     removeChild(firstChild);
-                //appendChild(ownerDocument.createTextNode(newValue));
+                appendChild(cast(Node)ownerDocument.createTextNode(newValue));
             }
             
             Node insertBefore(Node newChild, Node refChild)
@@ -219,7 +234,7 @@ template DOM(StringType)
             bool isDefaultNamespace(StringType prefix);
             bool isEqualNode(Node arg);
             Object getFeature(string feature, string version_);
-            //DOMUserData setUserData(string key, DOMUserData data, UserDataHandler handler);
+            DOMUserData setUserData(string key, DOMUserData data, UserDataHandler handler);
             DOMUserData getUserData(string key);
         }
         // REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
@@ -288,7 +303,8 @@ template DOM(StringType)
                 return oldChild;
             }
         }
-        protected Node _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
+        private Node _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
+        private NamedNodeMap _attributes;
         
         // NOT REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
         public
@@ -346,7 +362,8 @@ template DOM(StringType)
                     child.remove();
                     child = nextChild;
                 }
-                //_firstChild = _lastChild = ownerDocument.createTextNode(newValue);
+                _lastChild = ownerDocument.createTextNode(newValue);
+                _firstChild = _lastChild;
             }
         }
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -477,7 +494,7 @@ template DOM(StringType)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
                     
                 data = data[0..offset];
-                Text newNode = Text.Null; //ownerDocument.createTextNode(data[offset..$]);
+                Text newNode = ownerDocument.createTextNode(data[offset..$]);
                 if (parentNode)
                 {
                     newNode.unwrap._parentNode = parentNode;
@@ -555,10 +572,9 @@ template DOM(StringType)
         public
         {
             const StringType name;
-            /*const NamedNodeMap entities;
-            const NamedNodeMap notations;*/
+            const NamedNodeMap entities;
             const StringType publicId;
-            const StringType systemId;;
+            const StringType systemId;
             const StringType internalSubset;
         }
     }
@@ -588,8 +604,8 @@ template DOM(StringType)
             void removeAttributeNS(in StringType namespaceUri, in StringType localName);
             Attr removeAttributeNode(in Attr oldAttr);
             
-            /*NodeList getElementsByTagName(in StringType name) const;
-            NodeList getElementsByTagNameNS(in StringType namespaceUri, in StringType localName) const;*/
+            NodeList getElementsByTagName(in StringType name) const;
+            NodeList getElementsByTagNameNS(in StringType namespaceUri, in StringType localName) const;
             
             bool hasAttribute(in StringType name) const;
             bool hasAttributeNS(in StringType namespaceUri, in StringType localName) const;
@@ -630,28 +646,37 @@ template DOM(StringType)
             const DOMImplementation implementation;
             const Element documentElement;
             
-            Element createElement()
-            {
-            }
-            Text createTextNode(StringType text)
-            {
-            }
-            Comment createComment(StringType text)
-            {
-            }
-            CDATASection createCDataSection(StringType text)
-            {
-            }
-            ProcessingInstruction createProcessingInstruction(StringType target, StringType data)
-            {
-            }
-            Attr createAttribute(StringType name)
-            {
-            }
-            EntityReference createEntityReference(StringType name)
-            {
-            }
-            //NodeList getElementsByTagName
+            Element createElement(StringType tagName) { return assertAbstract!Element; }
+            Element createElementNS(StringType namespaceUri, StringType tagName) { return assertAbstract!Element; }
+            Text createTextNode(StringType text) const { return assertAbstract!Text; }
+            Comment createComment(StringType text) { return assertAbstract!Comment; }
+            CDATASection createCDataSection(StringType text) { return assertAbstract!CDATASection; }
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) { return assertAbstract!ProcessingInstruction; }
+            Attr createAttribute(StringType name) { return assertAbstract!Attr; }
+            Attr createAttributeNS(StringType namespaceUri, StringType name) { return assertAbstract!Attr; }
+            EntityReference createEntityReference(StringType name) { return assertAbstract!EntityReference; }
+            
+            NodeList getElementsByTagName(StringType tagName) { return assertAbstract!NodeList; }
+            NodeList getElementsByTagNameNS(StringType namespaceUri, StringType tagName) { return assertAbstract!NodeList; }
+            Node getElementById(StringType elementId) { return assertAbstract!Node; }
+            
+            Node importNode(Node node, bool deep) { return assertAbstract!Node; }
+            Node adoptNode(Node source) { return assertAbstract!Node; }
+            Node renameNode(Node n, StringType namespaceUri, StringType qualifiedName) { return assertAbstract!Node; }
+            
+            const StringType inputEncoding;
+            const StringType xmlEncoding;
+            const DOMConfiguration domConfig;
+            
+            @property bool xmlStandalone() { return assertAbstract!bool; }
+            @property void xmlStandalone(bool val) { return assertAbstract; }
+            @property StringType xmlVersion() { return assertAbstract!StringType; }
+            @property void xmlVersion(StringType val) { return assertAbstract; }
+            
+            bool strictErrorChecking = true;
+            StringType documentURI;
+            
+            void normalizeDocument();
         }
     }
     
@@ -663,6 +688,46 @@ template DOM(StringType)
     
     @PolymorphicWrapper("NodeList")
     struct _NodeList
+    {
+        mixin BaseClass;
+        
+        // REQUIRED BY THE STANDARD
+        public
+        {
+            ulong length() { return assertAbstract!ulong; }
+            Node item(ulong index) { return assertAbstract!Node; }
+        }
+    }
+    
+    @PolymorphicWrapper("NamedNodeMap")
+    struct _NamedNodeMap
+    {
+        mixin BaseClass;
+        
+        // REQUIRED BY THE STANDARD
+        public
+        {
+            ulong length() { return assertAbstract!ulong; }
+            Node item(ulong index) { return assertAbstract!Node; }
+            
+            Node getNamedItem(StringType name) { return assertAbstract!Node; }
+            Node setNamedItem(Node arg) { return assertAbstract!Node; }
+            Node removeNamedItem(StringType name) { return assertAbstract!Node; }
+            
+            Node getNamedItemNS(StringType namespaceUri, StringType localName) { return assertAbstract!Node; }
+            Node setNamedItemNS(Node arg) { return assertAbstract!Node; }
+            Node removeNamedItemNS(StringType namespaceUri, StringType localName) { return assertAbstract!Node; }
+        }
+    }
+    
+    @PolymorphicWrapper("DOMImplementation")
+    struct _DOMImplementation
+    {
+        mixin BaseClass;
+    }
+    
+    @PolymorphicWrapper("DOMConfiguration")
+    struct _DOMConfiguration
     {
         mixin BaseClass;
     }
