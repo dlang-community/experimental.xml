@@ -9,7 +9,9 @@ module std.experimental.xml.dom;
 
 import std.experimental.polymorph;
 
+import std.typecons: Tuple;
 import std.variant: Variant;
+
 alias UserData = Variant;
 
 enum NodeType
@@ -80,8 +82,8 @@ template DOM(StringType)
 {
     mixin MakePolymorphicRefCountedHierarchy!(_Node, _Attr, _CDATASection, _CharacterData, _Comment, _Document,
                                               _DocumentFragment, _DocumentType, _Element, _Entity, _EntityReference,
-                                              _Notation, _ProcessingInstruction, _Text, _NodeList, _NamedNodeMap,
-                                              _DOMImplementation, _DOMConfiguration);
+                                              _Notation, _ProcessingInstruction, _Text, _NodeList);
+    mixin MakePolymorphicRefCountedHierarchy!(_NamedNodeMap, _NamedNodeMapImpl_ElementAttributes);
                 
     alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
                               
@@ -491,7 +493,7 @@ template DOM(StringType)
     class _Text
     {
         mixin DerivedOf!_CharacterData;
-        mixin HasDerived!CDATASection;
+        mixin HasDerived!_CDATASection;
         
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
         public
@@ -533,7 +535,7 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
         public
         {
-            const StringType target;
+            StringType target;
             StringType data;
         }
     }
@@ -696,12 +698,47 @@ template DOM(StringType)
             const DOMImplementation implementation;
             const Element documentElement;
             
-            Element createElement(StringType tagName) { return assertAbstract!Element; }
-            Element createElementNS(StringType namespaceUri, StringType qualifiedName) const { return assertAbstract!Element; }
-            Text createTextNode(StringType text) const { return assertAbstract!Text; }
-            Comment createComment(StringType text) const { return assertAbstract!Comment; }
-            CDATASection createCDataSection(StringType text) const { return assertAbstract!CDATASection; }
-            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const { return assertAbstract!ProcessingInstruction; }
+            Element createElement(StringType tagName) const
+            {
+                auto result = Element(_Element());
+                result.unwrap._name = tagName;
+                return result;
+            }
+            Element createElementNS(StringType namespaceUri, StringType qualifiedName) const
+            {
+                import std.experimental.xml.faststrings: fastIndexOf;
+                
+                auto result = Element(_Element());
+                result.unwrap._name = qualifiedName;
+                auto pos = fastIndexOf(qualifiedName, ':');
+                result.unwrap._prefix_end = pos >= 0 ? pos : 0;
+                return result;
+            }
+            Text createTextNode(StringType text) const
+            {
+                auto result = Text(/*_Text()*/); // <-- WHY DOESN'T WORK ???
+                result.data = text;
+                return result;
+            }
+            Comment createComment(StringType text) const
+            {
+                auto result = Comment(_Comment());
+                result.data = text;
+                return result;
+            }
+            CDATASection createCDataSection(StringType text) const
+            {
+                auto result = CDATASection(_CDATASection());
+                result.data = text;
+                return result;
+            }
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const
+            {
+                auto result = ProcessingInstruction(_ProcessingInstruction());
+                result.target = target;
+                result.data = data;
+                return result;
+            }
             Attr createAttribute(StringType name) const { return assertAbstract!Attr; }
             Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName) const { return assertAbstract!Attr; }
             EntityReference createEntityReference(StringType name) const { return assertAbstract!EntityReference; }
@@ -753,6 +790,7 @@ template DOM(StringType)
     struct _NamedNodeMap
     {
         mixin BaseClass;
+        mixin HasDerived!_NamedNodeMapImpl_ElementAttributes;
         
         // REQUIRED BY THE STANDARD
         public
@@ -770,16 +808,80 @@ template DOM(StringType)
         }
     }
     
-    @PolymorphicWrapper("DOMImplementation")
-    struct _DOMImplementation
+    @PolymorphicWrapper("NamedNodeMapImpl_ElementAttributes")
+    private struct _NamedNodeMapImpl_ElementAttributes
     {
-        mixin BaseClass;
+        mixin DerivedOf!_NamedNodeMap;
+        
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public
+        {
+            ulong length() const
+            {
+                return attrs.length;
+            }
+            Node item(ulong index) const
+            {
+                return cast(Node)attrs[attrs.keys[index]];
+            }
+            
+            Node getNamedItem(StringType name) const
+            {
+                return cast(Node)attrs[Key(null, name)];
+            }
+            Node setNamedItem(Node arg)
+            {
+                return setNamedItemNS(arg);
+            }
+            Node removeNamedItem(StringType name)
+            {
+                return removeNamedItemNS(null, name);
+            }
+            
+            Node getNamedItemNS(StringType namespaceUri, StringType localName) const
+            {
+                return cast(Node)attrs[Key(namespaceUri, localName)];
+            }
+            Node setNamedItemNS(Node arg)
+            {
+                import core.exception: AssertError;
+                Attr attr;
+                try
+                {
+                    attr = cast(Attr)arg;
+                }
+                catch (AssertError)
+                {
+                    throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
+                }
+                auto key = Key(attr.namespaceUri, attr.localName);
+                auto oldAttr = (key in attrs)? attrs[key] : Attr.Null;
+                attrs[key] = attr;
+                return cast(Node)oldAttr;
+            }
+            Node removeNamedItemNS(StringType namespaceUri, StringType localName)
+            {
+                auto key = Key(namespaceUri, localName);
+                if (key in attrs)
+                {
+                    auto result = attrs[key];
+                    attrs.remove(key);
+                    return cast(Node)result;
+                }
+                else
+                    throw new DOMException(ExceptionCode.NOT_FOUND);
+            }
+        }
+        private alias Key = Tuple!(string, "namespaceUri", string, "localName");
+        private Attr[Key] attrs;
     }
     
-    @PolymorphicWrapper("DOMConfiguration")
-    struct _DOMConfiguration
+    struct DOMImplementation
     {
-        mixin BaseClass;
+    }
+    
+    struct DOMConfiguration
+    {
     }
 }
 

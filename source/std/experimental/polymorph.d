@@ -162,7 +162,7 @@ struct PolymorphicRefCounted(NominalType, Types...)
         else static if (isDerivedOf!(T, NominalType))
         {
             auto id = typeIndexOfThis;
-            if (T._polymorph_template_id || (T._polymorph_template_range[0] <= id && id <= T._polymorph_template_range[1]))
+            if (T._polymorph_template_id == id || (T._polymorph_template_range[0] <= id && id <= T._polymorph_template_range[1]))
                 return PolymorphicRefCounted!(T, Types)(cast(void*)_p_value);
             assert(0, "Invalid downcast");
         }
@@ -191,8 +191,8 @@ struct PolymorphicRefCounted(NominalType, Types...)
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
                 auto ptr = cast(const(Type*))(cast(size_t*)_p_value + 2);
-                static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
-                    if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
+                //static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
+                    if (id == Type._polymorph_template_id /* || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]) */ )
                     {
                             mixin("return ptr." ~ s ~ " = t;");
                     }
@@ -203,7 +203,7 @@ struct PolymorphicRefCounted(NominalType, Types...)
     }
     
     @property auto ref opDispatch(string s, T)(T t)
-        if (__traits(compiles, mixin("cast(NominalType*)(cast(size_t*)_p_value + 2)." ~ s ~ " = t")))
+        //if (__traits(compiles, mixin("cast(NominalType*)(cast(size_t*)_p_value + 2)." ~ s ~ " = t")))
     {
         auto nptr = cast(NominalType*)(cast(size_t*)_p_value + 2);
         static if (__traits(compiles, mixin("nptr." ~ s ~ " = t")))
@@ -212,8 +212,8 @@ struct PolymorphicRefCounted(NominalType, Types...)
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
                 auto ptr = cast(Type*)(cast(size_t*)_p_value + 2);
-                static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
-                    if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
+                //static if (__traits(compiles, mixin("ptr." ~ s ~ " = t")))
+                    if (id == Type._polymorph_template_id /* || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]) */ )
                     {
                         mixin("return ptr." ~ s ~ " = t;");
                     }
@@ -232,8 +232,8 @@ struct PolymorphicRefCounted(NominalType, Types...)
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
                 auto ptr = cast(const(Type*))(cast(size_t*)_p_value + 2);
-                static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
-                    if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
+                //static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
+                    if (id == Type._polymorph_template_id /* || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]) */ )
                     {
                         static if (Args.length == 0 && __traits(compiles, mixin("ptr." ~ s)))
                             mixin("return ptr." ~ s ~ ";");
@@ -255,8 +255,8 @@ struct PolymorphicRefCounted(NominalType, Types...)
             foreach (Type; staticSort!(TagRangeOrder, Filter!(ApplyRight!(isDerivedOf, NominalType), Types)))
             {
                 auto ptr = cast(Type*)(cast(size_t*)_p_value + 2);
-                static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
-                    if (id == Type._polymorph_template_id || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]))
+                //static if ((Args.length == 0 && __traits(compiles, mixin("ptr." ~ s))) || __traits(compiles, mixin("ptr." ~ s ~ "(args)")))
+                    if (id == Type._polymorph_template_id /* || (Type._polymorph_template_range[0] <= id && id <= Type._polymorph_template_range[1]) */ )
                     {
                         static if (Args.length == 0 && __traits(compiles, mixin("ptr." ~ s)))
                             mixin("return ptr." ~ s ~ ";");
