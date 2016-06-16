@@ -4,10 +4,18 @@ module std.experimental.xml.cursor;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
+import std.algorithm: canFind;
 import std.range.primitives;
 import std.typecons;
 
-struct XMLCursor(P, bool conflateCDATA = true)
+enum XMLCursorOptions
+{
+    ConflateCDATA,
+    CopyStrings,
+    InternStrings,
+}
+
+struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA])
     if (isLowLevelParser!P)
 {
     /++
@@ -42,6 +50,21 @@ struct XMLCursor(P, bool conflateCDATA = true)
     private NamespaceDeclaration!StringType[] namespaces;
     private bool attributesParsed;
     private ErrorHandler handler;
+    
+    static if (options.canFind(XMLCursorOptions.InternStrings))
+    {
+        import std.experimental.interner;
+        Interner!(StringType, options.canFind(XMLCursorOptions.CopyStrings)) interner;
+    }
+    private static StringType returnStringType(StringType result)
+    {
+        static if (options.canFind(XMLCursorOptions.InternStrings))
+            return interner.intern(result);
+        else static if (options.canFind(XMLCursorOptions.CopyStrings))
+            return result.idup;
+        else
+            return result;
+    }
     
     static if (isSaveableLowLevelParser!P)
     {
@@ -179,7 +202,7 @@ struct XMLCursor(P, bool conflateCDATA = true)
         if (starting)
             return XMLKind.DOCUMENT;
             
-        static if (conflateCDATA)
+        static if (options.canFind(XMLCursorOptions.ConflateCDATA))
             if (currentNode.kind == XMLKind.CDATA)
                 return XMLKind.TEXT;
                 
@@ -201,10 +224,12 @@ struct XMLCursor(P, bool conflateCDATA = true)
             auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
             if (nameStart < 0)
                 return [];
+                
+            StringType result;
             if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
-                return currentNode.content[nameStart..i];
+                return returnStringType(currentNode.content[nameStart..i]);
             else
-                return currentNode.content[nameStart..$];
+                return returnStringType(currentNode.content[nameStart..$]);
         }
         return [];
     }
@@ -235,7 +260,7 @@ struct XMLCursor(P, bool conflateCDATA = true)
     {
         auto colon = fastIndexOf(getName(), ':');
         if (colon != -1)
-            return currentNode.content[0..colon];
+            return returnStringType(currentNode.content[0..colon]);
         else
             return [];
     }
@@ -311,9 +336,9 @@ struct XMLCursor(P, bool conflateCDATA = true)
             value = currentNode.content[(quote + 1)..attEnd];
             
             if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
-                namespaces ~= NamespaceDeclaration!StringType(name, value);
+                namespaces ~= NamespaceDeclaration!StringType(returnStringType(name), returnStringType(value));
             else
-                attributes ~= Attribute!StringType(prefix, name, value);
+                attributes ~= Attribute!StringType(returnStringType(prefix), returnStringType(name), returnStringType(value));
             
             attStart = attEnd + 1;
             delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
