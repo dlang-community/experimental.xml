@@ -10,6 +10,7 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
 import core.exception;
+import std.algorithm: canFind;
 
 class EndOfStreamException: Exception
 {
@@ -27,14 +28,18 @@ class UnexpectedEndOfStreamException: Exception
     }
 }
 
+enum ParserOptions
+{
+    PreserveSpaces,
+    CopyStrings,
+}
+
 /+
 +   The low level XML parser.
 +   Params:
 +       L              = the underlying lexer type
-+       preserveSpaces = whether to emit tokens for spaces between tags and whether
-+                        to preserve space characters at the beginning of text contents
 +/
-struct Parser(L, bool preserveSpaces = false)
+struct Parser(L, ParserOptions[] options = [])
     if (isLexer!L)
 {
     private alias NodeType = XMLToken!(L.CharacterType);
@@ -64,9 +69,17 @@ struct Parser(L, bool preserveSpaces = false)
         }
     }
     
+    private CharacterType[] fetchContent(size_t start = 0, size_t stop = 0)
+    {
+        static if (options.canFind(ParserOptions.CopyStrings))
+            return lexer.get[start..($ - stop)].idup;
+        else
+            return lexer.get[start..($ - stop)];
+    }
+    
     bool empty()
     {
-        static if (!preserveSpaces)
+        static if (!options.canFind(ParserOptions.PreserveSpaces))
             lexer.dropWhile(" \r\n\t");
             
         return !ready && lexer.empty;
@@ -97,7 +110,7 @@ struct Parser(L, bool preserveSpaces = false)
     
     private void fetchNext()
     {
-        static if (!preserveSpaces)
+        static if (!options.canFind(ParserOptions.PreserveSpaces))
             lexer.dropWhile(" \r\n\t");
         
         if (lexer.empty)
@@ -110,14 +123,14 @@ struct Parser(L, bool preserveSpaces = false)
         {
             lexer.advanceUntil('<', false);
             next.kind = XMLKind.TEXT;
-            next.content = lexer.get();
+            next.content = fetchContent();
         }
         
         // tag end
         else if (lexer.testAndAdvance('/'))
         {
             lexer.advanceUntil('>', true);
-            next.content = lexer.get()[2..($-1)];
+            next.content = fetchContent(2, 1);
             next.kind = XMLKind.ELEMENT_END;
         }
         // processing instruction
@@ -127,7 +140,7 @@ struct Parser(L, bool preserveSpaces = false)
             do
                 lexer.advanceUntil('?', true);
             while (!lexer.testAndAdvance('>'));
-            next.content = lexer.get()[2..($-2)];
+            next.content = fetchContent(2, 2);
             next.kind = XMLKind.PROCESSING_INSTRUCTION;
         }
         // tag start
@@ -143,12 +156,12 @@ struct Parser(L, bool preserveSpaces = false)
             if (c == 2)
             {
                 lexer.advanceUntil('>', true); // should be the first character after '/'
-                next.content = lexer.get()[1..($-2)];
+                next.content = fetchContent(1, 2);
                 next.kind = XMLKind.ELEMENT_EMPTY;
             }
             else
             {
-                next.content = lexer.get()[1..($-1)];
+                next.content = fetchContent(1, 1);
                 next.kind = XMLKind.ELEMENT_START;
             }
         }
@@ -163,7 +176,7 @@ struct Parser(L, bool preserveSpaces = false)
                 do
                     lexer.advanceUntil('>', true);
                 while (!fastEqual(lexer.get()[($-3)..$], "]]>"));
-                next.content = lexer.get()[9..($-3)];
+                next.content = fetchContent(9, 3);
                 next.kind = XMLKind.CDATA;
             }
             // conditional
@@ -179,7 +192,7 @@ struct Parser(L, bool preserveSpaces = false)
                         count++;
                 }
                 while (count > 0);
-                next.content = lexer.get()[3..($-3)];
+                next.content = fetchContent(3, 3);
                 next.kind = XMLKind.CONDITIONAL;
             }
         }
@@ -190,7 +203,7 @@ struct Parser(L, bool preserveSpaces = false)
             do
                 lexer.advanceUntil('>', true);
             while (!fastEqual(lexer.get()[($-3)..$], "-->"));
-            next.content = lexer.get()[4..($-3)];
+            next.content = fetchContent(4, 3);
             next.kind = XMLKind.COMMENT;
         }
         // declaration or doctype
@@ -240,7 +253,7 @@ struct Parser(L, bool preserveSpaces = false)
                         else assert(0);
                     lexer.advanceUntil('>', true);
                 }
-                next.content = lexer.get()[9..($-1)];
+                next.content = fetchContent(9, 1);
                 next.kind = XMLKind.DOCTYPE;
             }
             else
@@ -254,7 +267,7 @@ struct Parser(L, bool preserveSpaces = false)
                         else
                             lexer.advanceUntil('\'', true);
                 }
-                next.content = lexer.get()[2..($-1)];
+                next.content = fetchContent(2, 1);
                 next.kind = XMLKind.DECLARATION;
             }
         }
