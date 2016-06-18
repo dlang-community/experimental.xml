@@ -2,18 +2,19 @@
 # std.experimental.xml (GSoC 2016) [![Build Status](https://travis-ci.org/lodo1995/experimental.xml.svg?branch=master)](https://travis-ci.org/lodo1995/experimental.xml)
 
 ## About
-This project aims to become a substitution for the current std.xml in Phobos.
-It will provide various APIs to parse, validate and output XML documents.
+This project aims to become a substitution for the current std.xml in Phobos.  
+It will provide various APIs to parse, validate and output XML documents.  
 It is still in its early development, and this document describes only currently
-implemented features.
+implemented features.  
+It is being developed by Lodovico Giaretta as a project for Google Summer of Code 2016.
 
 ## Implementation status
 Four lexers, the low-level parser and the cursor API are currently usable (and are
-in fact used internally to automate testing).
+in fact used internally to automate testing).  
 Work is steadily proceeding.
 
 ## Architectural overview
-The API is designed for modularity, with many pluggable and customizable components.
+The API is designed for modularity, with many pluggable and customizable components.  
 Below is the description of the components that are already implemented.
 
 ### The Lexers
@@ -45,12 +46,12 @@ to its first child, its next sibling or the end of its parent.
 
 ### The Validating Cursor
 It's a wrapper around a [Cursor](#the-cursor), with hooks to perform various validations
-while advancing in the document.
+while advancing in the document.  
 The validations are specified as template parameters to the validating cursor, for easy
 customization.
 
 ### The legacy API
-It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](@the-parser).
+It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](#the-parser).
 
 ### More is Coming
 Other high level APIs are currently under implementation (e.g. DOM), while others will
