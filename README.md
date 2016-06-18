@@ -8,22 +8,50 @@ It is still in its early development, and this document describes only currently
 implemented features.
 
 ## Implementation status
-Two lexers, the low-level parser and the cursor API are currently usable (and are
+Four lexers, the low-level parser and the cursor API are currently usable (and are
 in fact used internally to automate testing).
 Work is steadily proceeding.
 
 ## Architectural overview
-The API is designed for modularity.
-Parsing is divided in various stages:
+The API is designed for modularity, with many pluggable and customizable components.
+Below is the description of the components that are already implemented.
 
-- a lexer abstracts the input type (InputRange, string, file) from subsequent
-components;
-- a low-level parser tokenizes the input from the lexer into tags and text,
-applying as few assumptions as possible, so that it can be reused for formats
-that resemble XML without being fully compatible with it;
-- a cursor API represents the first high-level facility of the library; it allows
-to advance in the document structure, querying nodes for their properties and
-skipping them when not needed;
-- a validating cursor wraps a cursor, performing validations while advancing in
-the structure; validations are plugged-in at compilation time;
-- more higher-level API (e.g. DOM building) will be implemented as soon as possible.
+### The Lexers
+They are used to abstract the input type from subsequent components, providing a
+uniform API, with operations to advance the input and retrieve it. They are not
+XML-specific, but their API is specifically designed for the needs of [the parser](#the-parser).
+
+Currently, these lexers are available, in descending order of performance:
+
+- the `SliceLexer` accepts as input a single slice; it's the fastest lexer, perfect
+for small inputs, but very memory-demanding for big ones;
+- the `BufferedLexer` accepts an `InputRange` of slices, representing susequent
+chunks of the input; it's the optimal choice for big files and for other data that
+naturally comes in chunks (e.g. network packets);
+- the `ForwardLexer` and `RangeLexer` work with any `ForwardRange` or `InputRange` 
+respectively; the fact that they can't use slices means that they are way slower that
+the first two lexers; they should only be used as fallback for input sources that do
+not allow compound reads.
+
+### The Parser
+It's a low-level components that tokenizes the input into tags and text. It applies
+as few assumptions as possible, so that it may be reused for languages that resemble
+XML but are not fully compatible with it. It does not do any well-formedness check.
+
+### The Cursor
+It's the first almost-high-level API directly usable in user code. It reads the XML
+top-down, providing methods to query the current node for its properties and to advance
+to its first child, its next sibling or the end of its parent.
+
+### The Validating Cursor
+It's a wrapper around a [Cursor](#the-cursor), with hooks to perform various validations
+while advancing in the document.
+The validations are specified as template parameters to the validating cursor, for easy
+customization.
+
+### The legacy API
+It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](@the-parser).
+
+### More is Coming
+Other high level APIs are currently under implementation (e.g. DOM), while others will
+be implemented in the near future (e.g. an event-based parser).

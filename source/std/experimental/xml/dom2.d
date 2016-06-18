@@ -80,6 +80,10 @@ struct RefCounted(T)
     {
         RefCounted result;
         result._p_data = alloc.make!T(args);
+        
+        import core.memory;
+        auto block = result.dataBlock;
+        GC.addRange(block.ptr, block.length, T.classinfo);
         alloc.prefix(result.dataBlock) = 1;
         return result;
     }
