@@ -173,7 +173,6 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
         public abstract
         {
-            @property StringType    baseUri()         const @nogc;
             @property StringType    namespaceUri()    const @nogc;
             @property StringType    nodeName()        const @nogc;
             @property NodeType      nodeType()        const @nogc;
@@ -212,6 +211,7 @@ template DOM(StringType)
             @property void nodeValue(StringType newValue) {}
             @property StringType prefix() const @nogc { return null; }
             @property void prefix(StringType newValue) {}
+            @property StringType baseUri() { return parentNode.baseUri(); }
             
             bool hasAttributes() const { return false; }
             
@@ -238,7 +238,8 @@ template DOM(StringType)
                     throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
                 if (!isSameNode(refChild.parentNode))
                     throw new DOMException(ExceptionCode.NOT_FOUND);
-                newChild.parentNode.removeChild(newChild);
+                if (newChild.parentNode != null)
+                    newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
                 if (refChild.previousSibling)
                 {
@@ -259,7 +260,8 @@ template DOM(StringType)
                     throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
                 if (!isSameNode(oldChild.parentNode))
                     throw new DOMException(ExceptionCode.NOT_FOUND);
-                newChild.parentNode.removeChild(newChild);
+                if (newChild.parentNode != null)
+                    newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
                 oldChild._parentNode = null;
                 if (oldChild.previousSibling)
@@ -286,7 +288,8 @@ template DOM(StringType)
                     throw new DOMException(ExceptionCode.WRONG_DOCUMENT);
                 if (isSameNode(newChild) || newChild.isAncestor(Node(this)))
                     throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
-                newChild.parentNode.removeChild(newChild);
+                if (newChild.parentNode != null)
+                    newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
                 if (lastChild)
                 {
@@ -480,12 +483,11 @@ template DOM(StringType)
             @property StringType textContent() const { return value; }
             @property void textContent(StringType newContent) { value = newContent; }
             
-            @property StringType baseUri() const @nogc { return null; }
-            @property StringType namespaceUri() const @nogc { return null; }
+            @property StringType namespaceUri() const @nogc { return _namespaceUri; }
         }
         private
         {
-            StringType _name;
+            StringType _name, _namespaceUri;
             size_t _prefix_end;
             bool _specified, _isId;
             Element _ownerElement;
@@ -559,15 +561,19 @@ template DOM(StringType)
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
             }
             
-            @property StringType baseUri() const @nogc { return null;}
             @property StringType namespaceUri() const @nogc { return null;}
-            @property StringType nodeName() const @nogc { return null;}
         }
     }
 
     alias Comment = RefCounted!_Comment;
     class _Comment: _CharacterData
     {
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.COMMENT; }
+            @property StringType nodeName() const @nogc { return "#comment"; }
+        }
     }
 
     alias Text = RefCounted!_Text;
@@ -601,12 +607,19 @@ template DOM(StringType)
         public override
         {
             @property NodeType nodeType() const @nogc { return NodeType.TEXT; }
+            @property StringType nodeName() const @nogc { return "#text"; }
         }
     }
 
     alias CDATASection = RefCounted!_CDATASection;
     class _CDATASection: _Text
     {
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.CDATA_SECTION; }
+            @property StringType nodeName() const @nogc { return "#cdata-section"; }
+        }
     }
 
     alias ProcessingInclassion = RefCounted!_ProcessingInclassion;
@@ -618,11 +631,23 @@ template DOM(StringType)
             StringType target;
             StringType data;
         }
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.PROCESSING_INSTRUCTION; }
+            @property StringType nodeName() const @nogc { return target; }
+        }
     }
     
     alias EntityReference = RefCounted!_EntityReference;
     class _EntityReference: _Node
     {
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.ENTITY_REFERENCE; }
+            @property StringType nodeName() const @nogc { return null; }
+        }
     }
 
     alias Entity = RefCounted!_Entity;
@@ -638,6 +663,12 @@ template DOM(StringType)
             const StringType xmlEncoding;
             const StringType xmlVersion;
         }
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.ENTITY; }
+            @property StringType nodeName() const @nogc { return null; }
+        }
     }
 
     alias Notation = RefCounted!_Notation;
@@ -648,6 +679,12 @@ template DOM(StringType)
         {
             const StringType publicId;
             const StringType systemId;
+        }
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.NOTATION; }
+            @property StringType nodeName() const @nogc { return null; }
         }
     }
     
@@ -662,6 +699,12 @@ template DOM(StringType)
             const StringType publicId;
             const StringType systemId;
             const StringType internalSubset;
+        }
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.DOCUMENT_TYPE; }
+            @property StringType nodeName() const @nogc { return name; }
         }
     }
 
@@ -735,7 +778,13 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property StringType localName() const @nogc { return tagName[_prefix_end..$]; }
+            @property StringType localName() const @nogc
+            {
+                if (_prefix_end > 0)
+                    return tagName[_prefix_end..$];
+                else
+                    return null;
+            }
             @property StringType nodeName() const @nogc { return tagName; }
             @property StringType prefix() const @nogc { return tagName[0.._prefix_end]; }
             @property void prefix(StringType newPrefix)
@@ -747,8 +796,15 @@ template DOM(StringType)
             {
                 return _attributes != null && _attributes.length > 0;
             }
-            @property StringType baseUri() const { return null; }
-            @property StringType namespaceUri() const { return null; }
+            @property StringType baseUri()
+            {
+                auto base = getAttributeNS("http://www.w3.org/XML/1998/namespace", "base");
+                if (base != null)
+                    return base;
+                else
+                    return parentNode.baseUri();
+            }
+            @property StringType namespaceUri() const { return _namespaceUri; }
             @property NodeType nodeType() const { return NodeType.ELEMENT; }
         }
         private
@@ -757,9 +813,8 @@ template DOM(StringType)
             size_t _prefix_end;
             TypeInfo _schemaTypeInfo;
             NamedNodeMap _attributes;
-            
+            StringType _namespaceUri;
         }
-        
         this()
         {
             _attributes = NamedNodeMap(NamedNodeMapImpl_ElementAttributes.emplace());
@@ -783,14 +838,16 @@ template DOM(StringType)
                 result._ownerDocument = Document(this);
                 return result;
             }
-            Element createElementNS(StringType namespaceUri, StringType qualifiedName) const @nogc
+            Element createElementNS(StringType namespaceUri, StringType qualifiedName) @nogc
             {
                 import std.experimental.xml.faststrings: fastIndexOf;
                 
                 auto result = Element.emplace();
+                result._namespaceUri = namespaceUri;
                 result._name = qualifiedName;
                 auto pos = fastIndexOf(qualifiedName, ':');
                 result._prefix_end = pos >= 0 ? pos : 0;
+                result._ownerDocument = Document(this);
                 return result;
             }
             Text createTextNode(StringType text) const @nogc
@@ -825,7 +882,18 @@ template DOM(StringType)
                 result._ownerDocument = Document(this);
                 return result;
             }
-            Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName) const { return Attr(); }
+            Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName) @nogc
+            {
+                import std.experimental.xml.faststrings: fastIndexOf;
+                
+                auto result = Attr.emplace();
+                result._namespaceUri = namespaceUri;
+                result._name = qualifiedName;
+                auto pos = fastIndexOf(qualifiedName, ':');
+                result._prefix_end = pos >= 0 ? pos : 0;
+                result._ownerDocument = Document(this);
+                return result;
+            }
             EntityReference createEntityReference(StringType name) const { return EntityReference(); }
             
             NodeList getElementsByTagName(StringType tagName) { return NodeList(); }
@@ -855,7 +923,7 @@ template DOM(StringType)
         {
             @property StringType baseUri() const { return null; }
             @property StringType namespaceUri() const { return null; }
-            @property StringType nodeName() const { return null; }
+            @property StringType nodeName() const { return "#document"; }
             @property NodeType nodeType() const { return NodeType.DOCUMENT; }
         }
     }
@@ -863,6 +931,12 @@ template DOM(StringType)
     alias DocumentFragment = RefCounted!_DocumentFragment;
     class _DocumentFragment: _Node
     {
+        // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
+        public override
+        {
+            @property NodeType nodeType() const @nogc { return NodeType.DOCUMENT_FRAGMENT; }
+            @property StringType nodeName() const @nogc { return "#document-fragment"; }
+        }
     }
     
     alias NodeList = RefCounted!_NodeList;
@@ -955,7 +1029,7 @@ template DOM(StringType)
                     throw new DOMException(ExceptionCode.NOT_FOUND);
             }
         }
-        private alias Key = Tuple!(string, "namespaceUri", string, "localName");
+        private alias Key = Tuple!(StringType, "namespaceUri", StringType, "localName");
         private Attr[Key] attrs;
     }
     
@@ -968,22 +1042,26 @@ template DOM(StringType)
     }
 }
 
-mixin template InjectDOM(StringType)
+mixin template InjectDOM(StringType, string prefix = "", string suffix = "")
 {
-    alias Node = DOM!StringType.Node;
-    alias Attr = DOM!StringType.Attr;
-    alias Element = DOM!StringType.Element;
-    alias CharacterData = DOM!StringType.CharacterData;
-    alias Text = DOM!StringType.Text;
-    alias Comment = DOM!StringType.Comment;
-    alias CDATASection = DOM!StringType.CDATASection;
-    alias ProcessingInclassion = DOM!StringType.ProcessingInclassion;
-    alias Notation = DOM!StringType.Notation;
-    alias Entity = DOM!StringType.Entity;
-    alias EntityReference = DOM!StringType.EntityReference;
-    alias Document = DOM!StringType.Document;
-    alias DocumentFragment = DOM!StringType.DocumentFragment;
-    alias DocumentType = DOM!StringType.DocumentType;
+    private mixin template InjectClass(string name, T)
+    {
+        mixin ("alias " ~ prefix ~ name ~ suffix ~ " = T;");
+    }
+    mixin InjectClass!("Node", DOM!StringType.Node);
+    mixin InjectClass!("Attr", DOM!StringType.Attr);
+    mixin InjectClass!("Element", DOM!StringType.Element);
+    mixin InjectClass!("CharacterData", DOM!StringType.CharacterData);
+    mixin InjectClass!("Text", DOM!StringType.Text);
+    mixin InjectClass!("Comment", DOM!StringType.Comment);
+    mixin InjectClass!("CDATASection", DOM!StringType.CDATASection);
+    mixin InjectClass!("ProcessingInclassion", DOM!StringType.ProcessingInclassion);
+    mixin InjectClass!("Notation", DOM!StringType.Notation);
+    mixin InjectClass!("Entity", DOM!StringType.Entity);
+    mixin InjectClass!("EntityReference", DOM!StringType.EntityReference);
+    mixin InjectClass!("Document", DOM!StringType.Document);
+    mixin InjectClass!("DocumentFragment", DOM!StringType.DocumentFragment);
+    mixin InjectClass!("DocumentType", DOM!StringType.DocumentType);
 }
 
 unittest
@@ -993,4 +1071,7 @@ unittest
     auto element = document.createElement("myElement");
     element.setAttribute("myAttribute", "myValue");
     assert(element.getAttribute("myAttribute") == "myValue");
+    auto text = document.createTextNode("Some useful insight...");
+    element.appendChild(Node(text));
+    assert(element.firstChild.textContent == "Some useful insight...");
 }
