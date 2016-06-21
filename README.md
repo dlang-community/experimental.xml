@@ -51,7 +51,18 @@ The validations are specified as template parameters to the validating cursor, f
 customization.
 
 ### The legacy API
-It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](#the-parser).
+It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](#the-parser).  
+It is provided to ease the transition. Also, this implementation should be a bit faster.
+
+### The DOM
+This library contains a (still unfinished) implementation of the Document Object Model Level 3
+specification. The goals of this implementation are:
+
+- striving to be fully compliant to the specification, while adding more idiomatic alternatives
+whenever useful (e.g.: the spec doesn't use enums, but plain integer constants; this library
+provides both, one for compatibility and the other to match D idioms);
+- striving to avoid garbage collection, not because the GC is bad (it is not!), but because this
+library should be usable even in applications that cannot afford a GC (e.g.: real-time).
 
 ### More is Coming
 Other high level APIs are currently under implementation (e.g. DOM), while others will

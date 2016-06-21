@@ -13,93 +13,146 @@
 
 module std.experimental.xml.dom2;
 
-struct RefCounted(T)
+struct RefCounted(T, bool _userVisible = false)
     if (is(T == class))
 {
     import std.experimental.allocator.mallocator;
     import std.experimental.allocator.building_blocks.affix_allocator;
     import std.experimental.allocator;
-    static shared AffixAllocator!(Mallocator, size_t) alloc;
+    import std.traits: BaseClassesTuple, Unqual, CopyTypeQualifiers;
+    import std.typecons: Rebindable;
+    
+    static shared AffixAllocator!(Mallocator, size_t) _p_alloc;
     static this()
     {
-        alloc = alloc.instance;
+        _p_alloc = _p_alloc.instance;
     }
 
-    import std.typecons: Rebindable;
-    Rebindable!T _p_data;
-        
-    alias _p_data this;
+    private Rebindable!T _p_data;
     
-    private void[] dataBlock() const
+    static if (!is(Unqual!T == Object))
+    {
+        static if (is(BaseClassesTuple!(Unqual!T)[0]))
+        {
+            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, BaseClassesTuple!(Unqual!T)[0]), _userVisible);
+        }
+        else
+        {
+            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), _userVisible);
+        }
+        SuperType superType()
+        {
+            return SuperType(_p_data);
+        }
+        alias superType this;
+    }
+    
+    private void[] _p_dataBlock() const
     {
         void[] result = (cast(ubyte*)cast(void*)_p_data)[0..T.sizeof];
         return result;
+    }
+    private void _p_incr()
+    {
+        if (_p_data)
+        {
+            _p_alloc.prefix(_p_dataBlock)++;
+            static if (_userVisible && is(typeof(T.incrVisibleRefCount)))
+                _p_data.incrVisibleRefCount;
+        }
+    }
+    private void _p_decr()
+    {
+        if (_p_data)
+        {
+            static if (_userVisible && is(typeof(T.decrVisibleRefCount)))
+                _p_data.decrVisibleRefCount;
+            if (--_p_alloc.prefix(_p_dataBlock) == 0)
+                _p_alloc.deallocate(_p_dataBlock);
+        }
     }
     
     this(T payload)
     {
         _p_data = payload;
-        if (_p_data)
-            alloc.prefix(dataBlock)++;
-    }
-    this(U)(auto ref RefCounted!U other)
-    {
-        _p_data = cast(T)other._p_data;
-        if (_p_data)
-            alloc.prefix(dataBlock)++;
+        _p_incr;
     }
     this(this)
     {
-        if(_p_data)
-            alloc.prefix(dataBlock)++;
+        _p_incr;
     }
     ~this()
     {
-        if(_p_data && --alloc.prefix(dataBlock) == 0)
-            alloc.deallocate(dataBlock);
+        _p_decr;
     }
     
     bool opEquals(typeof(null) other) const
     {
         return _p_data is null;
     }
-    bool opEquals(U)(const auto ref RefCounted!U other) const
+    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, visibility) other) const
     {
         return _p_data is other._p_data;
     }
+    bool opCast(T: bool)() const
+    {
+        return (_p_data)?true:false;
+    }
+    
     void opAssign(typeof(null) other)
     {
-        if(_p_data && --alloc.prefix(dataBlock) == 0)
-            alloc.deallocate(dataBlock);
+        _p_decr;
         _p_data = null;
     }
-    void opAssign(U)(auto ref RefCounted!U other)
+    void opAssign(U, bool visibility)(auto ref RefCounted!(U, visibility) other)
     {
-        if(_p_data && --alloc.prefix(dataBlock) == 0)
-            alloc.deallocate(dataBlock);
+        _p_decr;
         _p_data = other._p_data;
-        if(_p_data)
-            alloc.prefix(dataBlock)++;
+        _p_incr;
     }
     
     static RefCounted emplace(Args...)(auto ref Args args)
     {
         RefCounted result;
-        result._p_data = alloc.make!T(args);
+        result._p_data = _p_alloc.make!T(args);
         
         import core.memory;
-        auto block = result.dataBlock;
+        auto block = result._p_dataBlock;
         GC.addRange(block.ptr, block.length, T.classinfo);
-        alloc.prefix(result.dataBlock) = 1;
+        _p_alloc.prefix(result._p_dataBlock) = 1;
+        return result;
+    }
+    static RefCounted Null()
+    {
+        RefCounted result;
+        result._p_data = null;
         return result;
     }
     
-    RefCounted!(const T) tailConst() const
+    RefCounted!(T, true) userVisible()
     {
-        RefCounted!(const T) result;
-        result._p_data = _p_data;
-        alloc.prefix(result.dataBlock)++;
-        return result;
+        return RefCounted!(T, true)(_p_data);
+    }
+    RefCounted!(T, false) libInternal()
+    {
+        return RefCounted!(T, false)(_p_data);
+    }
+    
+    RefCounted!(U, _userVisible) downCast(RC: RefCounted!(U, _userVisible), U)()
+    {
+        return RefCounted!(U, _userVisible)(cast(U)_p_data);
+    }
+    
+    @property auto opDispatch(string name, Arg)(Arg arg)
+    {
+        mixin("return _p_data." ~ name ~ " = arg;");
+    }
+    auto opDispatch(string name, Args...)(Args args)
+    {
+        static if (Args.length > 0)
+            mixin("return _p_data." ~ name ~ "(args);");
+        else
+            mixin("return _p_data." ~ name ~ ";");
     }
 }
 
@@ -173,12 +226,12 @@ class DOMException: Exception
 }
 
 template DOM(StringType)
-{               
+{
     alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
     
     alias ConstNode = RefCounted!(const _Node);
     alias Node = RefCounted!_Node;
-    class _Node
+    abstract class _Node
     {
         // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
         public abstract
@@ -215,20 +268,20 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; IMPLEMENTED HERE, CAN BE OVERRIDDEN
         public
         {
-            @property NamedNodeMap attributes() { return NamedNodeMap(); }
+            @property NamedNodeMap attributes() { return NamedNodeMap.Null; }
             StringType localName() const @nogc { return null; }
-            @property StringType nodeValue() const { return null; }
+            @property StringType nodeValue() { return null; }
             @property void nodeValue(StringType newValue) {}
             @property StringType prefix() const @nogc { return null; }
             @property void prefix(StringType newValue) {}
             @property StringType baseUri() { return parentNode.baseUri(); }
             
-            bool hasAttributes() const { return false; }
+            bool hasAttributes() { return false; }
             
-            @property StringType textContent() const
+            @property StringType textContent()
             {
                 StringType result = [];
-                for (Node child = firstChild.tailConst; child != null; child = child.nextSibling)
+                for (Node child = firstChild; child != null; child = child.nextSibling)
                     if (child.nodeType != NodeType.PROCESSING_INSTRUCTION && child.nodeType != NodeType.COMMENT)
                         result ~= child.textContent;
                 return result;
@@ -237,7 +290,7 @@ template DOM(StringType)
             {
                 while (firstChild)
                     removeChild(firstChild);
-                appendChild(Node(ownerDocument.createTextNode(newValue)));
+                appendChild(ownerDocument.createTextNode(newValue));
             }
             
             Node insertBefore(Node newChild, Node refChild)
@@ -312,7 +365,7 @@ template DOM(StringType)
                 return newChild;
             }
             
-            Node cloneNode(bool deep) @nogc { return Node(); }
+            Node cloneNode(bool deep) @nogc { return Node.Null; }
             void normalize() {}
             
             bool isSupported(string feature, string version_) const { return false; }
@@ -354,14 +407,14 @@ template DOM(StringType)
                         }
                         return result;
                     }
-                    override @property size_t length() const
+                    override @property size_t length()
                     {
-                        auto child = parent.firstChild.tailConst;
+                        auto child = parent.firstChild;
                         size_t result = 0;
                         while (child)
                         {
                             result++;
-                            child = child.nextSibling.tailConst;
+                            child = child.nextSibling;
                         }
                         return result;
                     }
@@ -370,7 +423,7 @@ template DOM(StringType)
                 alias ChildNodeList = RefCounted!(_ChildNodeList);
                 auto cnl = ChildNodeList.emplace();
                 cnl.parent = Node(this);
-                return NodeList(cnl);
+                return cnl;
             }
             @property inout(Node) firstChild() inout { return _firstChild; }
             @property inout(Node) lastChild() inout { return _lastChild; }
@@ -432,6 +485,13 @@ template DOM(StringType)
                 return false;
             }
         }
+        
+        // REF COUNTING
+        final
+        {
+            void incrVisibleRefCount() const {}
+            void decrVisibleRefCount() const {}
+        }
     }
 
     alias Attr = RefCounted!_Attr;
@@ -446,10 +506,10 @@ template DOM(StringType)
             @property auto schemaTypeInfo() const { return _schemaTypeInfo; }
             @property auto isId() const { return _isId; }
             
-            @property StringType value() const
+            @property StringType value()
             {
                 StringType result = [];
-                Node child = firstChild.tailConst;
+                Node child = firstChild;
                 while (child)
                 {
                     result ~= child.textContent;
@@ -482,7 +542,7 @@ template DOM(StringType)
             }
             @property StringType nodeName() const { return name; }
             @property NodeType nodeType() const { return NodeType.ATTRIBUTE; }
-            @property StringType nodeValue() const { return value; }
+            @property StringType nodeValue() { return value; }
             @property void nodeValue(StringType newValue) { value = newValue; }
             @property StringType prefix() const @nogc { return name[0.._prefix_end]; }
             @property void prefix(StringType newPrefix)
@@ -490,7 +550,7 @@ template DOM(StringType)
                 _name = newPrefix ~ ':' ~ localName;
                 _prefix_end = newPrefix.length;
             }
-            @property StringType textContent() const { return value; }
+            @property StringType textContent() { return value; }
             @property void textContent(StringType newContent) { value = newContent; }
             
             @property StringType namespaceUri() const @nogc { return _namespaceUri; }
@@ -632,8 +692,8 @@ template DOM(StringType)
         }
     }
 
-    alias ProcessingInclassion = RefCounted!_ProcessingInclassion;
-    class _ProcessingInclassion: _Node
+    alias ProcessingInstruction = RefCounted!_ProcessingInstruction;
+    class _ProcessingInstruction: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
         public
@@ -646,6 +706,7 @@ template DOM(StringType)
         {
             @property NodeType nodeType() const @nogc { return NodeType.PROCESSING_INSTRUCTION; }
             @property StringType nodeName() const @nogc { return target; }
+            @property StringType namespaceUri() const @nogc { return null; }
         }
     }
     
@@ -737,32 +798,32 @@ template DOM(StringType)
             }
             Attr getAttributeNode(StringType name)
             {
-                return Attr(_attributes.getNamedItem(name));
+                return _attributes.getNamedItem(name).downCast!Attr;
             }
             Attr getAttributeNodeNS(StringType namespaceUri,  StringType localName)
             {
-                return Attr(_attributes.getNamedItemNS(namespaceUri, localName));
+                return _attributes.getNamedItemNS(namespaceUri, localName).downCast!Attr;
             }
             
             void setAttribute(StringType name,  StringType value)
             {
                 auto attr = ownerDocument.createAttribute(name);
                 attr.value = value;
-                _attributes.setNamedItem(cast(Node)attr);
+                _attributes.setNamedItem(attr);
             }
             void setAttributeNS(StringType namespaceUri,  StringType qualifiedName,  StringType value)
             {
                 auto attr = ownerDocument.createAttributeNS(namespaceUri, qualifiedName);
                 attr.value = value;
-                _attributes.setNamedItemNS(cast(Node)attr);
+                _attributes.setNamedItemNS(attr);
             }
             Attr setAttributeNode(Attr newAttr)
             {
-                return cast(Attr)_attributes.setNamedItem(cast(Node)newAttr);
+                return _attributes.setNamedItem(newAttr).downCast!Attr;
             }
             Attr setAttributeNodeNS(Attr newAttr)
             {
-                return cast(Attr)_attributes.setNamedItemNS(cast(Node)newAttr);
+                return _attributes.setNamedItemNS(newAttr).downCast!Attr;
             }
             
             void removeAttribute(StringType name)
@@ -773,9 +834,9 @@ template DOM(StringType)
             {
                 _attributes.removeNamedItemNS(namespaceUri, localName);
             }
-            Attr removeAttributeNode(Attr oldAttr) { return Attr(); }
+            Attr removeAttributeNode(Attr oldAttr) { return Attr.Null; }
             
-            NodeList getElementsByTagName(StringType name) const { return NodeList(); }
+            NodeList getElementsByTagName(StringType name) const { return NodeList.Null; }
             NodeList getElementsByTagNameNS(StringType namespaceUri,  StringType localName) const { return NodeList(); }
             
             bool hasAttribute(StringType name) const { return false; }
@@ -802,7 +863,7 @@ template DOM(StringType)
                 _name = newPrefix ~ localName;
                 _prefix_end = newPrefix.length;
             }
-            bool hasAttributes() const @nogc
+            bool hasAttributes() @nogc
             {
                 return _attributes != null && _attributes.length > 0;
             }
@@ -825,9 +886,9 @@ template DOM(StringType)
             NamedNodeMap _attributes;
             StringType _namespaceUri;
         }
-        this()
+        package(std) this()
         {
-            _attributes = NamedNodeMap(NamedNodeMapImpl_ElementAttributes.emplace());
+            _attributes = NamedNodeMapImpl_ElementAttributes.emplace();
         }
     }
 
@@ -868,19 +929,19 @@ template DOM(StringType)
             }
             Comment createComment(StringType text) const @nogc
             {
-                auto result = Comment();
+                auto result = Comment.emplace();
                 result.data = text;
                 return result;
             }
             CDATASection createCDataSection(StringType text) const @nogc
             {
-                auto result = CDATASection();
+                auto result = CDATASection.emplace();
                 result.data = text;
                 return result;
             }
-            ProcessingInclassion createProcessingInclassion(StringType target, StringType data) const @nogc
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const @nogc
             {
-                auto result = ProcessingInclassion();
+                auto result = ProcessingInstruction.emplace();
                 result.target = target;
                 result.data = data;
                 return result;
@@ -992,9 +1053,9 @@ template DOM(StringType)
             Node item(ulong index)
             {
                 if (index < attrs.keys.length)
-                    return Node(*(attrs.keys[index] in attrs));
+                    return *(attrs.keys[index] in attrs);
                 else
-                    return Node();
+                    return Node.Null;
             }
             
             Node getNamedItem(StringType name) @nogc
@@ -1014,17 +1075,17 @@ template DOM(StringType)
             {
                 auto key = Key(namespaceUri, localName);
                 if (key in attrs)
-                    return Node(*(key in attrs));
+                    return *(key in attrs);
                 else
-                    return Node();
+                    return Node.Null;
             }
             Node setNamedItemNS(Node arg)
             {
-                Attr attr = cast(Attr)arg;
+                Attr attr = arg.downCast!Attr;
                 auto key = Key(attr.namespaceUri, attr.localName);
                 auto oldAttr = (key in attrs) ? *(key in attrs) : Attr();
                 attrs[key] = attr;
-                return Node(oldAttr);
+                return oldAttr;
             }
             Node removeNamedItemNS(StringType namespaceUri, StringType localName)
             {
@@ -1033,7 +1094,7 @@ template DOM(StringType)
                 {
                     auto result = attrs.get(key, Attr());
                     attrs.remove(key);
-                    return Node(result);
+                    return result;
                 }
                 else
                     throw new DOMException(ExceptionCode.NOT_FOUND);
@@ -1065,7 +1126,7 @@ mixin template InjectDOM(StringType, string prefix = "", string suffix = "")
     mixin InjectClass!("Text", DOM!StringType.Text);
     mixin InjectClass!("Comment", DOM!StringType.Comment);
     mixin InjectClass!("CDATASection", DOM!StringType.CDATASection);
-    mixin InjectClass!("ProcessingInclassion", DOM!StringType.ProcessingInclassion);
+    mixin InjectClass!("ProcessingInstruction", DOM!StringType.ProcessingInstruction);
     mixin InjectClass!("Notation", DOM!StringType.Notation);
     mixin InjectClass!("Entity", DOM!StringType.Entity);
     mixin InjectClass!("EntityReference", DOM!StringType.EntityReference);
@@ -1082,6 +1143,6 @@ unittest
     element.setAttribute("myAttribute", "myValue");
     assert(element.getAttribute("myAttribute") == "myValue");
     auto text = document.createTextNode("Some useful insight...");
-    element.appendChild(Node(text));
+    element.appendChild(text);
     assert(element.firstChild.textContent == "Some useful insight...");
 }

@@ -31,7 +31,7 @@ struct SliceLexer(T)
     private size_t pos;
     private size_t begin;
     
-    void setSource(T input)
+    void setSource(T input) @nogc
     {
         this.input = input;
         pos = 0;
@@ -39,7 +39,7 @@ struct SliceLexer(T)
     
     static if(isForwardRange!T)
     {
-        auto save() const
+        auto save() const @nogc
         {
             SliceLexer result;
             result.input = input;
@@ -48,28 +48,28 @@ struct SliceLexer(T)
         }
     }
     
-    auto empty() const
+    auto empty() const @nogc
     {
         return pos >= input.length;
     }
     
-    void start()
+    void start() @nogc
     {
         begin = pos;
     }
     
-    CharacterType[] get() const
+    CharacterType[] get() const @nogc
     {
         return input[begin..pos];
     }
     
-    void dropWhile(string s)
+    void dropWhile(string s) @nogc
     {
         while (pos < input.length && fastIndexOf(s, input[pos]) != -1)
             pos++;
     }
     
-    bool testAndAdvance(char c)
+    bool testAndAdvance(char c) @nogc
     {
         if (input[pos] == c)
         {
@@ -79,7 +79,7 @@ struct SliceLexer(T)
         return false;
     }
     
-    void advanceUntil(char c, bool included)
+    void advanceUntil(char c, bool included) @nogc
     {
         auto adv = fastIndexOf(input[pos..$], c);
         if (adv != -1)
@@ -95,7 +95,7 @@ struct SliceLexer(T)
             pos++;
     }
     
-    size_t advanceUntilAny(string s, bool included)
+    size_t advanceUntilAny(string s, bool included) @nogc
     {
         ptrdiff_t res;
         while ((res = fastIndexOf(s, input[pos])) == -1)

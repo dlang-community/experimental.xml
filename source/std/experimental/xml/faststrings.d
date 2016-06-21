@@ -15,17 +15,13 @@
 module std.experimental.xml.faststrings;
 
 /++ Compares for equality; input slices must have equal length. +/
-pure bool fastEqual(T, S)(T[] t, S[] s)
+bool fastEqual(T, S)(T[] t, S[] s) pure @nogc nothrow
 in
 {
     assert(t.length == s.length);
 }
 body
 {
-    /*foreach (i; 0 .. t.length)
-        if (t[i] != s[i])
-            return false;
-    return true;*/
     import core.stdc.string: memcmp;
     return memcmp(t.ptr, s.ptr, t.length) == 0;
 }
@@ -38,7 +34,7 @@ unittest
 }
 
 /++ Returns the index of the first occurrence of a value in a slice. +/
-pure ptrdiff_t fastIndexOf(T, S)(T[] t, S s)
+ptrdiff_t fastIndexOf(T, S)(T[] t, S s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (t[i] == s)
@@ -55,7 +51,7 @@ unittest
 + Returns the index of the first occurrence of any of the values in the second
 + slice inside the first one.
 +/
-pure ptrdiff_t fastIndexOfAny(T, S)(T[] t, S[] s)
+ptrdiff_t fastIndexOfAny(T, S)(T[] t, S[] s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) != -1)
@@ -72,7 +68,7 @@ unittest
 + Returns the index of the first occurrence of a value of the first slice that
 + does not appear in the second.
 +/
-pure ptrdiff_t fastIndexOfNeither(T, S)(T[] t, S[] s)
+ptrdiff_t fastIndexOfNeither(T, S)(T[] t, S[] s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) == -1)
