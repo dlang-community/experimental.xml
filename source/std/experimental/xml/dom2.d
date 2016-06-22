@@ -8,7 +8,7 @@
 /++
 +   An implementation of the W3C DOM Level 3 specification.
 +   It tries to differ as little as practically possible from the specification,
-+   while also adding some useful and more idiomatic conclasss.
++   while also adding some useful and more idiomatic constructs.
 +/
 
 module std.experimental.xml.dom2;
@@ -23,7 +23,7 @@ struct RefCounted(T, bool _userVisible = false)
     import std.typecons: Rebindable;
     
     static shared AffixAllocator!(Mallocator, size_t) _p_alloc;
-    static this()
+    static this() @nogc
     {
         _p_alloc = _p_alloc.instance;
     }
@@ -40,19 +40,19 @@ struct RefCounted(T, bool _userVisible = false)
         {
             alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), _userVisible);
         }
-        SuperType superType()
+        SuperType superType() @nogc
         {
             return SuperType(_p_data);
         }
         alias superType this;
     }
     
-    private void[] _p_dataBlock() const
+    private void[] _p_dataBlock() const @nogc
     {
         void[] result = (cast(ubyte*)cast(void*)_p_data)[0..T.sizeof];
         return result;
     }
-    private void _p_incr()
+    private void _p_incr() @nogc
     {
         if (_p_data)
         {
@@ -61,7 +61,7 @@ struct RefCounted(T, bool _userVisible = false)
                 _p_data.incrVisibleRefCount;
         }
     }
-    private void _p_decr()
+    private void _p_decr() @nogc
     {
         if (_p_data)
         {
@@ -72,46 +72,46 @@ struct RefCounted(T, bool _userVisible = false)
         }
     }
     
-    this(T payload)
+    this(T payload) @nogc
     {
         _p_data = payload;
         _p_incr;
     }
-    this(this)
+    this(this) @nogc
     {
         _p_incr;
     }
-    ~this()
+    ~this() @nogc
     {
         _p_decr;
     }
     
-    bool opEquals(typeof(null) other) const
+    bool opEquals(typeof(null) other) const @nogc
     {
         return _p_data is null;
     }
-    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, visibility) other) const
+    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, visibility) other) const @nogc
     {
         return _p_data is other._p_data;
     }
-    bool opCast(T: bool)() const
+    bool opCast(T: bool)() const @nogc
     {
         return (_p_data)?true:false;
     }
     
-    void opAssign(typeof(null) other)
+    void opAssign(typeof(null) other) @nogc
     {
         _p_decr;
         _p_data = null;
     }
-    void opAssign(U, bool visibility)(auto ref RefCounted!(U, visibility) other)
+    void opAssign(U, bool visibility)(auto ref RefCounted!(U, visibility) other) @nogc
     {
         _p_decr;
         _p_data = other._p_data;
         _p_incr;
     }
     
-    static RefCounted emplace(Args...)(auto ref Args args)
+    static RefCounted emplace(Args...)(auto ref Args args) @nogc
     {
         RefCounted result;
         result._p_data = _p_alloc.make!T(args);
@@ -122,23 +122,25 @@ struct RefCounted(T, bool _userVisible = false)
         _p_alloc.prefix(result._p_dataBlock) = 1;
         return result;
     }
-    static RefCounted Null()
+    static RefCounted Null() @nogc
     {
         RefCounted result;
         result._p_data = null;
         return result;
     }
     
-    RefCounted!(T, true) userVisible()
+    alias UserVisible = RefCounted!(T, true);
+    UserVisible userVisible() @nogc
     {
-        return RefCounted!(T, true)(_p_data);
+        return UserVisible(_p_data);
     }
-    RefCounted!(T, false) libInternal()
+    alias LibInternal = RefCounted!(T, false);
+    LibInternal libInternal() @nogc
     {
-        return RefCounted!(T, false)(_p_data);
+        return LibInternal(_p_data);
     }
     
-    RefCounted!(U, _userVisible) downCast(RC: RefCounted!(U, _userVisible), U)()
+    RefCounted!(U, _userVisible) downCast(RC: RefCounted!(U, _userVisible), U)() @nogc
     {
         return RefCounted!(U, _userVisible)(cast(U)_p_data);
     }
@@ -229,8 +231,8 @@ template DOM(StringType)
 {
     alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
     
-    alias ConstNode = RefCounted!(const _Node);
-    alias Node = RefCounted!_Node;
+    alias Node = RefCounted!(_Node, true);
+    alias WeakNode = RefCounted!_Node;
     abstract class _Node
     {
         // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
@@ -489,12 +491,13 @@ template DOM(StringType)
         // REF COUNTING
         final
         {
-            void incrVisibleRefCount() const {}
-            void decrVisibleRefCount() const {}
+            void incrVisibleRefCount() const @nogc {}
+            void decrVisibleRefCount() const @nogc {}
         }
     }
 
-    alias Attr = RefCounted!_Attr;
+    alias Attr = RefCounted!(_Attr, true);
+    alias WeakAttr = RefCounted!_Attr;
     class _Attr: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -565,7 +568,8 @@ template DOM(StringType)
         }
     }
 
-    alias CharacterData = RefCounted!_CharacterData;
+    alias CharacterData = RefCounted!(_CharacterData, true);
+    alias WeakCharacterData = RefCounted!_CharacterData;
     class _CharacterData: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -635,7 +639,8 @@ template DOM(StringType)
         }
     }
 
-    alias Comment = RefCounted!_Comment;
+    alias Comment = RefCounted!(_Comment, true);
+    alias WeakComment = RefCounted!_Comment;
     class _Comment: _CharacterData
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -646,7 +651,8 @@ template DOM(StringType)
         }
     }
 
-    alias Text = RefCounted!_Text;
+    alias Text = RefCounted!(_Text, true);
+    alias WeakText = RefCounted!_Text;
     class _Text: _CharacterData
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -681,7 +687,8 @@ template DOM(StringType)
         }
     }
 
-    alias CDATASection = RefCounted!_CDATASection;
+    alias CDATASection = RefCounted!(_CDATASection, true);
+    alias WeakCDATASection = RefCounted!_CDATASection;
     class _CDATASection: _Text
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -692,7 +699,8 @@ template DOM(StringType)
         }
     }
 
-    alias ProcessingInstruction = RefCounted!_ProcessingInstruction;
+    alias ProcessingInstruction = RefCounted!(_ProcessingInstruction, true);
+    alias WeakProcessingInstruction = RefCounted!_ProcessingInstruction;
     class _ProcessingInstruction: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -710,7 +718,8 @@ template DOM(StringType)
         }
     }
     
-    alias EntityReference = RefCounted!_EntityReference;
+    alias EntityReference = RefCounted!(_EntityReference, true);
+    alias WeakEntityReference = RefCounted!_EntityReference;
     class _EntityReference: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -721,7 +730,8 @@ template DOM(StringType)
         }
     }
 
-    alias Entity = RefCounted!_Entity;
+    alias Entity = RefCounted!(_Entity, true);
+    alias WeakEntity = RefCounted!_Entity;
     class _Entity: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -742,7 +752,8 @@ template DOM(StringType)
         }
     }
 
-    alias Notation = RefCounted!_Notation;
+    alias Notation = RefCounted!(_Notation, true);
+    alias WeakNotation = RefCounted!_Notation;
     class _Notation: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -759,7 +770,8 @@ template DOM(StringType)
         }
     }
     
-    alias DocumentType = RefCounted!_DocumentType;
+    alias DocumentType = RefCounted!(_DocumentType, true);
+    alias WeakDocumentType = RefCounted!_DocumentType;
     class _DocumentType: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -779,7 +791,8 @@ template DOM(StringType)
         }
     }
 
-    alias Element = RefCounted!_Element;
+    alias Element = RefCounted!(_Element, true);
+    alias WeakElement = RefCounted!_Element;
     class _Element: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -892,7 +905,8 @@ template DOM(StringType)
         }
     }
 
-    alias Document = RefCounted!_Document;
+    alias Document = RefCounted!(_Document, true);
+    alias WeakDocument = RefCounted!_Document;
     class _Document: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -999,7 +1013,8 @@ template DOM(StringType)
         }
     }
     
-    alias DocumentFragment = RefCounted!_DocumentFragment;
+    alias DocumentFragment = RefCounted!(_DocumentFragment, true);
+    alias WeakDocumentFragment = RefCounted!_DocumentFragment;
     class _DocumentFragment: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -1111,6 +1126,7 @@ template DOM(StringType)
     struct DOMConfiguration
     {
     }
+    
 }
 
 mixin template InjectDOM(StringType, string prefix = "", string suffix = "")
