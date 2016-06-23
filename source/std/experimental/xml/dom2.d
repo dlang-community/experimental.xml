@@ -13,16 +13,17 @@
 
 module std.experimental.xml.dom2;
 
-struct RefCounted(T, bool _userVisible = false)
+import std.conv: to;
+
+struct RefCounted(T, Alloc, bool _userVisible = false)
     if (is(T == class))
 {
-    import std.experimental.allocator.mallocator;
     import std.experimental.allocator.building_blocks.affix_allocator;
     import std.experimental.allocator;
     import std.traits: BaseClassesTuple, Unqual, CopyTypeQualifiers;
     import std.typecons: Rebindable;
     
-    static shared AffixAllocator!(Mallocator, size_t) _p_alloc;
+    static shared AffixAllocator!(Alloc, size_t) _p_alloc;
     static this() @nogc
     {
         _p_alloc = _p_alloc.instance;
@@ -33,13 +34,10 @@ struct RefCounted(T, bool _userVisible = false)
     static if (!is(Unqual!T == Object))
     {
         static if (is(BaseClassesTuple!(Unqual!T)[0]))
-        {
-            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, BaseClassesTuple!(Unqual!T)[0]), _userVisible);
-        }
+            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, BaseClassesTuple!(Unqual!T)[0]), Alloc, _userVisible);
         else
-        {
-            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), _userVisible);
-        }
+            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), Alloc, _userVisible);
+            
         SuperType superType() @nogc
         {
             return SuperType(_p_data);
@@ -72,6 +70,10 @@ struct RefCounted(T, bool _userVisible = false)
         }
     }
     
+    this(typeof(null)) @nogc
+    {
+        _p_data = null;
+    }
     this(T payload) @nogc
     {
         _p_data = payload;
@@ -90,7 +92,7 @@ struct RefCounted(T, bool _userVisible = false)
     {
         return _p_data is null;
     }
-    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, visibility) other) const @nogc
+    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, Alloc, visibility) other) const @nogc
     {
         return _p_data is other._p_data;
     }
@@ -104,7 +106,7 @@ struct RefCounted(T, bool _userVisible = false)
         _p_decr;
         _p_data = null;
     }
-    void opAssign(U, bool visibility)(auto ref RefCounted!(U, visibility) other) @nogc
+    void opAssign(U, bool visibility)(auto ref RefCounted!(U, Alloc, visibility) other) @nogc
     {
         _p_decr;
         _p_data = other._p_data;
@@ -129,20 +131,20 @@ struct RefCounted(T, bool _userVisible = false)
         return result;
     }
     
-    alias UserVisible = RefCounted!(T, true);
+    alias UserVisible = RefCounted!(T, Alloc, true);
     UserVisible userVisible() @nogc
     {
         return UserVisible(_p_data);
     }
-    alias LibInternal = RefCounted!(T, false);
+    alias LibInternal = RefCounted!(T, Alloc, false);
     LibInternal libInternal() @nogc
     {
         return LibInternal(_p_data);
     }
     
-    RefCounted!(U, _userVisible) downCast(RC: RefCounted!(U, _userVisible), U)() @nogc
+    RefCounted!(U, Alloc, _userVisible) downCast(RC: RefCounted!(U, Alloc, _userVisible), U)() @nogc
     {
-        return RefCounted!(U, _userVisible)(cast(U)_p_data);
+        return RefCounted!(U, Alloc, _userVisible)(cast(U)_p_data);
     }
     
     @property auto opDispatch(string name, Arg)(Arg arg)
@@ -163,7 +165,7 @@ import std.variant: Variant;
 
 alias UserData = Variant;
 
-enum NodeType
+enum NodeType: ushort
 {
     ELEMENT = 1,
     ATTRIBUTE,
@@ -178,7 +180,7 @@ enum NodeType
     DOCUMENT_FRAGMENT,
     NOTATION,
 }
-enum DocumentPosition
+enum DocumentPosition: ushort
 {
     DISCONNECTED,
     PRECEDING,
@@ -187,7 +189,7 @@ enum DocumentPosition
     CONTAINED_BY,
     IMPLEMENTATION_SPECIFIC,
 }
-enum UserDataOperation
+enum UserDataOperation: ushort
 {
     NODE_CLONED,
     NODE_IMPORTED,
@@ -196,7 +198,7 @@ enum UserDataOperation
     NODE_ADOPTED,
 }
 
-enum ExceptionCode
+enum ExceptionCode: ushort
 {
     INDEX_SIZE = 1,
     DOMSTRING_SIZE,
@@ -227,12 +229,92 @@ class DOMException: Exception
     }
 }
 
-template DOM(StringType)
+template DOM(StringType, Alloc = typeof(null))
 {
+    // We are using a custom allocator and reference counting
+    static if (!is(Alloc == typeof(null)))
+    {
+        // Types to be used in public APIs and user code; they keep the DOM trees alive
+        alias Node = RefCounted!(_Node, Alloc, true);
+        alias Attr = RefCounted!(_Attr, Alloc, true);
+        alias CharacterData = RefCounted!(_CharacterData, Alloc, true);
+        alias Comment = RefCounted!(_Comment, Alloc, true);
+        alias Text = RefCounted!(_Text, Alloc, true);
+        alias CDATASection = RefCounted!(_CDATASection, Alloc, true);
+        alias ProcessingInstruction = RefCounted!(_ProcessingInstruction, Alloc, true);
+        alias EntityReference = RefCounted!(_EntityReference, Alloc, true);
+        alias Entity = RefCounted!(_Entity, Alloc, true);
+        alias Notation = RefCounted!(_Notation, Alloc, true);
+        alias DocumentType = RefCounted!(_DocumentType, Alloc, true);
+        alias Element = RefCounted!(_Element, Alloc, true);
+        alias Document = RefCounted!(_Document, Alloc, true);
+        alias DocumentFragment = RefCounted!(_DocumentFragment, Alloc, true);
+        
+        // Types to be used internally; they do not keep the DOM alive and are needed to avoid
+        // circular references that prevent deallocation
+        alias WeakNode = RefCounted!(_Node, Alloc);
+        alias WeakAttr = RefCounted!(_Attr, Alloc);
+        alias WeakCharacterData = RefCounted!(_CharacterData, Alloc);
+        alias WeakComment = RefCounted!(_Comment, Alloc);
+        alias WeakText = RefCounted!(_Text, Alloc);
+        alias WeakCDATASection = RefCounted!(_CDATASection, Alloc);
+        alias WeakProcessingInstruction = RefCounted!(_ProcessingInstruction, Alloc);
+        alias WeakEntityReference = RefCounted!(_EntityReference, Alloc);
+        alias WeakEntity = RefCounted!(_Entity, Alloc);
+        alias WeakNotation = RefCounted!(_Notation, Alloc);
+        alias WeakDocumentType = RefCounted!(_DocumentType, Alloc);
+        alias WeakElement = RefCounted!(_Element, Alloc);
+        alias WeakDocument = RefCounted!(_Document, Alloc);
+        alias WeakDocumentFragment = RefCounted!(_DocumentFragment, Alloc);
+        
+        // others
+        alias NodeList = RefCounted!(_NodeList, Alloc);
+        alias NamedNodeMap = RefCounted!(_NamedNodeMap, Alloc);
+        alias NamedNodeMapImpl_ElementAttributes = RefCounted!(_NamedNodeMapImpl_ElementAttributes, Alloc);
+    }
+    // we are using the gc
+    else
+    {
+        alias Node = _Node;
+        alias Attr = _Attr;
+        alias CharacterData = _CharacterData;
+        alias Comment = _Comment;
+        alias Text = _Text;
+        alias CDATASection = _CDATASection;
+        alias ProcessingInstruction = _ProcessingInstruction;
+        alias EntityReference = _EntityReference;
+        alias Entity = _Entity;
+        alias Notation = _Notation;
+        alias DocumentType = _DocumentType;
+        alias Element = _Element;
+        alias Document = _Document;
+        alias DocumentFragment = _DocumentFragment;
+        
+        alias WeakNode = _Node;
+        alias WeakAttr = _Attr;
+        alias WeakCharacterData = _CharacterData;
+        alias WeakComment = _Comment;
+        alias WeakText = _Text;
+        alias WeakCDATASection = _CDATASection;
+        alias WeakProcessingInstruction = _ProcessingInstruction;
+        alias WeakEntityReference = _EntityReference;
+        alias WeakEntity = _Entity;
+        alias WeakNotation = _Notation;
+        alias WeakDocumentType = _DocumentType;
+        alias WeakElement = _Element;
+        alias WeakDocument = _Document;
+        alias WeakDocumentFragment = _DocumentFragment;
+        
+        alias NodeList = _NodeList;
+        alias NamedNodeMap = _NamedNodeMap;
+        alias NamedNodeMapImpl_ElementAttributes = _NamedNodeMapImpl_ElementAttributes;
+        
+        T userVisible(T)(auto ref T val) { return val; }
+        T libInternal(T)(auto ref T val) { return val; }
+    }
+    
     alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
     
-    alias Node = RefCounted!(_Node, true);
-    alias WeakNode = RefCounted!_Node;
     abstract class _Node
     {
         // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
@@ -270,7 +352,7 @@ template DOM(StringType)
         // REQUIRED BY THE STANDARD; IMPLEMENTED HERE, CAN BE OVERRIDDEN
         public
         {
-            @property NamedNodeMap attributes() { return NamedNodeMap.Null; }
+            @property NamedNodeMap attributes() { return to!NamedNodeMap(null); }
             StringType localName() const @nogc { return null; }
             @property StringType nodeValue() { return null; }
             @property void nodeValue(StringType newValue) {}
@@ -422,25 +504,25 @@ template DOM(StringType)
                     }
                     Node opIndex(size_t i) { return item(i); }
                 }
-                alias ChildNodeList = RefCounted!(_ChildNodeList);
+                alias ChildNodeList = RefCounted!(_ChildNodeList, Alloc);
                 auto cnl = ChildNodeList.emplace();
                 cnl.parent = Node(this);
                 return cnl;
             }
-            @property inout(Node) firstChild() inout { return _firstChild; }
-            @property inout(Node) lastChild() inout { return _lastChild; }
-            @property inout(Node) nextSibling() inout { return _nextSibling; }
-            @property inout(Document) ownerDocument() inout { return _ownerDocument; }
-            @property inout(Node) parentNode() inout { return _parentNode; }
-            @property inout(Node) previousSibling() inout { return _previousSibling; }
+            @property Node firstChild() { return _firstChild.userVisible; }
+            @property Node lastChild() { return _lastChild.userVisible; }
+            @property Node nextSibling() { return _nextSibling.userVisible; }
+            @property Document ownerDocument() { return _ownerDocument.userVisible; }
+            @property Node parentNode() { return _parentNode.userVisible; }
+            @property Node previousSibling() { return _previousSibling.userVisible; }
             
             bool hasChildNodes() const @nogc
             {
-                return firstChild != null;
+                return _firstChild != null;
             }
-            bool isSameNode(in Node other) const @nogc
+            bool isSameNode(in Node other) @nogc
             {
-                return RefCounted!(const _Node)(this) == other;
+                return Node(this) == other;
             }
             Node removeChild(Node oldChild)
             {
@@ -461,16 +543,15 @@ template DOM(StringType)
                 return oldChild;
             }
         }
-        private Node _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
-        private NamedNodeMap _attributes;
-        private Document _ownerDocument;
+        private WeakNode _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
+        private WeakDocument _ownerDocument;
         private UserData[string] userData;
         private UserDataHandler[string] userDataHandlers;
         
         // NOT REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
         public final
         {
-            void remove()
+            void removeFromParent()
             {
                 if (_parentNode)
                     parentNode.removeChild(Node(this));
@@ -488,16 +569,50 @@ template DOM(StringType)
             }
         }
         
-        // REF COUNTING
-        final
+        // internal reference counting code
+        private
         {
-            void incrVisibleRefCount() const @nogc {}
-            void decrVisibleRefCount() const @nogc {}
+            size_t refCount;
+            final void incrVisibleRefCount(size_t count = 1) @nogc
+            {
+                refCount += count;
+                WeakNode parent = getParent;
+                if (parent != null)
+                    parent.incrVisibleRefCount(count);
+            }
+            final void decrVisibleRefCount(size_t count = 1) @nogc
+            {
+                refCount -= count;
+                WeakNode parent = getParent();
+                if (parent != null)
+                    parent.decrVisibleRefCount(count);
+                else if (refCount == 0)
+                    destroyInternalReferences;
+            }
+            final void detachFromParent() @nogc
+            {
+                WeakNode parent = getParent;
+                if (parent != null)
+                    parent.decrVisibleRefCount(refCount);
+            }
+            final void attachToParent() @nogc
+            {
+                WeakNode parent = getParent;
+                if (parent != null)
+                    parent.incrVisibleRefCount(refCount);
+            }
+            WeakNode getParent() @nogc
+            {
+                return _parentNode;
+            }
+            void destroyInternalReferences()
+            {
+                // should contain code to delete all internal references,
+                // so that RefCounted can reclaim memory.
+            }
         }
     }
-
-    alias Attr = RefCounted!(_Attr, true);
-    alias WeakAttr = RefCounted!_Attr;
+    
     class _Attr: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -526,7 +641,7 @@ template DOM(StringType)
                 while (child)
                 {
                     auto nextChild = child.nextSibling;
-                    child.remove();
+                    child.removeFromParent;
                     child = nextChild;
                 }
                 _lastChild = ownerDocument.createTextNode(newValue);
@@ -563,13 +678,11 @@ template DOM(StringType)
             StringType _name, _namespaceUri;
             size_t _prefix_end;
             bool _specified, _isId;
-            Element _ownerElement;
+            WeakElement _ownerElement;
             TypeInfo _schemaTypeInfo;
         }
     }
 
-    alias CharacterData = RefCounted!(_CharacterData, true);
-    alias WeakCharacterData = RefCounted!_CharacterData;
     class _CharacterData: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -639,8 +752,6 @@ template DOM(StringType)
         }
     }
 
-    alias Comment = RefCounted!(_Comment, true);
-    alias WeakComment = RefCounted!_Comment;
     class _Comment: _CharacterData
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -651,8 +762,6 @@ template DOM(StringType)
         }
     }
 
-    alias Text = RefCounted!(_Text, true);
-    alias WeakText = RefCounted!_Text;
     class _Text: _CharacterData
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -687,8 +796,6 @@ template DOM(StringType)
         }
     }
 
-    alias CDATASection = RefCounted!(_CDATASection, true);
-    alias WeakCDATASection = RefCounted!_CDATASection;
     class _CDATASection: _Text
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -699,8 +806,6 @@ template DOM(StringType)
         }
     }
 
-    alias ProcessingInstruction = RefCounted!(_ProcessingInstruction, true);
-    alias WeakProcessingInstruction = RefCounted!_ProcessingInstruction;
     class _ProcessingInstruction: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -718,8 +823,6 @@ template DOM(StringType)
         }
     }
     
-    alias EntityReference = RefCounted!(_EntityReference, true);
-    alias WeakEntityReference = RefCounted!_EntityReference;
     class _EntityReference: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -730,8 +833,6 @@ template DOM(StringType)
         }
     }
 
-    alias Entity = RefCounted!(_Entity, true);
-    alias WeakEntity = RefCounted!_Entity;
     class _Entity: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -752,8 +853,6 @@ template DOM(StringType)
         }
     }
 
-    alias Notation = RefCounted!(_Notation, true);
-    alias WeakNotation = RefCounted!_Notation;
     class _Notation: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -770,8 +869,6 @@ template DOM(StringType)
         }
     }
     
-    alias DocumentType = RefCounted!(_DocumentType, true);
-    alias WeakDocumentType = RefCounted!_DocumentType;
     class _DocumentType: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -791,8 +888,6 @@ template DOM(StringType)
         }
     }
 
-    alias Element = RefCounted!(_Element, true);
-    alias WeakElement = RefCounted!_Element;
     class _Element: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -905,8 +1000,6 @@ template DOM(StringType)
         }
     }
 
-    alias Document = RefCounted!(_Document, true);
-    alias WeakDocument = RefCounted!_Document;
     class _Document: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -1013,8 +1106,6 @@ template DOM(StringType)
         }
     }
     
-    alias DocumentFragment = RefCounted!(_DocumentFragment, true);
-    alias WeakDocumentFragment = RefCounted!_DocumentFragment;
     class _DocumentFragment: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -1025,7 +1116,6 @@ template DOM(StringType)
         }
     }
     
-    alias NodeList = RefCounted!_NodeList;
     abstract class _NodeList
     {
         // REQUIRED BY THE STANDARD
@@ -1036,7 +1126,6 @@ template DOM(StringType)
         }
     }
     
-    alias NamedNodeMap = RefCounted!_NamedNodeMap;
     abstract class _NamedNodeMap
     {
         // REQUIRED BY THE STANDARD
@@ -1055,7 +1144,6 @@ template DOM(StringType)
         }
     }
     
-    alias NamedNodeMapImpl_ElementAttributes = RefCounted!_NamedNodeMapImpl_ElementAttributes;
     private class _NamedNodeMapImpl_ElementAttributes: _NamedNodeMap
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -1092,7 +1180,7 @@ template DOM(StringType)
                 if (key in attrs)
                     return *(key in attrs);
                 else
-                    return Node.Null;
+                    return Attr.Null;
             }
             Node setNamedItemNS(Node arg)
             {
@@ -1129,31 +1217,33 @@ template DOM(StringType)
     
 }
 
-mixin template InjectDOM(StringType, string prefix = "", string suffix = "")
+mixin template InjectDOM(StringType, Alloc = typeof(null), string prefix = "", string suffix = "")
 {
     private mixin template InjectClass(string name, T)
     {
         mixin ("alias " ~ prefix ~ name ~ suffix ~ " = T;");
     }
-    mixin InjectClass!("Node", DOM!StringType.Node);
-    mixin InjectClass!("Attr", DOM!StringType.Attr);
-    mixin InjectClass!("Element", DOM!StringType.Element);
-    mixin InjectClass!("CharacterData", DOM!StringType.CharacterData);
-    mixin InjectClass!("Text", DOM!StringType.Text);
-    mixin InjectClass!("Comment", DOM!StringType.Comment);
-    mixin InjectClass!("CDATASection", DOM!StringType.CDATASection);
-    mixin InjectClass!("ProcessingInstruction", DOM!StringType.ProcessingInstruction);
-    mixin InjectClass!("Notation", DOM!StringType.Notation);
-    mixin InjectClass!("Entity", DOM!StringType.Entity);
-    mixin InjectClass!("EntityReference", DOM!StringType.EntityReference);
-    mixin InjectClass!("Document", DOM!StringType.Document);
-    mixin InjectClass!("DocumentFragment", DOM!StringType.DocumentFragment);
-    mixin InjectClass!("DocumentType", DOM!StringType.DocumentType);
+    private alias _DOM = DOM!(StringType, Alloc);
+    mixin InjectClass!("Node", _DOM.Node);
+    mixin InjectClass!("Attr", _DOM.Attr);
+    mixin InjectClass!("Element", _DOM.Element);
+    mixin InjectClass!("CharacterData", _DOM.CharacterData);
+    mixin InjectClass!("Text", _DOM.Text);
+    mixin InjectClass!("Comment", _DOM.Comment);
+    mixin InjectClass!("CDATASection", _DOM.CDATASection);
+    mixin InjectClass!("ProcessingInstruction", _DOM.ProcessingInstruction);
+    mixin InjectClass!("Notation", _DOM.Notation);
+    mixin InjectClass!("Entity", _DOM.Entity);
+    mixin InjectClass!("EntityReference", _DOM.EntityReference);
+    mixin InjectClass!("Document", _DOM.Document);
+    mixin InjectClass!("DocumentFragment", _DOM.DocumentFragment);
+    mixin InjectClass!("DocumentType", _DOM.DocumentType);
 }
 
 unittest
 {
-    mixin InjectDOM!string;
+    import std.experimental.allocator.mallocator;
+    mixin InjectDOM!(string, Mallocator);
     auto document = Document.emplace();
     auto element = document.createElement("myElement");
     element.setAttribute("myAttribute", "myValue");
