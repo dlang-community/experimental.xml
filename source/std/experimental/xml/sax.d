@@ -11,6 +11,7 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
 struct SAXParser(T, alias H)
+    if (isXMLCursor!T)
 {
     static if (__traits(isTemplate, H))
         alias HandlerType = H!T;
@@ -18,7 +19,7 @@ struct SAXParser(T, alias H)
         alias HandlerType = H;
         
     private T cursor;
-    HandlerType handler;
+    public HandlerType handler;
     
     /++
     +   Initializes this parser (and the underlying low level one) with the given input.
@@ -26,54 +27,6 @@ struct SAXParser(T, alias H)
     void setSource(T.InputType input)
     {
         cursor.setSource(input);
-    }
-    
-    /++ Sets the handler for this parser +/
-    void setHandler(HandlerType handler)
-    {
-        this.handler = handler;
-    }
-    
-    /++ Works as the corresponding method in XMLCursor. +/
-    auto getName()
-    {
-        return cursor.getName();
-    }
-    
-    /++ ditto +/
-    auto getLocalName()
-    {
-        return cursor.getLocalName();
-    }
-    
-    /++ ditto +/
-    auto getPrefix()
-    {
-        return cursor.getPrefix();
-    }
-    
-    /++ ditto +/
-    auto getAttributes()
-    {
-        return cursor.getAttributes();
-    }
-    
-    /++ ditto +/
-    auto getNamespaceDefinitions()
-    {
-        return cursor.getNamespaceDefinitions();
-    }
-    
-    /++ ditto +/
-    auto getText()
-    {
-        return cursor.getText();
-    }
-    
-    /++ ditto +/
-    auto hasChildren()
-    {
-        return cursor.hasChildren();
     }
     
     /++
