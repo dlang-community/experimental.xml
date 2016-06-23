@@ -17,7 +17,7 @@ import std.experimental.xml.cursor;
 +   subtrees of the document, or connecting some nodes directly to their grand-parents,
 +   skipping one layer of the hierarchy.
 +/
-struct DOMBuilder(T)
+struct DOMBuilder(T, Alloc)
     if (isLowLevelParser!T)
 {   
     /++
@@ -42,5 +42,5 @@ struct DOMBuilder(T)
     void buildRecursive();
     
     /++ Returns the DOM tree built by this builder. +/
-    Document!StringType getDOMTree() const;
+    DOM!(StringType, Alloc).Document getDOMTree() const;
 }

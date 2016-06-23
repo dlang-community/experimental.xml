@@ -10,21 +10,20 @@ module std.experimental.xml.sax;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
-class SAXParser(T, alias H)
-    if (isLowLevelParser!T)
+struct SAXParser(T, alias H)
 {
     static if (__traits(isTemplate, H))
-        alias HandlerType = H!(T.CharacterType[]);
+        alias HandlerType = H!T;
     else
         alias HandlerType = H;
         
-    private XMLCursor!T cursor;
-    private HandlerType handler;
+    private T cursor;
+    HandlerType handler;
     
     /++
     +   Initializes this parser (and the underlying low level one) with the given input.
     +/
-    void setSource(typeof(XMLCursor!T).InputType input)
+    void setSource(T.InputType input)
     {
         cursor.setSource(input);
     }
@@ -36,39 +35,45 @@ class SAXParser(T, alias H)
     }
     
     /++ Works as the corresponding method in XMLCursor. +/
-    auto getName() const
+    auto getName()
     {
         return cursor.getName();
     }
     
     /++ ditto +/
-    auto getLocalName() const
+    auto getLocalName()
     {
         return cursor.getLocalName();
     }
     
     /++ ditto +/
-    auto getPrefix() const
+    auto getPrefix()
     {
         return cursor.getPrefix();
     }
     
     /++ ditto +/
-    auto getAttributes() const
+    auto getAttributes()
     {
         return cursor.getAttributes();
     }
     
     /++ ditto +/
-    auto getNamespaceDefinitions() const
+    auto getNamespaceDefinitions()
     {
         return cursor.getNamespaceDefinitions();
     }
     
     /++ ditto +/
-    auto getText() const
+    auto getText()
     {
         return cursor.getText();
+    }
+    
+    /++ ditto +/
+    auto hasChildren()
+    {
+        return cursor.hasChildren();
     }
     
     /++
@@ -78,44 +83,101 @@ class SAXParser(T, alias H)
     +/
     void processDocument()
     {
-        while (!cursor.endDocument())
+        while (!cursor.documentEnd)
         {
-            final switch (cursor.getKind())
+            switch (cursor.getKind)
             {
-                case DOCUMENT:
-                    static if (__traits(compiles, handler.onDocument(this)))
-                        handler.onDocument(this);
+                case XMLKind.DOCUMENT:
+                    static if (__traits(compiles, handler.onDocument(cursor)))
+                        handler.onDocument(cursor);
                     break;
-                case ELEMENT_START:
-                    static if (__traits(compiles, handler.onElementStart(this)))
-                        handler.onElementStart(this);
+                case XMLKind.ELEMENT_START:
+                    static if (__traits(compiles, handler.onElementStart(cursor)))
+                        handler.onElementStart(cursor);
                     break;
-                case ELEMENT_END:
-                    static if (__traits(compiles, handler.onElementEnd(this)))
-                        handler.onElementEnd(this);
+                case XMLKind.ELEMENT_END:
+                    static if (__traits(compiles, handler.onElementEnd(cursor)))
+                        handler.onElementEnd(cursor);
                     break;
-                case ELEMENT_EMPTY:
-                    static if (__traits(compiles, handler.onElementEmpty(this)))
-                        handler.onElementEmpty(this);
+                case XMLKind.ELEMENT_EMPTY:
+                    static if (__traits(compiles, handler.onElementEmpty(cursor)))
+                        handler.onElementEmpty(cursor);
                     break;
-                case TEXT:
-                    static if (__traits(compiles, handler.onText(this)))
-                        handler.onText(this);
+                case XMLKind.TEXT:
+                    static if (__traits(compiles, handler.onText(cursor)))
+                        handler.onText(cursor);
                     break;
-                case COMMENT:
-                    static if (__traits(compiles, handler.onComment(this)))
-                        handler.onComment(this);
+                case XMLKind.COMMENT:
+                    static if (__traits(compiles, handler.onComment(cursor)))
+                        handler.onComment(cursor);
                     break;
-                case PROCESSING_INSTRUCTION:
-                    static if (__traits(compiles, handler.onProcessingInstruction(this)))
-                        handler.onProcessingInstruction(this);
+                case XMLKind.PROCESSING_INSTRUCTION:
+                    static if (__traits(compiles, handler.onProcessingInstruction(cursor)))
+                        handler.onProcessingInstruction(cursor);
                     break;
+                default: break;
             }
             
-            if (cursor.hasChildren())
-                cursor.enter();
-            else if (!cursor.next())
-                cursor.exit();
+            if (cursor.hasChildren)
+                cursor.enter;
+            else if (!cursor.next)
+                cursor.exit;
         }
     }
+}
+
+unittest
+{
+    import std.experimental.xml.parser;
+    import std.experimental.xml.lexers;
+
+    string xml = q{
+    <?xml encoding = "utf-8" ?>
+    <aaa xmlns:myns="something">
+        <myns:bbb myns:att='>'>
+            <!-- lol -->
+            Lots of Text!
+            On multiple lines!
+        </myns:bbb>
+        <![CDATA[ Ciaone! ]]>
+        <ccc/>
+    </aaa>
+    };
+    
+    struct MyHandler(T)
+    {
+        int max_nesting;
+        int current_nesting;
+        int total_invocations;
+        
+        void onElementStart(ref T node)
+        {
+            total_invocations++;
+            if (node.hasChildren)
+            {
+                current_nesting++;
+                if (current_nesting > max_nesting)
+                    max_nesting = current_nesting;
+            }
+        }
+        void onElementEnd(ref T node)
+        {
+            total_invocations++;
+            current_nesting--;
+        }
+        void onElementEmpty(ref T node) { total_invocations++; }
+        void onProcessingInstruction(ref T node) { total_invocations++; }
+        void onText(ref T node) { total_invocations++; }
+        void onDocument(ref T node) { total_invocations++; }
+        void onComment(ref T node) { total_invocations++; }
+    }
+    
+    auto parser = SAXParser!(XMLCursor!(Parser!(SliceLexer!string)), MyHandler)();
+    parser.setSource(xml);
+    
+    parser.processDocument();
+    
+    assert(parser.handler.max_nesting == 2);
+    assert(parser.handler.current_nesting == 0);
+    assert(parser.handler.total_invocations == 9);
 }

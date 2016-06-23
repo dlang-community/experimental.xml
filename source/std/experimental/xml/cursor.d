@@ -51,7 +51,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     
     private P parser;
     private ElementType!P currentNode;
-    private bool starting;
+    private bool starting, _documentEnd;
     private Attribute!StringType[] attributes;
     private NamespaceDeclaration!StringType[] namespaces;
     private bool attributesParsed;
@@ -119,7 +119,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     void setSource(InputType input)
     {
         parser.setSource(input);
-        if (!documentEnd)
+        if (!parser.empty)
         {
             if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && fastEqual(parser.front.content[0..3], "xml"))
                 advanceInput();
@@ -137,7 +137,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     /++ Returns whether the cursor is at the end of the document. +/
     bool documentEnd()
     {
-        return parser.empty();
+        return _documentEnd;
     }
     
     /++ Advances to the first child of the current node. +/
@@ -156,8 +156,10 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     void exit()
     {
         while (next()) {}
-        if (!documentEnd)
+        if (!parser.empty)
             advanceInput();
+        else
+            _documentEnd = true;
     }
     
     /++
@@ -167,7 +169,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     +/
     bool next()
     {
-        if (documentEnd || starting)
+        if (parser.empty || starting)
             return false;
         else if (currentNode.kind != XMLKind.ELEMENT_START)
         {
@@ -186,7 +188,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
                 else if (currentNode.kind == XMLKind.ELEMENT_END)
                     count--;
             }
-            if (documentEnd)
+            if (parser.empty)
                 return false;
             if (parser.front.kind == XMLKind.ELEMENT_END)
                 return false;
@@ -199,7 +201,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     bool hasChildren()
     {
         return starting ||
-              (currentNode.kind == XMLKind.ELEMENT_START && parser.front.kind != XMLKind.ELEMENT_END);
+              (currentNode.kind == XMLKind.ELEMENT_START && !parser.empty && parser.front.kind != XMLKind.ELEMENT_END);
     }
     
     /++ Returns the kind of the current node. +/
