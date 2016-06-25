@@ -15,151 +15,6 @@ module std.experimental.xml.dom2;
 
 import std.conv: to;
 
-struct RefCounted(T, Alloc, bool _userVisible = false)
-    if (is(T == class))
-{
-    import std.experimental.allocator.building_blocks.affix_allocator;
-    import std.experimental.allocator;
-    import std.traits: BaseClassesTuple, Unqual, CopyTypeQualifiers;
-    import std.typecons: Rebindable;
-    
-    static shared AffixAllocator!(Alloc, size_t) _p_alloc;
-    static this() @nogc
-    {
-        _p_alloc = _p_alloc.instance;
-    }
-
-    private Rebindable!T _p_data;
-    
-    static if (!is(Unqual!T == Object))
-    {
-        static if (is(BaseClassesTuple!(Unqual!T)[0]))
-            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, BaseClassesTuple!(Unqual!T)[0]), Alloc, _userVisible);
-        else
-            alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), Alloc, _userVisible);
-            
-        SuperType superType() @nogc
-        {
-            return SuperType(_p_data);
-        }
-        alias superType this;
-    }
-    
-    private void[] _p_dataBlock() const @nogc
-    {
-        void[] result = (cast(ubyte*)cast(void*)_p_data)[0..T.sizeof];
-        return result;
-    }
-    private void _p_incr() @nogc
-    {
-        if (_p_data)
-        {
-            _p_alloc.prefix(_p_dataBlock)++;
-            static if (_userVisible && is(typeof(T.incrVisibleRefCount)))
-                _p_data.incrVisibleRefCount;
-        }
-    }
-    private void _p_decr() @nogc
-    {
-        if (_p_data)
-        {
-            static if (_userVisible && is(typeof(T.decrVisibleRefCount)))
-                _p_data.decrVisibleRefCount;
-            if (--_p_alloc.prefix(_p_dataBlock) == 0)
-                _p_alloc.deallocate(_p_dataBlock);
-        }
-    }
-    
-    this(typeof(null)) @nogc
-    {
-        _p_data = null;
-    }
-    this(T payload) @nogc
-    {
-        _p_data = payload;
-        _p_incr;
-    }
-    this(this) @nogc
-    {
-        _p_incr;
-    }
-    ~this() @nogc
-    {
-        _p_decr;
-    }
-    
-    bool opEquals(typeof(null) other) const @nogc
-    {
-        return _p_data is null;
-    }
-    bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, Alloc, visibility) other) const @nogc
-    {
-        return _p_data is other._p_data;
-    }
-    bool opCast(T: bool)() const @nogc
-    {
-        return (_p_data)?true:false;
-    }
-    
-    void opAssign(typeof(null) other) @nogc
-    {
-        _p_decr;
-        _p_data = null;
-    }
-    void opAssign(U, bool visibility)(auto ref RefCounted!(U, Alloc, visibility) other) @nogc
-    {
-        _p_decr;
-        _p_data = other._p_data;
-        _p_incr;
-    }
-    
-    static RefCounted emplace(Args...)(auto ref Args args) @nogc
-    {
-        RefCounted result;
-        result._p_data = _p_alloc.make!T(args);
-        
-        import core.memory;
-        auto block = result._p_dataBlock;
-        GC.addRange(block.ptr, block.length, T.classinfo);
-        _p_alloc.prefix(result._p_dataBlock) = 1;
-        return result;
-    }
-    static RefCounted Null() @nogc
-    {
-        RefCounted result;
-        result._p_data = null;
-        return result;
-    }
-    
-    alias UserVisible = RefCounted!(T, Alloc, true);
-    UserVisible userVisible() @nogc
-    {
-        return UserVisible(_p_data);
-    }
-    alias LibInternal = RefCounted!(T, Alloc, false);
-    LibInternal libInternal() @nogc
-    {
-        return LibInternal(_p_data);
-    }
-    
-    RefCounted!(U, Alloc, _userVisible) downCast(RC: RefCounted!(U, Alloc, _userVisible), U)() @nogc
-    {
-        return RefCounted!(U, Alloc, _userVisible)(cast(U)_p_data);
-    }
-    
-    @property auto opDispatch(string name, Arg)(Arg arg)
-    {
-        mixin("return _p_data." ~ name ~ " = arg;");
-    }
-    auto opDispatch(string name, Args...)(Args args)
-    {
-        static if (Args.length > 0)
-            mixin("return _p_data." ~ name ~ "(args);");
-        else
-            mixin("return _p_data." ~ name ~ ";");
-    }
-}
-
 import std.typecons: Tuple;
 import std.variant: Variant;
 
@@ -229,100 +84,252 @@ class DOMException: Exception
     }
 }
 
-template DOM(StringType, Alloc = typeof(null))
+import std.experimental.allocator.gc_allocator;
+
+template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = true)
 {
-    // We are using a custom allocator and reference counting
-    static if (!is(Alloc == typeof(null)))
+    // custom wrapper to manage the lifetime of the DOM objects
+    struct RefCounted(T, bool _userVisible = false)
+        if (is(T == class))
     {
-        // Types to be used in public APIs and user code; they keep the DOM trees alive
-        alias Node = RefCounted!(_Node, Alloc, true);
-        alias Attr = RefCounted!(_Attr, Alloc, true);
-        alias CharacterData = RefCounted!(_CharacterData, Alloc, true);
-        alias Comment = RefCounted!(_Comment, Alloc, true);
-        alias Text = RefCounted!(_Text, Alloc, true);
-        alias CDATASection = RefCounted!(_CDATASection, Alloc, true);
-        alias ProcessingInstruction = RefCounted!(_ProcessingInstruction, Alloc, true);
-        alias EntityReference = RefCounted!(_EntityReference, Alloc, true);
-        alias Entity = RefCounted!(_Entity, Alloc, true);
-        alias Notation = RefCounted!(_Notation, Alloc, true);
-        alias DocumentType = RefCounted!(_DocumentType, Alloc, true);
-        alias Element = RefCounted!(_Element, Alloc, true);
-        alias Document = RefCounted!(_Document, Alloc, true);
-        alias DocumentFragment = RefCounted!(_DocumentFragment, Alloc, true);
+        import std.experimental.allocator.building_blocks.affix_allocator;
+        import std.experimental.allocator;
+        import std.traits: BaseClassesTuple, Unqual, CopyTypeQualifiers;
+        import std.typecons: Rebindable;
+
+        // get the correct allocator
+        static if (is(Alloc == GCAllocator))
+        {
+            private static shared GCAllocator _p_alloc;
+            static this()
+            {
+                _p_alloc = typeof(_p_alloc).instance;
+            }
+            private enum _p_rc = false;
+        }
+        else static if (is(typeof(Alloc) == GCAllocator))
+        {
+            private static alias _p_alloc = Alloc;
+            private enum _p_rc = false;
+        }
+        else static if (is(Alloc))
+        {
+            private static shared AffixAllocator!(Alloc, size_t) _p_alloc;
+            static this()
+            {
+                _p_alloc = typeof(_p_alloc).instance;
+            }
+            private enum _p_rc = true;
+        }
+        else
+        {
+            private static shared AffixAllocator!(typeof(Alloc), size_t) _p_alloc;
+            static if (stateSize!(typeof(_p_alloc)))
+                static this()
+                {
+                    _p_alloc = typeof(_p_alloc)(Alloc);
+                }
+            private enum _p_rc = false;
+        }
+
+        // the actual wrapped data
+        private Rebindable!T _p_data;
+
+        // provide implicit cast to wrapper of supertype
+        static if (!is(Unqual!T == Object))
+        {
+            static if (is(BaseClassesTuple!(Unqual!T)[0]))
+                alias SuperType = RefCounted!(CopyTypeQualifiers!(T, BaseClassesTuple!(Unqual!T)[0]), _userVisible);
+            else
+                alias SuperType = RefCounted!(CopyTypeQualifiers!(T, Object), _userVisible);
+
+            SuperType superType()
+            {
+                return SuperType(_p_data);
+            }
+            alias superType this;
+        }
+
+        // cast the wrapped object to raw memory
+        private void[] _p_dataBlock() const
+        {
+            void[] result = (cast(ubyte*)cast(void*)_p_data)[0..T.sizeof];
+            return result;
+        }
+
+        // refcounting methods
+        static if (_p_rc)
+        {
+            private void _p_incr()
+            {
+                if (_p_data)
+                {
+                    _p_alloc.prefix(_p_dataBlock)++;
+                    static if (_userVisible && advancedRefCouting && is(typeof(T.incrVisibleRefCount)))
+                        _p_data.incrVisibleRefCount;
+                }
+            }
+            private void _p_decr()
+            {
+                if (_p_data)
+                {
+                    static if (_userVisible && advancedRefCouting && is(typeof(T.decrVisibleRefCount)))
+                        _p_data.decrVisibleRefCount;
+                    if (--_p_alloc.prefix(_p_dataBlock) == 0)
+                        _p_alloc.deallocate(_p_dataBlock);
+                }
+            }
+        }
+        else
+        {
+            private void _p_incr() {}
+            private void _p_decr() {}
+        }
+
+        // constructors only work for already wrapped objects
+        this(typeof(null))
+        {
+            _p_data = null;
+        }
+        this(T payload)
+        {
+            _p_data = payload;
+            _p_incr;
+        }
+        this(this)
+        {
+            _p_incr;
+        }
+        ~this()
+        {
+            _p_decr;
+        }
+
+        // comparisons
+        bool opEquals(typeof(null) other) const
+        {
+            return _p_data is null;
+        }
+        bool opEquals(U, bool visibility)(const auto ref RefCounted!(U, visibility) other) const
+        {
+            return _p_data is other._p_data;
+        }
         
-        // Types to be used internally; they do not keep the DOM alive and are needed to avoid
-        // circular references that prevent deallocation
-        alias WeakNode = RefCounted!(_Node, Alloc);
-        alias WeakAttr = RefCounted!(_Attr, Alloc);
-        alias WeakCharacterData = RefCounted!(_CharacterData, Alloc);
-        alias WeakComment = RefCounted!(_Comment, Alloc);
-        alias WeakText = RefCounted!(_Text, Alloc);
-        alias WeakCDATASection = RefCounted!(_CDATASection, Alloc);
-        alias WeakProcessingInstruction = RefCounted!(_ProcessingInstruction, Alloc);
-        alias WeakEntityReference = RefCounted!(_EntityReference, Alloc);
-        alias WeakEntity = RefCounted!(_Entity, Alloc);
-        alias WeakNotation = RefCounted!(_Notation, Alloc);
-        alias WeakDocumentType = RefCounted!(_DocumentType, Alloc);
-        alias WeakElement = RefCounted!(_Element, Alloc);
-        alias WeakDocument = RefCounted!(_Document, Alloc);
-        alias WeakDocumentFragment = RefCounted!(_DocumentFragment, Alloc);
+        // true means not null
+        bool opCast(T: bool)() const
+        {
+            return (_p_data)?true:false;
+        }
+
+        // assignments
+        void opAssign(typeof(null) other)
+        {
+            _p_decr;
+            _p_data = null;
+        }
+        void opAssign(U, bool visibility)(auto ref RefCounted!(U, visibility) other)
+        {
+            _p_decr;
+            _p_data = other._p_data;
+            _p_incr;
+        }
+
+        // only way to construct a new object
+        static RefCounted emplace(Args...)(auto ref Args args)
+        {
+            auto result = RefCounted(_p_alloc.make!T(args));
+            //result._p_data = _p_alloc.make!T(args);
+
+            import core.memory;
+            auto block = result._p_dataBlock;
+            GC.addRange(block.ptr, block.length, T.classinfo);
+            
+            /*static if(_p_rc)
+                _p_alloc.prefix(result._p_dataBlock) = 1;*/
+            
+            return result;
+        }
         
-        // others
-        alias NodeList = RefCounted!(_NodeList, Alloc);
-        alias NamedNodeMap = RefCounted!(_NamedNodeMap, Alloc);
-        alias NamedNodeMapImpl_ElementAttributes = RefCounted!(_NamedNodeMapImpl_ElementAttributes, Alloc);
-    }
-    // we are using the gc
-    else
-    {
-        alias Node = _Node;
-        alias Attr = _Attr;
-        alias CharacterData = _CharacterData;
-        alias Comment = _Comment;
-        alias Text = _Text;
-        alias CDATASection = _CDATASection;
-        alias ProcessingInstruction = _ProcessingInstruction;
-        alias EntityReference = _EntityReference;
-        alias Entity = _Entity;
-        alias Notation = _Notation;
-        alias DocumentType = _DocumentType;
-        alias Element = _Element;
-        alias Document = _Document;
-        alias DocumentFragment = _DocumentFragment;
-        
-        alias WeakNode = _Node;
-        alias WeakAttr = _Attr;
-        alias WeakCharacterData = _CharacterData;
-        alias WeakComment = _Comment;
-        alias WeakText = _Text;
-        alias WeakCDATASection = _CDATASection;
-        alias WeakProcessingInstruction = _ProcessingInstruction;
-        alias WeakEntityReference = _EntityReference;
-        alias WeakEntity = _Entity;
-        alias WeakNotation = _Notation;
-        alias WeakDocumentType = _DocumentType;
-        alias WeakElement = _Element;
-        alias WeakDocument = _Document;
-        alias WeakDocumentFragment = _DocumentFragment;
-        
-        alias NodeList = _NodeList;
-        alias NamedNodeMap = _NamedNodeMap;
-        alias NamedNodeMapImpl_ElementAttributes = _NamedNodeMapImpl_ElementAttributes;
-        
-        T userVisible(T)(auto ref T val) { return val; }
-        T libInternal(T)(auto ref T val) { return val; }
+        enum Null = RefCounted(null);
+
+        alias UserVisible = RefCounted!(T, true);
+        UserVisible userVisible()
+        {
+            return UserVisible(_p_data);
+        }
+        alias LibInternal = RefCounted!(T, false);
+        LibInternal libInternal()
+        {
+            return LibInternal(_p_data);
+        }
+
+        RefCounted!(U, _userVisible) downCast(RC: RefCounted!(U, _userVisible), U)()
+        {
+            return RefCounted!(U, _userVisible)(cast(U)_p_data);
+        }
+
+        // dispatch everything to wrapped type
+        @property auto opDispatch(string name, Arg)(Arg arg)
+        {
+            mixin("return _p_data." ~ name ~ " = arg;");
+        }
+        auto opDispatch(string name, Args...)(Args args)
+        {
+            static if (Args.length > 0)
+                mixin("return _p_data." ~ name ~ "(args);");
+            else
+                mixin("return _p_data." ~ name ~ ";");
+        }
     }
     
+    // Types to be used in public APIs and user code; they keep the DOM trees alive
+    alias Node = RefCounted!(_Node, true);
+    alias Attr = RefCounted!(_Attr, true);
+    alias CharacterData = RefCounted!(_CharacterData, true);
+    alias Comment = RefCounted!(_Comment, true);
+    alias Text = RefCounted!(_Text, true);
+    alias CDATASection = RefCounted!(_CDATASection, true);
+    alias ProcessingInstruction = RefCounted!(_ProcessingInstruction, true);
+    alias EntityReference = RefCounted!(_EntityReference, true);
+    alias Entity = RefCounted!(_Entity, true);
+    alias Notation = RefCounted!(_Notation, true);
+    alias DocumentType = RefCounted!(_DocumentType, true);
+    alias Element = RefCounted!(_Element, true);
+    alias Document = RefCounted!(_Document, true);
+    alias DocumentFragment = RefCounted!(_DocumentFragment, true);
+
+    // Types to be used internally; they do not keep the DOM alive and are needed to avoid
+    // circular references that prevent deallocation (only if advancedRefCouting is true)
+    alias WeakNode = RefCounted!(_Node);
+    alias WeakAttr = RefCounted!(_Attr);
+    alias WeakCharacterData = RefCounted!(_CharacterData);
+    alias WeakComment = RefCounted!(_Comment);
+    alias WeakText = RefCounted!(_Text);
+    alias WeakCDATASection = RefCounted!(_CDATASection);
+    alias WeakProcessingInstruction = RefCounted!(_ProcessingInstruction);
+    alias WeakEntityReference = RefCounted!(_EntityReference);
+    alias WeakEntity = RefCounted!(_Entity);
+    alias WeakNotation = RefCounted!(_Notation);
+    alias WeakDocumentType = RefCounted!(_DocumentType);
+    alias WeakElement = RefCounted!(_Element);
+    alias WeakDocument = RefCounted!(_Document);
+    alias WeakDocumentFragment = RefCounted!(_DocumentFragment);
+
+    // others
+    alias NodeList = RefCounted!(_NodeList);
+    alias NamedNodeMap = RefCounted!(_NamedNodeMap);
+    alias NamedNodeMapImpl_ElementAttributes = RefCounted!(_NamedNodeMapImpl_ElementAttributes);
+
     alias UserDataHandler = void delegate(UserDataOperation, string, UserData, Node, Node);
-    
+
     abstract class _Node
     {
         // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
         public abstract
         {
-            @property StringType    namespaceUri()    const @nogc;
-            @property StringType    nodeName()        const @nogc;
-            @property NodeType      nodeType()        const @nogc;
+            @property StringType    namespaceUri()    const ;
+            @property StringType    nodeName()        const ;
+            @property NodeType      nodeType()        const ;
         }
         // REQUIRED BY THE STANDARD; USE DISCOURAGED
         public deprecated
@@ -340,7 +347,7 @@ template DOM(StringType, Alloc = typeof(null))
             enum NodeType DOCUMENT_TYPE_NODE          = NodeType.DOCUMENT_TYPE;
             enum NodeType DOCUMENT_FRAGMENT_NODE      = NodeType.DOCUMENT_FRAGMENT;
             enum NodeType NOTATION_NODE               = NodeType.NOTATION;
-            
+
             // aliases to members of DocumentPosition
             enum DocumentPosition DOCUMENT_POSITION_DISCONNECTED            = DocumentPosition.DISCONNECTED;
             enum DocumentPosition DOCUMENT_POSITION_PRECEDING               = DocumentPosition.PRECEDING;
@@ -353,15 +360,15 @@ template DOM(StringType, Alloc = typeof(null))
         public
         {
             @property NamedNodeMap attributes() { return to!NamedNodeMap(null); }
-            StringType localName() const @nogc { return null; }
+            StringType localName() const  { return null; }
             @property StringType nodeValue() { return null; }
             @property void nodeValue(StringType newValue) {}
-            @property StringType prefix() const @nogc { return null; }
+            @property StringType prefix() const  { return null; }
             @property void prefix(StringType newValue) {}
             @property StringType baseUri() { return parentNode.baseUri(); }
-            
+
             bool hasAttributes() { return false; }
-            
+
             @property StringType textContent()
             {
                 StringType result = [];
@@ -376,7 +383,7 @@ template DOM(StringType, Alloc = typeof(null))
                     removeChild(firstChild);
                 appendChild(ownerDocument.createTextNode(newValue));
             }
-            
+
             Node insertBefore(Node newChild, Node refChild)
             {
                 if (newChild.ownerDocument != ownerDocument)
@@ -388,6 +395,7 @@ template DOM(StringType, Alloc = typeof(null))
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
+                newChild.attachToParent;
                 if (refChild.previousSibling)
                 {
                     refChild.previousSibling._nextSibling = newChild;
@@ -410,6 +418,7 @@ template DOM(StringType, Alloc = typeof(null))
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
+                newChild.attachToParent;
                 oldChild._parentNode = null;
                 if (oldChild.previousSibling)
                 {
@@ -438,6 +447,7 @@ template DOM(StringType, Alloc = typeof(null))
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = Node(this);
+                newChild.attachToParent;
                 if (lastChild)
                 {
                     newChild._previousSibling = lastChild;
@@ -448,18 +458,18 @@ template DOM(StringType, Alloc = typeof(null))
                 _lastChild = newChild;
                 return newChild;
             }
-            
-            Node cloneNode(bool deep) @nogc { return Node.Null; }
+
+            Node cloneNode(bool deep)  { return Node.Null; }
             void normalize() {}
-            
+
             bool isSupported(string feature, string version_) const { return false; }
-            
+
             DocumentPosition compareDocumentPosition(Node other) { return DocumentPosition.PRECEDING; }
             StringType lookupPrefix(StringType namespaceUri) { return null; }
             bool isDefaultNamespace(StringType prefix) { return false; }
             bool isEqualNode(Node arg) { return false; }
             Object getFeature(string feature, string version_) { return null; }
-            
+
             UserData setUserData(string key, UserData data, UserDataHandler handler)
             {
                 userData[key] = data;
@@ -504,7 +514,7 @@ template DOM(StringType, Alloc = typeof(null))
                     }
                     Node opIndex(size_t i) { return item(i); }
                 }
-                alias ChildNodeList = RefCounted!(_ChildNodeList, Alloc);
+                alias ChildNodeList = RefCounted!(_ChildNodeList);
                 auto cnl = ChildNodeList.emplace();
                 cnl.parent = Node(this);
                 return cnl;
@@ -515,12 +525,12 @@ template DOM(StringType, Alloc = typeof(null))
             @property Document ownerDocument() { return _ownerDocument.userVisible; }
             @property Node parentNode() { return _parentNode.userVisible; }
             @property Node previousSibling() { return _previousSibling.userVisible; }
-            
-            bool hasChildNodes() const @nogc
+
+            bool hasChildNodes() const
             {
                 return _firstChild != null;
             }
-            bool isSameNode(in Node other) @nogc
+            bool isSameNode(in Node other)
             {
                 return Node(this) == other;
             }
@@ -528,17 +538,17 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 if (!isSameNode(oldChild.parentNode))
                     throw new DOMException(ExceptionCode.NOT_FOUND);
-                
+
                 if (oldChild == firstChild)
                     _firstChild = oldChild.nextSibling;
                 else
                     oldChild.previousSibling._nextSibling = oldChild.nextSibling;
-                    
+
                 if (oldChild == lastChild)
                     _lastChild = oldChild.previousSibling;
                 else
                     oldChild.nextSibling._previousSibling = oldChild.previousSibling;
-                    
+
                 oldChild._parentNode = null;
                 return oldChild;
             }
@@ -547,7 +557,7 @@ template DOM(StringType, Alloc = typeof(null))
         private WeakDocument _ownerDocument;
         private UserData[string] userData;
         private UserDataHandler[string] userDataHandlers;
-        
+
         // NOT REQUIRED BY THE STANDARD; SHOULD NOT BE OVERRIDDEN
         public final
         {
@@ -568,9 +578,9 @@ template DOM(StringType, Alloc = typeof(null))
                 return false;
             }
         }
-        
+
         // internal reference counting code
-        private
+        protected
         {
             size_t refCount;
             final void incrVisibleRefCount(size_t count = 1) @nogc
@@ -603,16 +613,50 @@ template DOM(StringType, Alloc = typeof(null))
             }
             WeakNode getParent() @nogc
             {
-                return _parentNode;
+                if (_parentNode != null)
+                    return _parentNode;
+                else
+                    return _ownerDocument;
             }
-            void destroyInternalReferences()
+            void destroyInternalReferences() @nogc
             {
-                // should contain code to delete all internal references,
-                // so that RefCounted can reclaim memory.
+                if (refCount == size_t.max)
+                    return;
+                refCount = size_t.max;
+                if (_firstChild != null)
+                {
+                    _firstChild.destroyInternalReferences();
+                    _firstChild = null;
+                }
+                if (_lastChild != null)
+                {
+                    _lastChild.destroyInternalReferences();
+                    _lastChild = null;
+                }
+                if (_parentNode != null)
+                {
+                    _parentNode.destroyInternalReferences();
+                    _parentNode = null;
+                }
+                if (_previousSibling != null)
+                {
+                    _previousSibling.destroyInternalReferences();
+                    _previousSibling = null;
+                }
+                if (_nextSibling != null)
+                {
+                    _nextSibling.destroyInternalReferences();
+                    _nextSibling = null;
+                }
+                if (_ownerDocument != null)
+                {
+                    _ownerDocument.destroyInternalReferences();
+                    _ownerDocument = null;
+                }
             }
         }
     }
-    
+
     class _Attr: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -623,7 +667,7 @@ template DOM(StringType, Alloc = typeof(null))
             @property auto ownerElement() const { return _ownerElement; }
             @property auto schemaTypeInfo() const { return _schemaTypeInfo; }
             @property auto isId() const { return _isId; }
-            
+
             @property StringType value()
             {
                 StringType result = [];
@@ -644,14 +688,17 @@ template DOM(StringType, Alloc = typeof(null))
                     child.removeFromParent;
                     child = nextChild;
                 }
-                _lastChild = ownerDocument.createTextNode(newValue);
+                auto newChild = ownerDocument.createTextNode(newValue);
+                newChild._parentNode = Attr(this);
+                newChild.attachToParent;
+                _lastChild = newChild;
                 _firstChild = _lastChild;
             }
         }
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property StringType localName() const @nogc
+            @property StringType localName() const
             {
                 if (_prefix_end > 0)
                     return _name[(_prefix_end + 1)..$];
@@ -662,7 +709,7 @@ template DOM(StringType, Alloc = typeof(null))
             @property NodeType nodeType() const { return NodeType.ATTRIBUTE; }
             @property StringType nodeValue() { return value; }
             @property void nodeValue(StringType newValue) { value = newValue; }
-            @property StringType prefix() const @nogc { return name[0.._prefix_end]; }
+            @property StringType prefix() const  { return name[0.._prefix_end]; }
             @property void prefix(StringType newPrefix)
             {
                 _name = newPrefix ~ ':' ~ localName;
@@ -670,8 +717,8 @@ template DOM(StringType, Alloc = typeof(null))
             }
             @property StringType textContent() { return value; }
             @property void textContent(StringType newContent) { value = newContent; }
-            
-            @property StringType namespaceUri() const @nogc { return _namespaceUri; }
+
+            @property StringType namespaceUri() const  { return _namespaceUri; }
         }
         private
         {
@@ -690,7 +737,7 @@ template DOM(StringType, Alloc = typeof(null))
         {
             StringType data;
             @property auto length() const { return data.length; }
-            
+
             void appendData(StringType arg)
             {
                 data ~= arg;
@@ -699,7 +746,7 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 if (offset > length)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
-                    
+
                 import std.algorithm: min;
                 data = data[0..offset] ~ data[min(offset + count, length)..$];
             }
@@ -707,14 +754,14 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 if (offset > length)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
-                    
+
                 data = data[0..offset] ~ arg ~ data[offset..$];
             }
             void replaceData(size_t offset, size_t count, StringType arg)
             {
                 if (offset > length)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
-                    
+
                 import std.algorithm: min;
                 data = data[0..offset] ~ arg ~ data[min(offset + count, length)..$];
             }
@@ -722,7 +769,7 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 if (offset > length)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
-                    
+
                 import std.algorithm: min;
                 return data[offset..min(offset + count, length)];
             }
@@ -734,7 +781,7 @@ template DOM(StringType, Alloc = typeof(null))
             @property void nodeValue(StringType newValue) { data = newValue; }
             @property StringType textContent() const { return data; }
             @property void textContent(StringType newValue) { data = newValue; }
-            
+
             Node insertBefore(Node newChild,  Node refChild)
             {
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
@@ -747,8 +794,8 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
             }
-            
-            @property StringType namespaceUri() const @nogc { return null;}
+
+            @property StringType namespaceUri() const  { return null;}
         }
     }
 
@@ -757,8 +804,8 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.COMMENT; }
-            @property StringType nodeName() const @nogc { return "#comment"; }
+            @property NodeType nodeType() const  { return NodeType.COMMENT; }
+            @property StringType nodeName() const  { return "#comment"; }
         }
     }
 
@@ -774,7 +821,7 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 if (offset > length)
                     throw new DOMException(ExceptionCode.INDEX_SIZE);
-                    
+
                 data = data[0..offset];
                 Text newNode = ownerDocument.createTextNode(data[offset..$]);
                 if (parentNode)
@@ -791,8 +838,8 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.TEXT; }
-            @property StringType nodeName() const @nogc { return "#text"; }
+            @property NodeType nodeType() const  { return NodeType.TEXT; }
+            @property StringType nodeName() const  { return "#text"; }
         }
     }
 
@@ -801,8 +848,8 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.CDATA_SECTION; }
-            @property StringType nodeName() const @nogc { return "#cdata-section"; }
+            @property NodeType nodeType() const  { return NodeType.CDATA_SECTION; }
+            @property StringType nodeName() const  { return "#cdata-section"; }
         }
     }
 
@@ -817,19 +864,19 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.PROCESSING_INSTRUCTION; }
-            @property StringType nodeName() const @nogc { return target; }
-            @property StringType namespaceUri() const @nogc { return null; }
+            @property NodeType nodeType() const  { return NodeType.PROCESSING_INSTRUCTION; }
+            @property StringType nodeName() const  { return target; }
+            @property StringType namespaceUri() const  { return null; }
         }
     }
-    
+
     class _EntityReference: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.ENTITY_REFERENCE; }
-            @property StringType nodeName() const @nogc { return null; }
+            @property NodeType nodeType() const  { return NodeType.ENTITY_REFERENCE; }
+            @property StringType nodeName() const  { return null; }
         }
     }
 
@@ -848,8 +895,8 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.ENTITY; }
-            @property StringType nodeName() const @nogc { return null; }
+            @property NodeType nodeType() const  { return NodeType.ENTITY; }
+            @property StringType nodeName() const  { return null; }
         }
     }
 
@@ -864,11 +911,11 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.NOTATION; }
-            @property StringType nodeName() const @nogc { return null; }
+            @property NodeType nodeType() const  { return NodeType.NOTATION; }
+            @property StringType nodeName() const  { return null; }
         }
     }
-    
+
     class _DocumentType: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
@@ -883,8 +930,8 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.DOCUMENT_TYPE; }
-            @property StringType nodeName() const @nogc { return name; }
+            @property NodeType nodeType() const  { return NodeType.DOCUMENT_TYPE; }
+            @property StringType nodeName() const  { return name; }
         }
     }
 
@@ -895,7 +942,7 @@ template DOM(StringType, Alloc = typeof(null))
         {
             @property auto tagName() const { return _name; }
             @property auto schemaTypeInfo() const { return _schemaTypeInfo; }
-            
+
             StringType getAttribute(StringType name)
             {
                 return _attributes.getNamedItem(name).nodeValue;
@@ -912,14 +959,14 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 return _attributes.getNamedItemNS(namespaceUri, localName).downCast!Attr;
             }
-            
-            void setAttribute(StringType name,  StringType value)
+
+            void setAttribute(StringType name, StringType value)
             {
                 auto attr = ownerDocument.createAttribute(name);
                 attr.value = value;
                 _attributes.setNamedItem(attr);
             }
-            void setAttributeNS(StringType namespaceUri,  StringType qualifiedName,  StringType value)
+            void setAttributeNS(StringType namespaceUri, StringType qualifiedName, StringType value)
             {
                 auto attr = ownerDocument.createAttributeNS(namespaceUri, qualifiedName);
                 attr.value = value;
@@ -933,7 +980,7 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 return _attributes.setNamedItemNS(newAttr).downCast!Attr;
             }
-            
+
             void removeAttribute(StringType name)
             {
                 _attributes.removeNamedItem(name);
@@ -943,13 +990,13 @@ template DOM(StringType, Alloc = typeof(null))
                 _attributes.removeNamedItemNS(namespaceUri, localName);
             }
             Attr removeAttributeNode(Attr oldAttr) { return Attr.Null; }
-            
+
             NodeList getElementsByTagName(StringType name) const { return NodeList.Null; }
             NodeList getElementsByTagNameNS(StringType namespaceUri,  StringType localName) const { return NodeList(); }
-            
+
             bool hasAttribute(StringType name) const { return false; }
             bool hasAttributeNS(StringType namespaceUri,  StringType localName) const { return false; }
-            
+
             void setIdAttribute(StringType name,  bool isId) {}
             void setIdAttributeNS(StringType namespaceUri,  StringType localName,  bool isId) {}
             void setIdAttributeNode(Attr idAttr,  bool isId) {}
@@ -957,21 +1004,21 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property StringType localName() const @nogc
+            @property StringType localName() const
             {
                 if (_prefix_end > 0)
                     return tagName[_prefix_end..$];
                 else
                     return null;
             }
-            @property StringType nodeName() const @nogc { return tagName; }
-            @property StringType prefix() const @nogc { return tagName[0.._prefix_end]; }
+            @property StringType nodeName() const  { return tagName; }
+            @property StringType prefix() const  { return tagName[0.._prefix_end]; }
             @property void prefix(StringType newPrefix)
             {
                 _name = newPrefix ~ localName;
                 _prefix_end = newPrefix.length;
             }
-            bool hasAttributes() @nogc
+            bool hasAttributes()
             {
                 return _attributes != null && _attributes.length > 0;
             }
@@ -1005,21 +1052,21 @@ template DOM(StringType, Alloc = typeof(null))
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
         public
         {
-            const DocumentType doctype;
+            const WeakDocumentType doctype;
             const DOMImplementation implementation;
-            const Element documentElement;
-            
-            Element createElement(StringType tagName) @nogc
+            const WeakElement documentElement;
+
+            Element createElement(StringType tagName)
             {
                 auto result = Element.emplace();
                 result._name = tagName;
                 result._ownerDocument = Document(this);
                 return result;
             }
-            Element createElementNS(StringType namespaceUri, StringType qualifiedName) @nogc
+            Element createElementNS(StringType namespaceUri, StringType qualifiedName)
             {
                 import std.experimental.xml.faststrings: fastIndexOf;
-                
+
                 auto result = Element.emplace();
                 result._namespaceUri = namespaceUri;
                 result._name = qualifiedName;
@@ -1028,42 +1075,42 @@ template DOM(StringType, Alloc = typeof(null))
                 result._ownerDocument = Document(this);
                 return result;
             }
-            Text createTextNode(StringType text) const @nogc
+            Text createTextNode(StringType text) const
             {
                 auto result = Text.emplace();
                 result.data = text;
                 return result;
             }
-            Comment createComment(StringType text) const @nogc
+            Comment createComment(StringType text) const
             {
                 auto result = Comment.emplace();
                 result.data = text;
                 return result;
             }
-            CDATASection createCDataSection(StringType text) const @nogc
+            CDATASection createCDataSection(StringType text) const
             {
                 auto result = CDATASection.emplace();
                 result.data = text;
                 return result;
             }
-            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const @nogc
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const
             {
                 auto result = ProcessingInstruction.emplace();
                 result.target = target;
                 result.data = data;
                 return result;
             }
-            Attr createAttribute(StringType name) @nogc
+            Attr createAttribute(StringType name)
             {
                 auto result = Attr.emplace();
                 result._name = name;
                 result._ownerDocument = Document(this);
                 return result;
             }
-            Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName) @nogc
+            Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName)
             {
                 import std.experimental.xml.faststrings: fastIndexOf;
-                
+
                 auto result = Attr.emplace();
                 result._namespaceUri = namespaceUri;
                 result._name = qualifiedName;
@@ -1073,27 +1120,27 @@ template DOM(StringType, Alloc = typeof(null))
                 return result;
             }
             EntityReference createEntityReference(StringType name) const { return EntityReference(); }
-            
+
             NodeList getElementsByTagName(StringType tagName) { return NodeList(); }
             NodeList getElementsByTagNameNS(StringType namespaceUri, StringType tagName) { return NodeList(); }
             Node getElementById(StringType elementId) { return Node(); }
-            
+
             Node importNode(Node node, bool deep) { return Node(); }
             Node adoptNode(Node source) { return Node(); }
             Node renameNode(Node n, StringType namespaceUri, StringType qualifiedName) { return Node(); }
-            
+
             const StringType inputEncoding;
             const StringType xmlEncoding;
             const DOMConfiguration domConfig;
-            
+
             @property bool xmlStandalone() { return false; }
             @property void xmlStandalone(bool val) {}
             @property StringType xmlVersion() { return null; }
             @property void xmlVersion(StringType val) {}
-            
+
             bool strictErrorChecking = true;
             StringType documentURI;
-            
+
             void normalizeDocument() {}
         }
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
@@ -1105,17 +1152,17 @@ template DOM(StringType, Alloc = typeof(null))
             @property NodeType nodeType() const { return NodeType.DOCUMENT; }
         }
     }
-    
+
     class _DocumentFragment: _Node
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            @property NodeType nodeType() const @nogc { return NodeType.DOCUMENT_FRAGMENT; }
-            @property StringType nodeName() const @nogc { return "#document-fragment"; }
+            @property NodeType nodeType() const  { return NodeType.DOCUMENT_FRAGMENT; }
+            @property StringType nodeName() const  { return "#document-fragment"; }
         }
     }
-    
+
     abstract class _NodeList
     {
         // REQUIRED BY THE STANDARD
@@ -1125,31 +1172,31 @@ template DOM(StringType, Alloc = typeof(null))
             abstract Node item(ulong index);
         }
     }
-    
+
     abstract class _NamedNodeMap
     {
         // REQUIRED BY THE STANDARD
         public
         {
-            abstract ulong length() const @nogc;
+            abstract ulong length() const ;
             abstract Node item(ulong index);
-            
-            abstract Node getNamedItem(StringType name) @nogc;
+
+            abstract Node getNamedItem(StringType name);
             abstract Node setNamedItem(Node arg);
             abstract Node removeNamedItem(StringType name);
-            
-            abstract Node getNamedItemNS(StringType namespaceUri, StringType localName) @nogc;
+
+            abstract Node getNamedItemNS(StringType namespaceUri, StringType localName) ;
             abstract Node setNamedItemNS(Node arg);
             abstract Node removeNamedItemNS(StringType namespaceUri, StringType localName);
         }
     }
-    
+
     private class _NamedNodeMapImpl_ElementAttributes: _NamedNodeMap
     {
         // REQUIRED BY THE STANDARD; INHERITED FROM SUPERCLASS
         public override
         {
-            ulong length() const @nogc
+            ulong length() const
             {
                 return attrs.length;
             }
@@ -1160,8 +1207,8 @@ template DOM(StringType, Alloc = typeof(null))
                 else
                     return Node.Null;
             }
-            
-            Node getNamedItem(StringType name) @nogc
+
+            Node getNamedItem(StringType name)
             {
                 return getNamedItemNS(null, name);
             }
@@ -1173,8 +1220,8 @@ template DOM(StringType, Alloc = typeof(null))
             {
                 return removeNamedItemNS(null, name);
             }
-            
-            Node getNamedItemNS(StringType namespaceUri, StringType localName) @nogc
+
+            Node getNamedItemNS(StringType namespaceUri, StringType localName)
             {
                 auto key = Key(namespaceUri, localName);
                 if (key in attrs)
@@ -1206,18 +1253,18 @@ template DOM(StringType, Alloc = typeof(null))
         private alias Key = Tuple!(StringType, "namespaceUri", StringType, "localName");
         private Attr[Key] attrs;
     }
-    
+
     struct DOMImplementation
     {
     }
-    
+
     struct DOMConfiguration
     {
     }
-    
+
 }
 
-mixin template InjectDOM(StringType, Alloc = typeof(null), string prefix = "", string suffix = "")
+mixin template InjectDOM(StringType, alias Alloc = GCAllocator, string prefix = "", string suffix = "")
 {
     private mixin template InjectClass(string name, T)
     {
@@ -1250,5 +1297,5 @@ unittest
     assert(element.getAttribute("myAttribute") == "myValue");
     auto text = document.createTextNode("Some useful insight...");
     element.appendChild(text);
-    assert(element.firstChild.textContent == "Some useful insight...");
+    assert(element.childNodes.item(0).textContent == "Some useful insight...");
 }
