@@ -1,7 +1,7 @@
 
 language: d
 
-script: make unittest
+script: make unittest-cov
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

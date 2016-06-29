@@ -10,6 +10,7 @@ help:
 	@echo - random-benchmark-csv: as random-benchmark, but exports the results in CSV
 	@echo - test: builds and executes compliance tests
 	@echo - unittest: builds and executes unittests
+	@echo - unittest-cov: builds and executes unittest, collecting coverage statistics
 
 .PHONY: benchmark
 benchmark:
@@ -21,6 +22,7 @@ clean:
 	$(RM) __test__library__
 	$(RM) std-experimental-xml
 	$(RM) lib*.a
+	$(RM) rm -f ..?*.lst .[!.]*.lst *.lst
 	
 .PHONY: clean-random-benchmark
 clean-random-benchmark:
@@ -41,3 +43,7 @@ test:
 .PHONY: unittest
 unittest:
 	dub test -b unittest
+	
+.PHONY: unittest-cov
+unittest-cov:
+	dub test -b unittest-cov
