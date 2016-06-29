@@ -16,7 +16,6 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
 import core.exception;
-import std.algorithm: canFind;
 
 class EndOfStreamException: Exception
 {
@@ -45,9 +44,11 @@ enum ParserOptions
 +   Params:
 +       L              = the underlying lexer type
 +/
-struct Parser(L, ParserOptions[] options = [])
+struct Parser(L, options...)
     if (isLexer!L)
 {
+    import std.meta: staticIndexOf;
+
     private alias NodeType = XMLToken!(L.CharacterType);
 
     private L lexer;
@@ -57,27 +58,33 @@ struct Parser(L, ParserOptions[] options = [])
     alias InputType = L.InputType;
     alias CharacterType = L.CharacterType;
 
+    /++ Generic constructor; forwards its arguments to the lexer constructor +/
+    this(Args...)(Args args)
+    {
+        lexer = L(args);
+    }
+    
     void setSource(InputType input)
     {
         lexer.setSource(input);
         ready = false;
     }
     
+    /++ Copy constructor hidden, because the lexer may not be copyable +/
+    package this(this) {}
     static if (isSaveableLexer!L)
     {
         auto save() const
         {
-            Parser result;
+            Parser result = this;
             result.lexer = lexer.save;
-            result.ready = ready;
-            result.next = next;
             return result;
         }
     }
     
     private CharacterType[] fetchContent(size_t start = 0, size_t stop = 0)
     {
-        static if (options.canFind(ParserOptions.CopyStrings))
+        static if (staticIndexOf!(options, ParserOptions.CopyStrings) >= 0)
             return lexer.get[start..($ - stop)].idup;
         else
             return lexer.get[start..($ - stop)];
@@ -85,7 +92,7 @@ struct Parser(L, ParserOptions[] options = [])
     
     bool empty()
     {
-        static if (!options.canFind(ParserOptions.PreserveSpaces))
+        static if (staticIndexOf!(options, ParserOptions.PreserveSpaces) < 0)
             lexer.dropWhile(" \r\n\t");
             
         return !ready && lexer.empty;
@@ -116,7 +123,7 @@ struct Parser(L, ParserOptions[] options = [])
     
     private void fetchNext()
     {
-        static if (!options.canFind(ParserOptions.PreserveSpaces))
+        static if (staticIndexOf!(options, ParserOptions.PreserveSpaces) < 0)
             lexer.dropWhile(" \r\n\t");
         
         if (lexer.empty)

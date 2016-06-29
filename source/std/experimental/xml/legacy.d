@@ -17,7 +17,7 @@ import std.experimental.xml.interfaces;
 
 class ElementParser
 {
-    private alias Cursor = XMLCursor!(Parser!(SliceLexer!string), []);
+    private alias Cursor = XMLCursor!(Parser!(SliceLexer!string), XMLCursorOptions.DontConflateCDATA);
 
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);

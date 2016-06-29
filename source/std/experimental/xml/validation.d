@@ -29,11 +29,26 @@ template applyCursorType(CursorType)
 
 struct ValidatingCursor(P, T...)
 {
-    XMLCursor!P cursor;
+    static if (isLowLevelParser!P)
+    {
+        XMLCursor!P cursor;
+    }
+    else static if (isXMLCursor!P)
+    {
+        P cursor;
+    }
+    
     alias CursorType = typeof(cursor);
     
     import std.meta: staticMap, staticIndexOf;
-    private Tuple!(staticMap!(applyCursorType!CursorType, T)) validations;
+    package Tuple!(staticMap!(applyCursorType!CursorType, T)) validations;
+    
+    /++ Generic constructor; forwards its arguments to the cursor constructor +/
+    this(Args...)(typeof(validations) valids, Args args)
+    {
+        validations = valids;
+        cursor = CursorType(args);
+    }
     
     /++ Copy constructor hidden, because the cursor may not be copyable +/
     package this(this) {}
@@ -90,7 +105,7 @@ template validatingCursor(P, Names...)
     import std.traits: TemplateArgsOf;
     auto validatingCursor(Args...)(Args args)
     {
-        return ValidatingCursor!(P, TemplateArgsOf!(typeof(tuple!Names(args))))(XMLCursor!P(), tuple!Names(args));
+        return ValidatingCursor!(P, TemplateArgsOf!(typeof(tuple!Names(args))))(tuple!Names(args));
     }
 }
 

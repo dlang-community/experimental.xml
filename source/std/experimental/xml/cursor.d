@@ -10,18 +10,18 @@ module std.experimental.xml.cursor;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
-import std.algorithm: canFind;
+import std.meta: staticIndexOf;
 import std.range.primitives;
 import std.typecons;
 
 enum XMLCursorOptions
 {
-    ConflateCDATA,
+    DontConflateCDATA,
     CopyStrings,
     InternStrings,
 }
 
-struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA])
+struct XMLCursor(P, options...)
     if (isLowLevelParser!P)
 {
     /++
@@ -57,19 +57,25 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     private bool attributesParsed;
     private ErrorHandler handler;
     
-    static if (options.canFind(XMLCursorOptions.InternStrings))
+    static if (staticIndexOf!(options, XMLCursorOptions.InternStrings) >= 0)
     {
         import std.experimental.interner;
-        Interner!(StringType, options.canFind(XMLCursorOptions.CopyStrings)) interner;
+        Interner!(StringType, staticIndexOf!(options, XMLCursorOptions.CopyStrings) >= 0) interner;
     }
     private static StringType returnStringType(StringType result)
     {
-        static if (options.canFind(XMLCursorOptions.InternStrings))
+        static if (staticIndexOf!(options, XMLCursorOptions.InternStrings) >= 0)
             return interner.intern(result);
-        else static if (options.canFind(XMLCursorOptions.CopyStrings))
+        else static if (staticIndexOf!(options, XMLCursorOptions.CopyStrings) >= 0)
             return result.idup;
         else
             return result;
+    }
+    
+    /++ Generic constructor; forwards its arguments to the parser constructor +/
+    this(Args...)(Args args)
+    {
+        parser = P(args);
     }
     
     /++ Copy constructor hidden, because the parser may not be copyable +/
@@ -208,7 +214,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
         if (starting)
             return XMLKind.DOCUMENT;
             
-        static if (options.canFind(XMLCursorOptions.ConflateCDATA))
+        static if (staticIndexOf!(options, XMLCursorOptions.DontConflateCDATA) < 0)
             if (currentNode.kind == XMLKind.CDATA)
                 return XMLKind.TEXT;
                 

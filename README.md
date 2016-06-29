@@ -64,6 +64,25 @@ provides both, one for compatibility and the other to match D idioms);
 - striving to avoid garbage collection, not because the GC is bad (it is not!), but because this
 library should be usable even in applications that cannot afford a GC (e.g.: real-time).
 
+### The Fluent Interface
+`package.d` contains some fluent wrappers for building parsing chains out of the various components
+
+```d
+    auto sax =
+         withInput(myInput)
+        .withParserOptions!(ParserOptions.CopyStrings)
+        .withCursorOptions!(XMLCursorOptions.DontConflateCDATA)
+        .asSAXParser(myHandler);
+```
+
+Which is way better than direct use of the types shown below
+
+```d
+    auto sax = SAXParser!(XMLCursor!(Parser!(SliceLexer!(typeof(myInput)), ParserOptions.CopyStrings), XMLCursorOptions.DontConflateCDATA), typeof(myHandler));
+    sax.handler = myHandler;
+    sax.setSource(myInput);
+```
+
 ### The legacy API
 It's a re-implementation of the deprecated `std.xml` module, based on [the new backend](#the-parser).  
 It is provided to ease the transition. Also, this implementation should be a bit faster.
