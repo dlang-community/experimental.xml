@@ -1,5 +1,8 @@
 
-# std.experimental.xml (GSoC 2016) [![Build Status](https://travis-ci.org/lodo1995/experimental.xml.svg?branch=master)](https://travis-ci.org/lodo1995/experimental.xml)
+[![Build Status](https://travis-ci.org/lodo1995/experimental.xml.svg?branch=master)](https://travis-ci.org/lodo1995/experimental.xml)
+[![codecov](https://codecov.io/gh/lodo1995/experimental.xml/branch/master/graph/badge.svg)](https://codecov.io/gh/lodo1995/experimental.xml)
+
+# std.experimental.xml (GSoC 2016)
 
 ## About
 This project aims to become a substitution for the current std.xml in Phobos.  
