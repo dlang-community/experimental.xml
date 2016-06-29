@@ -7,6 +7,7 @@
 
 module std.experimental.xml.validation;
 
+import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 import std.typecons: Tuple;
 
@@ -33,6 +34,18 @@ struct ValidatingCursor(P, T...)
     
     import std.meta: staticMap, staticIndexOf;
     private Tuple!(staticMap!(applyCursorType!CursorType, T)) validations;
+    
+    /++ Copy constructor hidden, because the cursor may not be copyable +/
+    package this(this) {}
+    static if (isSaveableXMLCursor!(typeof(cursor)))
+    {
+        auto save()
+        {
+            auto result = this;
+            result.cursor = cursor.save;
+            return result;
+        }
+    }
     
     ref auto opDispatch(string s, T...)(T args)
     {

@@ -547,8 +547,8 @@ unittest
         assert(!lexer.empty);
     }
     
-    //testLexer!(SliceLexer!string)(x => x);
-    //testLexer!(RangeLexer!string)(x => x);
-    //testLexer!(ForwardLexer!string)(x => x);
+    testLexer!(SliceLexer!string)(x => x);
+    testLexer!(RangeLexer!string)(x => x);
+    testLexer!(ForwardLexer!string)(x => x);
     testLexer!(BufferedLexer!DumbBufferedReader)(x => DumbBufferedReader(x, 10));
 }

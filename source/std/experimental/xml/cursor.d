@@ -72,15 +72,13 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
             return result;
     }
     
+    /++ Copy constructor hidden, because the parser may not be copyable +/
+    package this(this) {}
     static if (isSaveableLowLevelParser!P)
     {
-        public this(this)
-        {
-            parser = parser.save;
-        }
         public auto save()
         {
-            XMLCursor result = this;
+            auto result = this;
             result.parser = parser.save;
             return result;
         }
@@ -165,7 +163,7 @@ struct XMLCursor(P, XMLCursorOptions[] options = [XMLCursorOptions.ConflateCDATA
     /++
     +   Advances to the next sibling of the current node.
     +   Returns whether it succeded. If it fails, either the
-    +   document has ended or the only meaningful operation is exit().
+    +   document has ended or the only meaningful operations are enter() or exit().
     +/
     bool next()
     {
@@ -569,6 +567,148 @@ unittest
         
         assert(!cursor.next());
     cursor.exit();
+    
+    assert(cursor.documentEnd());
+}
+
+auto children(T)(ref T cursor)
+    if (isXMLCursor!T)
+{
+    struct XMLRange
+    {
+        T* cursor;
+        bool endReached;
+        
+        bool empty() const { return endReached; }
+        void popFront() { endReached = !cursor.next(); }
+        ref T front() { return *cursor; }
+        
+        ~this() { cursor.exit; }
+    }
+    if (cursor.hasChildren)
+        cursor.enter;
+    return XMLRange(&cursor, !cursor.hasChildren);
+}
+
+unittest
+{
+    import std.experimental.xml.lexers;
+    import std.experimental.xml.parser;
+    import std.string: lineSplitter, strip;
+    import std.algorithm: map;
+    import std.array: array;
+    
+    string xml = q{
+    <?xml encoding = "utf-8" ?>
+    <aaa xmlns:myns="something">
+        <myns:bbb myns:att='>'>
+            <!-- lol -->
+            Lots of Text!
+            On multiple lines!
+        </myns:bbb>
+        <![CDATA[ Ciaone! ]]>
+        <ccc/>
+    </aaa>
+    };
+    
+    auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    cursor.setSource(xml);
+    
+    // <?xml encoding = "utf-8" ?>
+    assert(cursor.getKind() == XMLKind.DOCUMENT);
+    assert(cursor.getName() == "xml");
+    assert(cursor.getPrefix() == "");
+    assert(cursor.getLocalName() == "xml");
+    assert(cursor.getAttributes() == [Attribute!string("", "encoding", "utf-8")]);
+    assert(cursor.getNamespaceDefinitions() == []);
+    assert(cursor.getText() == []);
+    assert(cursor.hasChildren());
+    
+    {
+        auto range1 = cursor.children;
+        // <aaa xmlns:myns="something">
+        assert(range1.front.getKind() == XMLKind.ELEMENT_START);
+        assert(range1.front.getName() == "aaa");
+        assert(range1.front.getPrefix() == "");
+        assert(range1.front.getLocalName() == "aaa");
+        assert(range1.front.getAttributes() == []);
+        assert(range1.front.getNamespaceDefinitions() == [NamespaceDeclaration!string("myns", "something")]);
+        assert(range1.front.getText() == []);
+        assert(range1.front.hasChildren());
+        
+        {
+            auto range2 = range1.front.children();
+            // <myns:bbb myns:att='>'>
+            assert(range2.front.getKind() == XMLKind.ELEMENT_START);
+            assert(range2.front.getName() == "myns:bbb");
+            assert(range2.front.getPrefix() == "myns");
+            assert(range2.front.getLocalName() == "bbb");
+            assert(range2.front.getAttributes() == [Attribute!string("myns", "att", ">")]);
+            assert(range2.front.getNamespaceDefinitions() == []);
+            assert(range2.front.getText() == []);
+            assert(range2.front.hasChildren());
+            
+            {
+                auto range3 = range2.front.children();
+                // <!-- lol -->
+                assert(range3.front.getKind() == XMLKind.COMMENT);
+                assert(range3.front.getName() == "");
+                assert(range3.front.getPrefix() == "");
+                assert(range3.front.getLocalName() == "");
+                assert(range3.front.getAttributes() == []);
+                assert(range3.front.getNamespaceDefinitions() == []);
+                assert(range3.front.getText() == " lol ");
+                assert(!range3.front.hasChildren());
+                
+                range3.popFront;
+                assert(!range3.empty);
+                // Lots of Text!
+                // On multiple lines!
+                assert(range3.front.getKind() == XMLKind.TEXT);
+                assert(range3.front.getName() == "");
+                assert(range3.front.getPrefix() == "");
+                assert(range3.front.getLocalName() == "");
+                assert(range3.front.getAttributes() == []);
+                assert(range3.front.getNamespaceDefinitions() == []);
+                // split and strip so the unittest does not depend on the newline policy or indentation of this file
+                assert(range3.front.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!", "On multiple lines!", ""]);
+                assert(!range3.front.hasChildren());
+                
+                range3.popFront;
+                assert(range3.empty);
+            }
+            
+            range2.popFront;
+            assert(!range2.empty);
+            // <<![CDATA[ Ciaone! ]]>
+            assert(range2.front.getKind() == XMLKind.TEXT);
+            assert(range2.front.getName() == "");
+            assert(range2.front.getPrefix() == "");
+            assert(range2.front.getLocalName() == "");
+            assert(range2.front.getAttributes() == []);
+            assert(range2.front.getNamespaceDefinitions() == []);
+            assert(range2.front.getText() == " Ciaone! ");
+            assert(!range2.front.hasChildren());
+            
+            range2.popFront;
+            assert(!range2.empty());
+            // <ccc/>
+            assert(range2.front.getKind() == XMLKind.ELEMENT_EMPTY);
+            assert(range2.front.getName() == "ccc");
+            assert(range2.front.getPrefix() == "");
+            assert(range2.front.getLocalName() == "ccc");
+            assert(range2.front.getAttributes() == []);
+            assert(range2.front.getNamespaceDefinitions() == []);
+            assert(range2.front.getText() == []);
+            assert(!range2.front.hasChildren());
+            
+            range2.popFront;
+            assert(range2.empty());
+        }
+        
+        range1.popFront;
+        assert(range1.empty);
+    }
     
     assert(cursor.documentEnd());
 }

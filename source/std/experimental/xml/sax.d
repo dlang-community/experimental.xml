@@ -29,6 +29,18 @@ struct SAXParser(T, alias H)
         cursor.setSource(input);
     }
     
+    /++ Copy constructor hidden, because the cursor may not be copyable +/
+    package this(this) {}
+    static if (isSaveableXMLCursor!T)
+    {
+        auto save()
+        {
+            auto result = this;
+            result.cursor = cursor.save;
+            return result;
+        }
+    }
+    
     /++
     +   Processes the entire document; every time a node of
     +   Kind XXX is found, the corresponding method onXXX(this)
