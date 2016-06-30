@@ -70,11 +70,9 @@ struct Parser(L, options...)
         ready = false;
     }
     
-    /++ Copy constructor hidden, because the lexer may not be copyable +/
-    package this(this) {}
     static if (isSaveableLexer!L)
     {
-        auto save() const
+        auto save()
         {
             Parser result = this;
             result.lexer = lexer.save;

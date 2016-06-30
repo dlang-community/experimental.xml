@@ -85,7 +85,7 @@ void main()
     
     writeln("SliceLexer:");
     performTests((data) {
-        auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+        auto cursor = Cursor!(Parser!(SliceLexer!string))();
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
@@ -93,7 +93,7 @@ void main()
     
     writeln("RangeLexer:");
     performTests((data) {
-        auto cursor = XMLCursor!(Parser!(RangeLexer!string))();
+        auto cursor = Cursor!(Parser!(RangeLexer!string))();
         cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);

@@ -74,14 +74,14 @@ library should be usable even in applications that cannot afford a GC (e.g.: rea
     auto sax =
          withInput(myInput)
         .withParserOptions!(ParserOptions.CopyStrings)
-        .withCursorOptions!(XMLCursorOptions.DontConflateCDATA)
+        .withCursorOptions!(CursorOptions.DontConflateCDATA)
         .asSAXParser(myHandler);
 ```
 
 Which is way better than direct use of the types shown below
 
 ```d
-    auto sax = SAXParser!(XMLCursor!(Parser!(SliceLexer!(typeof(myInput)), ParserOptions.CopyStrings), XMLCursorOptions.DontConflateCDATA), typeof(myHandler));
+    auto sax = SAXParser!(Cursor!(Parser!(SliceLexer!(typeof(myInput)), ParserOptions.CopyStrings), CursorOptions.DontConflateCDATA), typeof(myHandler));
     sax.handler = myHandler;
     sax.setSource(myInput);
 ```

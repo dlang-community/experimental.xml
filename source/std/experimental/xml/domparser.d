@@ -11,7 +11,7 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
 /++
-+   Built on top of XMLCursor, the DOM builder adds to it the ability to 
++   Built on top of Cursor, the DOM builder adds to it the ability to 
 +   build a DOM node representing the node at the current position and, if
 +   needed, its children. This allows for advanced usages like skipping entire
 +   subtrees of the document, or connecting some nodes directly to their grand-parents,
@@ -21,10 +21,10 @@ struct DOMBuilder(T, Alloc)
     if (isLowLevelParser!T)
 {   
     /++
-    +   The underlying XMLCursor methods are exposed, so that one can, for example,
+    +   The underlying Cursor methods are exposed, so that one can, for example,
     +   use the cursor API to skip some nodes.
     +/
-    XMLCursor!T cursor;
+    Cursor!T cursor;
     alias cursor this;
     
     /++

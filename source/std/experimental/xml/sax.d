@@ -11,7 +11,7 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
 struct SAXParser(T, alias H)
-    if (isXMLCursor!T)
+    if (isCursor!T)
 {
     static if (__traits(isTemplate, H))
         alias HandlerType = H!T;
@@ -29,9 +29,7 @@ struct SAXParser(T, alias H)
         cursor.setSource(input);
     }
     
-    /++ Copy constructor hidden, because the cursor may not be copyable +/
-    package this(this) {}
-    static if (isSaveableXMLCursor!T)
+    static if (isSaveableCursor!T)
     {
         auto save()
         {
@@ -137,7 +135,7 @@ unittest
         void onComment(ref T node) { total_invocations++; }
     }
     
-    auto parser = SAXParser!(XMLCursor!(Parser!(SliceLexer!string)), MyHandler)();
+    auto parser = SAXParser!(Cursor!(Parser!(SliceLexer!string)), MyHandler)();
     parser.setSource(xml);
     
     parser.processDocument();

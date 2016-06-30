@@ -31,9 +31,9 @@ struct ValidatingCursor(P, T...)
 {
     static if (isLowLevelParser!P)
     {
-        XMLCursor!P cursor;
+        Cursor!P cursor;
     }
-    else static if (isXMLCursor!P)
+    else static if (isCursor!P)
     {
         P cursor;
     }
@@ -50,9 +50,7 @@ struct ValidatingCursor(P, T...)
         cursor = CursorType(args);
     }
     
-    /++ Copy constructor hidden, because the cursor may not be copyable +/
-    package this(this) {}
-    static if (isSaveableXMLCursor!(typeof(cursor)))
+    static if (isSaveableCursor!(typeof(cursor)))
     {
         auto save()
         {
@@ -120,19 +118,19 @@ unittest
     
     struct Foo
     {
-        void validate(ref XMLCursor!ParserType cursor)
+        void validate(ref Cursor!ParserType cursor)
         {
             count++;
         }
     }
     struct Bar
     {
-        void validate(ref XMLCursor!ParserType cursor)
+        void validate(ref Cursor!ParserType cursor)
         {
             count++;
         }
     }
-    void fun(ref XMLCursor!ParserType cursor)
+    void fun(ref Cursor!ParserType cursor)
     {
         count++;
     }
@@ -140,7 +138,7 @@ unittest
     auto validator = validatingCursor!(ParserType, "foo", "bar", "baz")(Foo(), Bar(), &fun);
     validator.performValidations();
     
-    XMLCursor!ParserType cursor;
+    Cursor!ParserType cursor;
     auto myfun = validator.baz;
     myfun(cursor);
     

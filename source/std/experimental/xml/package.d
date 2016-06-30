@@ -79,21 +79,21 @@ struct XMLChain3(ParserType, InputType)
     
     auto withCursor(alias CursorType)()
     {
-        static if (is(CursorType) && isXMLCursor!CursorType)
+        static if (is(CursorType) && isCursor!CursorType)
             return XMLChain4!(CursorType, InputType)(input);
-        else static if (is(CursorType!ParserType) && isXMLCursor!(CursorType!ParserType))
+        else static if (is(CursorType!ParserType) && isCursor!(CursorType!ParserType))
             return XMLChain4!(CursorType!ParserType, InputType)(input);
         else static assert(0, CursorType.stringof ~ " is not an appropriate cursor for parser " ~ ParserType.stringof);
     }
     auto withDefaultCursor()
     {
         import std.experimental.xml.cursor;
-        return withCursor!XMLCursor;
+        return withCursor!Cursor;
     }
     auto withCursorOptions(Args...)()
     {
         import std.experimental.xml.cursor;
-        return withCursor!(XMLCursor!(ParserType, Args));
+        return withCursor!(Cursor!(ParserType, Args));
     }
     alias withDefaultCursor this;
     
@@ -173,7 +173,7 @@ unittest
     auto cursor =
          withInput(xml)
         .withParserOptions!(ParserOptions.CopyStrings)
-        .withCursorOptions!(XMLCursorOptions.DontConflateCDATA)
+        .withCursorOptions!(CursorOptions.DontConflateCDATA)
         .asCursor;
         
     assert(cursor.getKind == XMLKind.DOCUMENT);

@@ -100,7 +100,7 @@ void parserTest(alias Lexer, T = string)(T data)
 
 void cursorTest(alias Lexer, T = string)(T data)
 {
-    auto cursor = XMLCursor!(Parser!(Lexer!T))();
+    auto cursor = Cursor!(Parser!(Lexer!T))();
     cursor.setSource(data);
     inspectOneLevel(cursor);
 }

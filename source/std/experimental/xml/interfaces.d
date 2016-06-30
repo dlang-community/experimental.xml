@@ -234,9 +234,9 @@ struct NamespaceDeclaration(StringType)
 }
     
 
-template isXMLCursor(CursorType)
+template isCursor(CursorType)
 {
-    enum bool isXMLCursor = is(typeof(
+    enum bool isCursor = is(typeof(
     (inout int = 0)
     {
         /++
@@ -269,9 +269,9 @@ template isXMLCursor(CursorType)
     ));
 }
 
-template isSaveableXMLCursor(CursorType)
+template isSaveableCursor(CursorType)
 {
-    enum bool isSaveableXMLCursor = isXMLCursor!CursorType && is(typeof(
+    enum bool isSaveableCursor = isCursor!CursorType && is(typeof(
     (inout int = 0)
     {
         const CursorType cursor1;

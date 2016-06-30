@@ -123,8 +123,6 @@ struct RangeLexer(T)
         this.input = input;
     }
     
-    /++ Copy constructor hidden, because the range may not be copyable +/
-    package this(this) {}
     static if (isForwardRange!T)
     {
         auto save() const
@@ -215,8 +213,6 @@ struct ForwardLexer(T)
         this.input_start = input;
     }
     
-    /++ Copy constructor hidden, because the range may not be copyable +/
-    package this(this) {}
     auto save() const
     {
         ForwardLexer result;

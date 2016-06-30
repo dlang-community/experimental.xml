@@ -14,14 +14,14 @@ import std.meta: staticIndexOf;
 import std.range.primitives;
 import std.typecons;
 
-enum XMLCursorOptions
+enum CursorOptions
 {
     DontConflateCDATA,
     CopyStrings,
     InternStrings,
 }
 
-struct XMLCursor(P, options...)
+struct Cursor(P, options...)
     if (isLowLevelParser!P)
 {
     /++
@@ -57,16 +57,16 @@ struct XMLCursor(P, options...)
     private bool attributesParsed;
     private ErrorHandler handler;
     
-    static if (staticIndexOf!(options, XMLCursorOptions.InternStrings) >= 0)
+    static if (staticIndexOf!(options, CursorOptions.InternStrings) >= 0)
     {
         import std.experimental.interner;
-        Interner!(StringType, staticIndexOf!(options, XMLCursorOptions.CopyStrings) >= 0) interner;
+        Interner!(StringType, staticIndexOf!(options, CursorOptions.CopyStrings) >= 0) interner;
     }
     private static StringType returnStringType(StringType result)
     {
-        static if (staticIndexOf!(options, XMLCursorOptions.InternStrings) >= 0)
+        static if (staticIndexOf!(options, CursorOptions.InternStrings) >= 0)
             return interner.intern(result);
-        else static if (staticIndexOf!(options, XMLCursorOptions.CopyStrings) >= 0)
+        else static if (staticIndexOf!(options, CursorOptions.CopyStrings) >= 0)
             return result.idup;
         else
             return result;
@@ -78,8 +78,6 @@ struct XMLCursor(P, options...)
         parser = P(args);
     }
     
-    /++ Copy constructor hidden, because the parser may not be copyable +/
-    package this(this) {}
     static if (isSaveableLowLevelParser!P)
     {
         public auto save()
@@ -214,7 +212,7 @@ struct XMLCursor(P, options...)
         if (starting)
             return XMLKind.DOCUMENT;
             
-        static if (staticIndexOf!(options, XMLCursorOptions.DontConflateCDATA) < 0)
+        static if (staticIndexOf!(options, CursorOptions.DontConflateCDATA) < 0)
             if (currentNode.kind == XMLKind.CDATA)
                 return XMLKind.TEXT;
                 
@@ -434,7 +432,7 @@ auto asCursor(T)(auto ref T input)
 {
     struct Chain
     {
-        alias Type = XMLCursor!(T.Type);
+        alias Type = Cursor!(T.Type);
         auto finalize()
         {
             return Type(input.finalize(), typeof(Type.currentNode)(), false, [], [], false, null);
@@ -464,7 +462,7 @@ unittest
     </aaa>
     };
     
-    auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    auto cursor = Cursor!(Parser!(SliceLexer!string))();
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -578,7 +576,7 @@ unittest
 }
 
 auto children(T)(ref T cursor)
-    if (isXMLCursor!T)
+    if (isCursor!T)
 {
     struct XMLRange
     {
@@ -617,7 +615,7 @@ unittest
     </aaa>
     };
     
-    auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    auto cursor = Cursor!(Parser!(SliceLexer!string))();
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>

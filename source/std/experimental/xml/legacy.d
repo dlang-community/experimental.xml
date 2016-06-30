@@ -17,13 +17,13 @@ import std.experimental.xml.interfaces;
 
 class ElementParser
 {
-    private alias Cursor = XMLCursor!(Parser!(SliceLexer!string), XMLCursorOptions.DontConflateCDATA);
+    private alias CursorType = Cursor!(Parser!(SliceLexer!string), CursorOptions.DontConflateCDATA);
 
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);
     alias Handler = void delegate(string);
 
-    private Cursor* cursor;
+    private CursorType* cursor;
     
     ParserHandler[string] onStartTag;
     ElementHandler[string] onEndTag;
@@ -39,7 +39,7 @@ class ElementParser
         return _tag;
     }
     
-    private this(Cursor* cur)
+    private this(CursorType* cur)
     {
         cursor = cur;
         _tag =  new Tag(cursor.getName);
@@ -60,7 +60,7 @@ class ElementParser
                     case XMLKind.ELEMENT_EMPTY:
                         if (cursor.getName in onStartTag || null in onStartTag)
                         {
-                            Cursor copy;
+                            CursorType copy;
                             if (cursor.getName in onEndTag || null in onEndTag)
                                 copy = cursor.save;
                             
@@ -108,11 +108,11 @@ class ElementParser
 
 class DocumentParser: ElementParser
 {
-    Cursor cursor;
+    CursorType cursor;
     
     this(string text)
     {
-        auto handler = delegate(ref Cursor cur, Cursor.Error err) {};
+        auto handler = delegate(ref CursorType cur, CursorType.Error err) {};
         cursor.setErrorHandler(handler);
         cursor.setSource(text);
         super(&cursor);

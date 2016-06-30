@@ -202,7 +202,7 @@ void uselessCallback(T)(ref T cur, T.Error err)
 +/
 void main()
 {
-    auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    auto cursor = Cursor!(Parser!(SliceLexer!string))();
     
     // If an index is not well-formed, just tell us but continue parsing
     cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
@@ -255,7 +255,7 @@ void parseFile(string filename)
         transcode(cast(Latin1String)raw, text);
     }
     
-    auto cursor = XMLCursor!(Parser!(SliceLexer!string))();
+    auto cursor = Cursor!(Parser!(SliceLexer!string))();
     // lots of tests do not have an xml declaration
     cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
     cursor.setSource(text);
