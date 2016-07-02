@@ -91,5 +91,4 @@ It's a re-implementation of the deprecated `std.xml` module, based on [the new b
 It is provided to ease the transition. Also, this implementation should be a bit faster.
 
 ### More is Coming
-Other high level APIs are currently under implementation (e.g. DOM), while others will
-be implemented in the near future (e.g. an event-based parser).
+Work is steadily proceeding to complete the [DOM implementation](#the-dom) and the [validation layer](#the-validating-cursor).

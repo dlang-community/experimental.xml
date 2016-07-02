@@ -1,3 +1,9 @@
+/*
+*             Copyright Lodovico Giaretta 2016 - .
+*  Distributed under the Boost Software License, Version 1.0.
+*      (See accompanying file LICENSE_1_0.txt or copy at
+*            http://www.boost.org/LICENSE_1_0.txt)
+*/
 
 module std.experimental.xml;
 
@@ -109,10 +115,14 @@ struct XMLChain4(CursorType, InputType, Validations...)
 {
     import std.experimental.xml.validation;
     import std.experimental.xml.sax;
+    import std.typecons: Tuple;
     
     private template TupleType(Validations...)
     {
-        alias TupleType = typeof(ValidatingCursor!(CursorType, Validations).validations);
+        static if (Validations.length == 0)
+            alias TupleType = Tuple!Validations;
+        else
+            alias TupleType = Tuple!(typeof(ValidatingCursor!(CursorType, Validations[0..2])), Validations[2..$]);
     }
     private template SAXParserHandler(alias H)
     {
@@ -124,18 +134,18 @@ struct XMLChain4(CursorType, InputType, Validations...)
 
     auto withValidation(string name, alias T)()
     {
-        return XMLChain4!(ParserType, LexerType, InputType, Validations, T, name)
-                (input, TupleType!(Validations, T, name)(valids.expand, TupleType!(Validations, T, name).Types[$-1]()));
+        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, Validations, T, name);
+        return ResultType(input, typeof(ResultType.valids)(valids.expand, typeof(ResultType.valids[$-1]).init));
     }
     auto withValidation(string name, alias T)(auto ref T valid)
     {
-        return XMLChain4!(ParserType, LexerType, InputType, Validations, T, name)
-                (input, TupleType!(CursorType, Validations, T, name)(valids.expand, valid));
+        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, Validations, T, name);
+        return ResultType(input, typeof(ResultType.valids)(valids.expand, valid));
     }
     
     auto asCursor(Args...)(Args args)
     {
-        auto result = ValidatingCursor!(CursorType, Validations)(valids, args);
+        auto result = ValidatingCursor!(CursorType, Validations)(valids.expand, args);
         result.setSource(input);
         return result;
     }
@@ -154,8 +164,8 @@ struct XMLChain4(CursorType, InputType, Validations...)
 
 unittest
 {
-    import std.experimental.xml.parser;
-    import std.experimental.xml.cursor;
+    import std.experimental.xml.parser: ParserOptions;
+    import std.experimental.xml.cursor: CursorOptions;
    
     string xml = q{
     <?xml encoding = "utf-8" ?>

@@ -9,25 +9,16 @@ module std.experimental.xml.validation;
 
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
-import std.typecons: Tuple;
 
-template applyCursorType(CursorType)
+enum ValidationEvent
 {
-    template applyCursorType(string s)
-    {
-        enum string applyCursorType = s;
-    }
-    template applyCursorType(T)
-    {
-        alias applyCursorType = T;
-    }
-    template applyCursorType(alias T)
-    {
-        alias applyCursorType = T!CursorType;
-    }
+    SOURCE,
+    ENTER,
+    EXIT,
+    NEXT,
 }
 
-struct ValidatingCursor(P, T...)
+private struct ValidatingCursorImpl(P)
 {
     static if (isLowLevelParser!P)
     {
@@ -37,63 +28,111 @@ struct ValidatingCursor(P, T...)
     {
         P cursor;
     }
-    
     alias CursorType = typeof(cursor);
+    alias cursor this;
     
-    import std.meta: staticMap, staticIndexOf;
-    package Tuple!(staticMap!(applyCursorType!CursorType, T)) validations;
-    
-    /++ Generic constructor; forwards its arguments to the cursor constructor +/
-    this(Args...)(typeof(validations) valids, Args args)
+    this(Args...)(Args args)
     {
-        validations = valids;
-        cursor = CursorType(args);
+        cursor.__ctor(args);
     }
     
-    static if (isSaveableCursor!(typeof(cursor)))
+    void performBefore(ValidationEvent ev) {}
+    void performAfter(ValidationEvent ev) {}
+}
+
+private struct ValidatingCursorImpl(P, T...)
+{
+    import std.algorithm: all;
+    import std.ascii: isAlphaNum;
+    
+    static assert (T.length > 1);
+    static assert (is(typeof(T[$-1]) == string), "Field name expected");
+    static assert (T[$-1].all!isAlphaNum, "Invalid field name: " ~ T[$-1]);
+    
+    ValidatingCursorImpl!(P, T[0..$-2]) _p_parent;
+    alias _p_parent this;
+    
+    private alias CurrType = T[$-2];
+    static if (is(CurrType))
     {
-        auto save()
+        package CurrType _p_valid;
+    }
+    else static if (is(CurrType!(typeof(_p_parent))))
+    {
+        package CurrType!(typeof(_p_parent)) _p_valid;
+    }
+    else static assert(false, "Invalid validation type");
+    
+    this(Args...)(Args args)
+        if (Args.length > 0)
+    {
+        static if (is(Args[$-1] == typeof(_p_valid)))
         {
-            auto result = this;
-            result.cursor = cursor.save;
-            return result;
+            _p_parent = typeof(_p_parent)(args[0..$-1]);
+            _p_valid = args[$-1];
+        }
+        else
+        {
+            _p_parent = typeof(_p_parent)(args);
+            _p_valid = _p_valid.init;
         }
     }
     
-    ref auto opDispatch(string s, T...)(T args)
+    void performBefore(ValidationEvent ev)
     {
-        static if (staticIndexOf!(s, validations.fieldNames) != -1)    
-            mixin("return validations." ~ s ~ ";");
-        else
-            mixin("return cursor." ~ s ~ "(args);");
+        _p_parent.performBefore(ev);
+        static if (__traits(compiles, _p_valid.before(_p_parent, ev)))
+            _p_valid.before(_p_parent, ev);
+    }
+    void performAfter(ValidationEvent ev)
+    {
+        _p_parent.performAfter(ev);
+        static if (__traits(compiles, _p_valid.after(_p_parent, ev)))
+            _p_valid.after(_p_parent, ev);
+        else static if (__traits(compiles, _p_valid(_p_parent, ev)))
+            _p_valid(_p_parent, ev);
     }
     
-    void performValidations()
+    mixin("@property ref typeof(_p_valid) " ~ T[$-1] ~ "() return { return _p_valid; }");
+}
+
+struct ValidatingCursor(P, T...)
+{
+    ValidatingCursorImpl!(P, T) _p_impl;
+    alias _p_impl this;
+    
+    this(Args...)(Args args)
     {
-        foreach (ref valid; validations)
-            static if (__traits(compiles, valid.validate(cursor)))
-                valid.validate(cursor);
-            else if (__traits(compiles, valid(cursor)))
-                valid(cursor);
-            else
-                assert(0);
+        _p_impl = typeof(_p_impl)(args[0..$]);
     }
     
+    void setSource(typeof(_p_impl).InputType input)
+    {
+        performBefore(ValidationEvent.SOURCE);
+        _p_impl.setSource(input);
+        performAfter(ValidationEvent.SOURCE);
+    }
     void enter()
     {
-        cursor.enter();
-        performValidations();
+        performBefore(ValidationEvent.ENTER);
+        _p_impl.enter;
+        performAfter(ValidationEvent.ENTER);
+    }
+    auto next()
+    {
+        performBefore(ValidationEvent.NEXT);
+        if (_p_impl.next)
+        {
+            performAfter(ValidationEvent.NEXT);
+            return true;
+        }
+        return false;
     }
     void exit()
     {
-        cursor.exit();
-        performValidations();
-    }
-    bool next()
-    {
-        auto result = cursor.next();
-        performValidations();
-        return result;
+        performBefore(ValidationEvent.EXIT);
+        _p_impl.exit;
+        performAfter(ValidationEvent.EXIT);
     }
 }
 
@@ -103,7 +142,7 @@ template validatingCursor(P, Names...)
     import std.traits: TemplateArgsOf;
     auto validatingCursor(Args...)(Args args)
     {
-        return ValidatingCursor!(P, TemplateArgsOf!(typeof(tuple!Names(args))))(tuple!Names(args));
+        return ValidatingCursor!(P, TemplateArgsOf!(typeof(tuple!Names(args))))(args);
     }
 }
 
@@ -118,31 +157,33 @@ unittest
     
     struct Foo
     {
-        void validate(ref Cursor!ParserType cursor)
+        void before(ref Cursor!ParserType cursor, ValidationEvent ev)
         {
             count++;
         }
     }
     struct Bar
     {
-        void validate(ref Cursor!ParserType cursor)
+        void after(ref Cursor!ParserType cursor, ValidationEvent ev)
         {
             count++;
         }
     }
-    void fun(ref Cursor!ParserType cursor)
+    void fun(ref Cursor!ParserType cursor, ValidationEvent ev)
     {
-        count++;
+        if (ev == ValidationEvent.ENTER)
+            count++;
     }
     
     auto validator = validatingCursor!(ParserType, "foo", "bar", "baz")(Foo(), Bar(), &fun);
-    validator.performValidations();
+    validator.performBefore(ValidationEvent.NEXT);
+    validator.performAfter(ValidationEvent.NEXT);
     
     Cursor!ParserType cursor;
     auto myfun = validator.baz;
-    myfun(cursor);
+    myfun(cursor, ValidationEvent.ENTER);
     
-    assert(count == 4);
+    assert(count == 3);
 }
 
 struct ElementNestingValidator(CursorType)
@@ -157,16 +198,18 @@ struct ElementNestingValidator(CursorType)
     alias ErrorHandlerType = void delegate(ref CursorType, ref typeof(stack));
     ErrorHandlerType errorHandler;
     
-    void validate(ref CursorType cursor)
+    void before(ref CursorType cursor, ValidationEvent ev)
     {
-        import std.stdio: writeln;
+        if (ev == ValidationEvent.ENTER)
+            stack.insert(cursor.getName);
+    }
+    void after(ref CursorType cursor, ValidationEvent ev)
+    {
         import std.experimental.xml.faststrings;
         
-        if (cursor.getKind() == XMLKind.ELEMENT_START)
-            stack.insert(cursor.getName());
-        else if (cursor.getKind() == XMLKind.ELEMENT_END && stack.length > 0)
+        if (ev == ValidationEvent.EXIT)
         {
-            if (stack.empty || !fastEqual(stack.back, cursor.getName()))
+            if (stack.empty || !fastEqual(stack.back, cursor.getName))
             {
                 if (errorHandler != null)
                     errorHandler(cursor, stack);
@@ -192,7 +235,8 @@ unittest
             <bbb>
                 <ccc>
             </bbb>
-            </bbb>
+            <ddd>
+            </ddd>
         </aaa>
     };
     
