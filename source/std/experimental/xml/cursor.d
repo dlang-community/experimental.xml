@@ -410,6 +410,7 @@ struct Cursor(P, options...)
                 if (nameStart < 0)
                     assert(0);
                 auto nameEnd = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t");
+                nameEnd = nameEnd < 0 ? currentNode.content.length : nameEnd;
                 // xml declaration does not have any content
                 if(fastEqual(currentNode.content[nameStart..nameEnd], "xml"))
                     return [];

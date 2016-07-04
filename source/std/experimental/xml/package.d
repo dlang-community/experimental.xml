@@ -134,13 +134,13 @@ struct XMLChain4(CursorType, InputType, Validations...)
 
     auto withValidation(string name, alias T)()
     {
-        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, Validations, T, name);
-        return ResultType(input, typeof(ResultType.valids)(valids.expand, typeof(ResultType.valids[$-1]).init));
+        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, T, name, Validations);
+        return ResultType(input, typeof(ResultType.valids)(typeof(ResultType.valids[$-1]).init, valids.expand));
     }
     auto withValidation(string name, alias T)(auto ref T valid)
     {
-        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, Validations, T, name);
-        return ResultType(input, typeof(ResultType.valids)(valids.expand, valid));
+        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, T, name, Validations);
+        return ResultType(input, typeof(ResultType.valids)(valid, valids.expand));
     }
     
     auto asCursor(Args...)(Args args)
