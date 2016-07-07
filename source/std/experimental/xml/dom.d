@@ -11,7 +11,7 @@
 +   while also adding some useful and more idiomatic constructs.
 +/
 
-module std.experimental.xml.dom2;
+/+module std.experimental.xml.dom2;
 
 import std.conv: to;
 
@@ -19,6 +19,8 @@ import std.typecons: Tuple;
 import std.variant: Variant;
 
 alias UserData = Variant;
+
+int counter;
 
 enum NodeType: ushort
 {
@@ -98,7 +100,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
         import std.typecons: Rebindable;
 
         // get the correct allocator
-        static if (is(Alloc == GCAllocator))
+        static if (is(Alloc == GCAllocator) || is(typeof(Alloc) == GCAllocator))
         {
             private static shared GCAllocator _p_alloc;
             static this()
@@ -107,29 +109,29 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             }
             private enum _p_rc = false;
         }
-        else static if (is(typeof(Alloc) == GCAllocator))
-        {
-            private static alias _p_alloc = Alloc;
-            private enum _p_rc = false;
-        }
         else static if (is(Alloc))
         {
-            private static shared AffixAllocator!(Alloc, size_t) _p_alloc;
-            static this()
+            static if (is(typeof(Alloc.instance) == shared))
             {
-                _p_alloc = typeof(_p_alloc).instance;
+                private static shared AffixAllocator!(Alloc, size_t) _p_alloc;
+                shared static this() { _p_alloc = typeof(_p_alloc).instance; }
+            }
+            else
+            {
+                private static AffixAllocator!(Alloc, size_t) _p_alloc;
+                static this() { _p_alloc = typeof(_p_alloc).instance; }
             }
             private enum _p_rc = true;
         }
         else
         {
-            private static shared AffixAllocator!(typeof(Alloc), size_t) _p_alloc;
+            private static AffixAllocator!(typeof(Alloc), size_t) _p_alloc;
             static if (stateSize!(typeof(_p_alloc)))
                 static this()
                 {
                     _p_alloc = typeof(_p_alloc)(Alloc);
                 }
-            private enum _p_rc = false;
+            private enum _p_rc = true;
         }
 
         // the actual wrapped data
@@ -176,7 +178,10 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                     static if (_userVisible && advancedRefCouting && is(typeof(T.decrVisibleRefCount)))
                         _p_data.decrVisibleRefCount;
                     if (--_p_alloc.prefix(_p_dataBlock) == 0)
+                    {
+                        counter++;
                         _p_alloc.deallocate(_p_dataBlock);
+                    }
                 }
             }
         }
@@ -238,14 +243,13 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
         static RefCounted emplace(Args...)(auto ref Args args)
         {
             auto result = RefCounted(_p_alloc.make!T(args));
-            //result._p_data = _p_alloc.make!T(args);
 
             import core.memory;
             auto block = result._p_dataBlock;
             GC.addRange(block.ptr, block.length, T.classinfo);
             
-            /*static if(_p_rc)
-                _p_alloc.prefix(result._p_dataBlock) = 1;*/
+            static if(_p_rc)
+                _p_alloc.prefix(block) = 1;
             
             return result;
         }
@@ -394,8 +398,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                     throw new DOMException(ExceptionCode.NOT_FOUND);
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
-                newChild._parentNode = Node(this);
-                newChild.attachToParent;
+                newChild._parentNode = WeakNode(this);
                 if (refChild.previousSibling)
                 {
                     refChild.previousSibling._nextSibling = newChild;
@@ -417,8 +420,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                     throw new DOMException(ExceptionCode.NOT_FOUND);
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
-                newChild._parentNode = Node(this);
-                newChild.attachToParent;
+                newChild._parentNode = WeakNode(this);
                 oldChild._parentNode = null;
                 if (oldChild.previousSibling)
                 {
@@ -440,14 +442,13 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             }
             Node appendChild(Node newChild)
             {
-                if (newChild.ownerDocument == ownerDocument)
+                if (newChild.ownerDocument != ownerDocument)
                     throw new DOMException(ExceptionCode.WRONG_DOCUMENT);
                 if (isSameNode(newChild) || newChild.isAncestor(Node(this)))
                     throw new DOMException(ExceptionCode.HIERARCHY_REQUEST);
                 if (newChild.parentNode != null)
                     newChild.parentNode.removeChild(newChild);
-                newChild._parentNode = Node(this);
-                newChild.attachToParent;
+                newChild._parentNode = WeakNode(this);
                 if (lastChild)
                 {
                     newChild._previousSibling = lastChild;
@@ -553,7 +554,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                 return oldChild;
             }
         }
-        private WeakNode _parentNode, _previousSibling, _nextSibling, _firstChild, _lastChild;
+        private WeakNode _previousSibling, _nextSibling, _firstChild, _lastChild;
         private WeakDocument _ownerDocument;
         private UserData[string] userData;
         private UserDataHandler[string] userDataHandlers;
@@ -579,81 +580,68 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             }
         }
 
-        // internal reference counting code
-        protected
+        // internals
+        static if (advancedRefCouting)
         {
-            size_t refCount;
-            final void incrVisibleRefCount(size_t count = 1) @nogc
+            private WeakNode _p_parentNode;
+            private @property ref WeakNode _parentNode() return @nogc { return _p_parentNode; }
+            private @property ref WeakNode _parentNode(WeakNode newParent) return @nogc
             {
-                refCount += count;
-                WeakNode parent = getParent;
-                if (parent != null)
-                    parent.incrVisibleRefCount(count);
+                if (_p_parentNode != null)
+                    _p_parentNode.decrVisibleRefCount(refCount);
+                _p_parentNode = newParent;
+                if (_p_parentNode != null)
+                    _p_parentNode.incrVisibleRefCount(refCount);
+                return _p_parentNode;
             }
-            final void decrVisibleRefCount(size_t count = 1) @nogc
+            protected
             {
-                refCount -= count;
-                WeakNode parent = getParent();
-                if (parent != null)
-                    parent.decrVisibleRefCount(count);
-                else if (refCount == 0)
-                    destroyInternalReferences;
-            }
-            final void detachFromParent() @nogc
-            {
-                WeakNode parent = getParent;
-                if (parent != null)
-                    parent.decrVisibleRefCount(refCount);
-            }
-            final void attachToParent() @nogc
-            {
-                WeakNode parent = getParent;
-                if (parent != null)
-                    parent.incrVisibleRefCount(refCount);
-            }
-            WeakNode getParent() @nogc
-            {
-                if (_parentNode != null)
+                size_t refCount;
+                final void incrVisibleRefCount(size_t count = 1) @nogc
+                {
+                    refCount += count;
+                    WeakNode parent = getParent;
+                    if (parent != null)
+                        parent.incrVisibleRefCount(count);
+                    else if (_ownerDocument != WeakNode(this))
+                        _ownerDocument.incrVisibleRefCount(count);
+                }
+                final void decrVisibleRefCount(size_t count = 1) @nogc
+                {
+                    refCount -= count;
+                    WeakNode parent = getParent();
+                    if (parent != null)
+                        parent.decrVisibleRefCount(count);
+                    else if (_ownerDocument != WeakNode(this))
+                    {
+                        _ownerDocument.decrVisibleRefCount(count);
+                        if (refCount == 0 && _ownerDocument.documentElement != WeakNode(this))
+                            destroyInternalReferences;
+                    }
+                    else if (refCount == 0)
+                        destroyInternalReferences;
+                }
+                WeakNode getParent() @nogc
+                {
                     return _parentNode;
-                else
-                    return _ownerDocument;
-            }
-            void destroyInternalReferences() @nogc
-            {
-                if (refCount == size_t.max)
-                    return;
-                refCount = size_t.max;
-                if (_firstChild != null)
-                {
-                    _firstChild.destroyInternalReferences();
-                    _firstChild = null;
                 }
-                if (_lastChild != null)
+                void destroyInternalReferences() @nogc
                 {
-                    _lastChild.destroyInternalReferences();
-                    _lastChild = null;
-                }
-                if (_parentNode != null)
-                {
-                    _parentNode.destroyInternalReferences();
-                    _parentNode = null;
-                }
-                if (_previousSibling != null)
-                {
-                    _previousSibling.destroyInternalReferences();
-                    _previousSibling = null;
-                }
-                if (_nextSibling != null)
-                {
-                    _nextSibling.destroyInternalReferences();
-                    _nextSibling = null;
-                }
-                if (_ownerDocument != null)
-                {
-                    _ownerDocument.destroyInternalReferences();
-                    _ownerDocument = null;
+                    if (refCount == size_t.max)
+                        return;
+                    assert(0, "Killing something");
+                    /*
+                    refCount = size_t.max;
+                    for (auto child = firstChild; child != null; child = child.nextSibling)
+                    {
+                        child.destroyInternalReferences();
+                    }*/
                 }
             }
+        }
+        else
+        {
+            private WeakNode _parentNode;
         }
     }
 
@@ -689,8 +677,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                     child = nextChild;
                 }
                 auto newChild = ownerDocument.createTextNode(newValue);
-                newChild._parentNode = Attr(this);
-                newChild.attachToParent;
+                newChild._parentNode = WeakAttr(this);
                 _lastChild = newChild;
                 _firstChild = _lastChild;
             }
@@ -728,9 +715,14 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             WeakElement _ownerElement;
             TypeInfo _schemaTypeInfo;
         }
+        
+        package(std) this(WeakDocument doc)
+        {
+            _ownerDocument = doc;
+        }
     }
 
-    class _CharacterData: _Node
+    abstract class _CharacterData: _Node
     {
         // REQUIRED BY THE STANDARD; SPECIFIC TO THIS CLASS
         public
@@ -807,6 +799,11 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             @property NodeType nodeType() const  { return NodeType.COMMENT; }
             @property StringType nodeName() const  { return "#comment"; }
         }
+        
+        package(std) this(WeakDocument doc)
+        {
+            _ownerDocument = doc;
+        }
     }
 
     class _Text: _CharacterData
@@ -827,7 +824,7 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
                 if (parentNode)
                 {
                     newNode._parentNode = parentNode;
-                    newNode._previousSibling = Node(this);
+                    newNode._previousSibling = WeakNode(this);
                     newNode._nextSibling = nextSibling;
                     nextSibling._previousSibling = newNode;
                     _nextSibling = newNode;
@@ -841,6 +838,11 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             @property NodeType nodeType() const  { return NodeType.TEXT; }
             @property StringType nodeName() const  { return "#text"; }
         }
+        
+        package(std) this(WeakDocument doc)
+        {
+            _ownerDocument = doc;
+        }
     }
 
     class _CDATASection: _Text
@@ -850,6 +852,11 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
         {
             @property NodeType nodeType() const  { return NodeType.CDATA_SECTION; }
             @property StringType nodeName() const  { return "#cdata-section"; }
+        }
+        
+        package(std) this(WeakDocument doc)
+        {
+            super(doc);
         }
     }
 
@@ -867,6 +874,11 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             @property NodeType nodeType() const  { return NodeType.PROCESSING_INSTRUCTION; }
             @property StringType nodeName() const  { return target; }
             @property StringType namespaceUri() const  { return null; }
+        }
+        
+        package(std) this(WeakDocument doc)
+        {
+            _ownerDocument = doc;
         }
     }
 
@@ -1041,8 +1053,9 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             NamedNodeMap _attributes;
             StringType _namespaceUri;
         }
-        package(std) this()
+        package(std) this(WeakDocument doc)
         {
+            _ownerDocument = doc;
             _attributes = NamedNodeMapImpl_ElementAttributes.emplace();
         }
     }
@@ -1058,65 +1071,61 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
 
             Element createElement(StringType tagName)
             {
-                auto result = Element.emplace();
+                auto result = Element.emplace(WeakDocument(this));
                 result._name = tagName;
-                result._ownerDocument = Document(this);
                 return result;
             }
             Element createElementNS(StringType namespaceUri, StringType qualifiedName)
             {
                 import std.experimental.xml.faststrings: fastIndexOf;
 
-                auto result = Element.emplace();
+                auto result = Element.emplace(WeakDocument(this));
                 result._namespaceUri = namespaceUri;
                 result._name = qualifiedName;
                 auto pos = fastIndexOf(qualifiedName, ':');
                 result._prefix_end = pos >= 0 ? pos : 0;
-                result._ownerDocument = Document(this);
                 return result;
             }
-            Text createTextNode(StringType text) const
+            Text createTextNode(StringType text)
             {
-                auto result = Text.emplace();
+                auto result = Text.emplace(WeakDocument(this));
                 result.data = text;
                 return result;
             }
-            Comment createComment(StringType text) const
+            Comment createComment(StringType text)
             {
-                auto result = Comment.emplace();
+                auto result = Comment.emplace(WeakDocument(this));
                 result.data = text;
                 return result;
             }
-            CDATASection createCDataSection(StringType text) const
+            CDATASection createCDataSection(StringType text)
             {
-                auto result = CDATASection.emplace();
+                auto result = CDATASection.emplace(WeakDocument(this));
                 result.data = text;
                 return result;
             }
-            ProcessingInstruction createProcessingInstruction(StringType target, StringType data) const
+            ProcessingInstruction createProcessingInstruction(StringType target, StringType data)
             {
-                auto result = ProcessingInstruction.emplace();
+                auto result = ProcessingInstruction.emplace(WeakDocument(this));
                 result.target = target;
                 result.data = data;
                 return result;
             }
             Attr createAttribute(StringType name)
             {
-                auto result = Attr.emplace();
+                auto result = Attr.emplace(WeakDocument(this));
                 result._name = name;
-                result._ownerDocument = Document(this);
                 return result;
             }
             Attr createAttributeNS(StringType namespaceUri, StringType qualifiedName)
             {
                 import std.experimental.xml.faststrings: fastIndexOf;
 
-                auto result = Attr.emplace();
+                auto result = Attr.emplace(WeakDocument(this));
                 result._namespaceUri = namespaceUri;
                 result._name = qualifiedName;
                 auto pos = fastIndexOf(qualifiedName, ':');
                 result._prefix_end = pos >= 0 ? pos : 0;
-                result._ownerDocument = Document(this);
                 return result;
             }
             EntityReference createEntityReference(StringType name) const { return EntityReference(); }
@@ -1150,6 +1159,17 @@ template DOM(StringType, alias Alloc = GCAllocator, bool advancedRefCouting = tr
             @property StringType namespaceUri() const { return null; }
             @property StringType nodeName() const { return "#document"; }
             @property NodeType nodeType() const { return NodeType.DOCUMENT; }
+        }
+        
+        package(std) this()
+        {
+            _ownerDocument = WeakDocument(this);
+            xmlEncoding = typeof(xmlEncoding).init;
+            documentElement = typeof(documentElement).init;
+            inputEncoding = typeof(inputEncoding).init;
+            doctype = typeof(doctype).init;
+            implementation = typeof(implementation).init;
+            domConfig = typeof(domConfig).init;
         }
     }
 
@@ -1287,15 +1307,44 @@ mixin template InjectDOM(StringType, alias Alloc = GCAllocator, string prefix = 
     mixin InjectClass!("DocumentType", _DOM.DocumentType);
 }
 
+import std.experimental.allocator.mallocator;
+struct MyAllocator
+{
+    static shared Mallocator mallocator;
+    shared static this()
+    {
+        mallocator = Mallocator.instance;
+    }
+    static auto instance()
+    {
+        return MyAllocator();
+    }
+    @disable this(this);
+    int x;
+    alias mallocator this;
+}
+
 unittest
 {
-    import std.experimental.allocator.mallocator;
-    mixin InjectDOM!(string, Mallocator);
+    mixin InjectDOM!(string, MyAllocator(2));
+    import std.stdio: writeln;
+    writeln(1);
     auto document = Document.emplace();
-    auto element = document.createElement("myElement");
-    element.setAttribute("myAttribute", "myValue");
-    assert(element.getAttribute("myAttribute") == "myValue");
-    auto text = document.createTextNode("Some useful insight...");
-    element.appendChild(text);
-    assert(element.childNodes.item(0).textContent == "Some useful insight...");
+    {
+        auto element = document.createElement("myElement");
+        element.setAttribute("myAttribute", "myValue");
+        writeln(2);
+        assert(element.getAttribute("myAttribute") == "myValue");
+        {
+            auto text = document.createTextNode("Some useful insight...");
+            element.appendChild(text);
+        }
+        assert(element.childNodes.item(0).textContent == "Some useful insight...");
+        writeln(3);
+    }
+    writeln(document.refCount);
+    writeln(counter);
+    writeln(document);
+    assert(counter == 3);
 }
++/
