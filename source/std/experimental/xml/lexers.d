@@ -15,14 +15,15 @@ module std.experimental.xml.lexers;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
-import std.array;
 import std.range.primitives;
 import std.traits: isArray;
+
+import std.experimental.allocator.gc_allocator;
 
 /++
 +   A lexer that takes a sliceable input.
 +/
-struct SliceLexer(T)
+struct SliceLexer(T, alias Alloc = GCAllocator)
 {
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
@@ -109,18 +110,33 @@ struct SliceLexer(T)
 /++
 +   A lexer that takes an InputRange.
 +/
-struct RangeLexer(T)
+struct RangeLexer(T, alias Alloc = GCAllocator)
     if (isInputRange!T)
 {
+    mixin UsesAllocator!Alloc;
+    import std.experimental.appender;
+
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
     
-    private T input;
-    private Appender!(CharacterType[]) app;
+    private Appender!(CharacterType, _p_alloc) app;
     
-    void setSource(T input)
+    import std.string: representation;
+    static if (is(typeof(representation!CharacterType(""))))
     {
-        this.input = input;
+        private typeof(representation!CharacterType("")) input;
+        void setSource(T input)
+        {
+            this.input = input.representation;
+        }
+    }
+    else
+    {
+        private T input;
+        void setSource(T input)
+        {
+            this.input = input;
+        }
     }
     
     static if (isForwardRange!T)
@@ -140,7 +156,7 @@ struct RangeLexer(T)
     
     void start()
     {
-        app = appender!(CharacterType[])();
+        app = typeof(app)();
     }
     
     CharacterType[] get() const
@@ -196,21 +212,38 @@ struct RangeLexer(T)
     }
 }
 
-struct ForwardLexer(T)
+struct ForwardLexer(T, alias Alloc = GCAllocator)
     if (isForwardRange!T)
 {
+    mixin UsesAllocator!Alloc;
+    import std.experimental.appender;
+    
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
     
-    private T input;
-    private T input_start;
     private size_t count;
-    private Appender!(CharacterType[]) app;
+    private Appender!(CharacterType, _p_alloc) app;
     
-    void setSource(T input)
+    import std.string: representation;
+    static if (is(typeof(representation!CharacterType(""))))
     {
-        this.input = input;
-        this.input_start = input;
+        private typeof(representation!CharacterType("")) input;
+        private typeof(input) input_start;
+        void setSource(T input)
+        {
+            this.input = input.representation;
+            this.input_start = this.input;
+        }
+    }
+    else
+    {
+        private T input;
+        private T input_start;
+        void setSource(T input)
+        {
+            this.input = input;
+            this.input_start = input;
+        }
     }
     
     auto save() const
@@ -229,7 +262,7 @@ struct ForwardLexer(T)
     
     void start()
     {
-        app = appender!(CharacterType[])();
+        app = typeof(app)();
         input_start = input.save;
         count = 0;
     }
@@ -295,25 +328,46 @@ struct ForwardLexer(T)
     }
 }
 
-struct BufferedLexer(T)
+struct BufferedLexer(T, alias Alloc = GCAllocator)
     if (isInputRange!T && isArray!(ElementType!T))
 {
+    mixin UsesAllocator!Alloc;
+    import std.experimental.appender;
+    
     alias BufferType = ElementType!T;
     alias CharacterType = ElementEncodingType!BufferType;
     alias InputType = T;
     
     InputType buffers;
-    BufferType buffer;
     size_t pos;
     size_t begin;
-    Appender!(CharacterType[]) app;
+    Appender!(CharacterType, _p_alloc) app;
     bool onEdge;
+    
+    import std.string: representation, assumeUTF;
+    static if (is(typeof(representation!CharacterType(""))))
+    {
+        private typeof(representation!CharacterType("")) buffer;
+        void popBuffer()
+        {
+            buffer = buffers.front.representation;
+            buffers.popFront;
+        }
+    }
+    else
+    {
+        private BufferType buffer;
+        void popBuffer()
+        {
+            buffer = buffers.front;
+            buffers.popFront;
+        }
+    }
     
     void setSource(T input)
     {
         this.buffers = input;
-        buffer = buffers.front;
-        buffers.popFront;
+        popBuffer;
     }
     
     static if (isForwardRange!T)
@@ -336,7 +390,7 @@ struct BufferedLexer(T)
     
     void start()
     {
-        app = appender!(CharacterType[])();
+        app = typeof(app)();
         begin = pos;
         onEdge = false;
     }
@@ -352,8 +406,7 @@ struct BufferedLexer(T)
                 app.put(buffer[begin..$]);
                 onEdge = true;
             }
-            buffer = buffers.front;
-            buffers.popFront;
+            popBuffer;
             begin = 0;
             pos = 0;
         }
@@ -376,8 +429,7 @@ struct BufferedLexer(T)
             app.put(buffer[begin..$]);
             onEdge = true;
         }
-        buffer = buffers.front;
-        buffers.popFront;
+        popBuffer;
         begin = 0;
         pos = 0;
     }
@@ -387,7 +439,12 @@ struct BufferedLexer(T)
         if (onEdge)
             return app.data;
         else
-            return buffer[begin..pos];
+        {
+            static if (is(typeof(representation!CharacterType(""))))
+                return cast(CharacterType[])buffer[begin..pos];
+            else
+                return buffer[begin..pos];
+        }
     }
     
     void dropWhile(string s)
@@ -475,29 +532,32 @@ auto lex(T)(auto ref T input)
     }
     return chain;
 }
- 
-struct DumbBufferedReader
+
+version(unittest) 
 {
-    string content;
-    size_t chunk_size;
-    
-    void popFront()
+    struct DumbBufferedReader
     {
-        if (content.length > chunk_size)
-            content = content[chunk_size..$];
-        else
-            content = [];
-    }
-    string front() const
-    {
-        if (content.length >= chunk_size)
-            return content[0..chunk_size];
-        else
-            return content[0..$];
-    }
-    bool empty() const
-    {
-        return !content.length;
+        string content;
+        size_t chunk_size;
+        
+        void popFront() @nogc
+        {
+            if (content.length > chunk_size)
+                content = content[chunk_size..$];
+            else
+                content = [];
+        }
+        string front() const @nogc
+        {
+            if (content.length >= chunk_size)
+                return content[0..chunk_size];
+            else
+                return content[0..$];
+        }
+        bool empty() const @nogc
+        {
+            return !content.length;
+        }
     }
 }
  
@@ -551,4 +611,58 @@ unittest
     testLexer!(RangeLexer!string)(x => x);
     testLexer!(ForwardLexer!string)(x => x);
     testLexer!(BufferedLexer!DumbBufferedReader)(x => DumbBufferedReader(x, 10));
+}
+ 
+unittest
+{
+
+    void testLexer(T)(T.InputType delegate(string) @nogc conv) @nogc
+    {
+        string xml = q{
+        <?xml encoding = "utf-8" ?>
+        <aaa xmlns:myns="something">
+            <myns:bbb myns:att='>'>
+                <!-- lol -->
+                Lots of Text!
+                On multiple lines!
+            </myns:bbb>
+            <![CDATA[ Ciaone! ]]>
+            <ccc/>
+        </aaa>
+        };
+        
+        T lexer;
+        lexer.setSource(conv(xml));
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntilAny(":>", true);
+        assert(lexer.get() == "<?xml encoding = \"utf-8\" ?>");
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntilAny("=:", false);
+        assert(lexer.get() == "<aaa xmlns");
+        
+        lexer.start();
+        lexer.advanceUntil('>', true);
+        assert(lexer.get() == ":myns=\"something\">");
+        
+        lexer.dropWhile(" \r\n\t");
+        lexer.start();
+        lexer.advanceUntil('\'', true);
+        assert(lexer.testAndAdvance('>'));
+        lexer.advanceUntil('>', false);
+        assert(lexer.testAndAdvance('>'));
+        assert(lexer.get() == "<myns:bbb myns:att='>'>");
+        
+        assert(!lexer.empty);
+    }
+    
+    import std.experimental.allocator.mallocator;
+    auto alloc = Mallocator.instance;
+    testLexer!(SliceLexer!(string, alloc))(x => x);
+    testLexer!(RangeLexer!(string, alloc))(x => x);
+    testLexer!(ForwardLexer!(string, alloc))(x => x);
+    testLexer!(BufferedLexer!(DumbBufferedReader, alloc))(x => DumbBufferedReader(x, 10));
 }

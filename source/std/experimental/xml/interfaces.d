@@ -283,3 +283,39 @@ template isSaveableCursor(CursorType)
         CursorType cursor2 = cursor1.save();
     }));
 }
+
+// INTERNALS
+
+package mixin template UsesAllocator(alias Alloc)
+{
+    import std.experimental.allocator.gc_allocator;
+    
+    static if (is(Alloc == GCAllocator) || is(typeof(Alloc) == GCAllocator))
+    {
+        protected shared static GCAllocator _p_alloc;
+        shared static this() { _p_alloc = typeof(_p_alloc).instance; }
+    }
+    else static if (is(Alloc))
+    {
+        static if (is(typeof(Alloc.instance) == shared))
+        {
+            protected shared static Alloc _p_alloc;
+            shared static this() { _p_alloc = typeof(_p_alloc).instance; }
+        }
+        else
+        {
+            protected static AffixAllocator!(Alloc, size_t) _p_alloc;
+            static this() { _p_alloc = typeof(_p_alloc).instance; }
+        }
+    }
+    else
+    {
+        import std.experimental.allocator.common;
+        
+        protected static typeof(Alloc) _p_alloc;
+        static if (stateSize!(typeof(_p_alloc)))
+        {
+            static this() { _p_alloc = typeof(_p_alloc)(Alloc); }
+        }
+    }
+}

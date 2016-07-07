@@ -10,6 +10,7 @@ module std.experimental.xml.domparser;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
+import std.experimental.xml.dom2;
 /++
 +   Built on top of Cursor, the DOM builder adds to it the ability to 
 +   build a DOM node representing the node at the current position and, if
@@ -18,14 +19,21 @@ import std.experimental.xml.cursor;
 +   skipping one layer of the hierarchy.
 +/
 struct DOMBuilder(T, Alloc)
-    if (isLowLevelParser!T)
+    if (isCursor!T)
 {   
     /++
     +   The underlying Cursor methods are exposed, so that one can, for example,
     +   use the cursor API to skip some nodes.
     +/
-    Cursor!T cursor;
+    T cursor;
     alias cursor this;
+    
+    private Node!(T.StringType, Alloc) currentNode;
+    
+    void setSource(T.InputType input)
+    {
+        cursor.setSource(input);
+    }
     
     /++
     +   Adds the current node to the DOM tree; if the DOM tree does not exist yet,
@@ -42,5 +50,17 @@ struct DOMBuilder(T, Alloc)
     void buildRecursive();
     
     /++ Returns the DOM tree built by this builder. +/
-    DOM!(StringType, Alloc).Document getDOMTree() const;
+    Document!(T.StringType, Alloc) getDOMTree() const;
+}
+
+unittest
+{
+    import std.experimental.xml.lexers;
+    import std.experimental.xml.parser;
+    import std.experimental.xml.cursor;
+    import std.experimental.allocator.gc_allocator;
+    
+    alias CursorType = Cursor!(Parser!(SliceLexer!string));
+    
+    auto builder = DOMBuilder!(CursorType, GCAllocator)();
 }

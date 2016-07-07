@@ -88,49 +88,12 @@ class DOMException: Exception // OK
     }
 }
 
-private mixin template WithAllocator(alias Alloc) // OK
-{
-    import std.experimental.allocator.gc_allocator;
-    
-    static if (is(Alloc == GCAllocator) || is(typeof(Alloc) == GCAllocator))
-    {
-        protected shared static GCAllocator _p_alloc;
-        shared static this()
-        {
-            _p_alloc = typeof(_p_alloc).instance;
-        }
-    }
-    else static if (is(Alloc))
-    {
-        static if (is(typeof(Alloc.instance) == shared))
-        {
-            protected shared static Alloc _p_alloc;
-            shared static this() { _p_alloc = typeof(_p_alloc).instance; }
-        }
-        else
-        {
-            protected static AffixAllocator!(Alloc, size_t) _p_alloc;
-            static this() { _p_alloc = typeof(_p_alloc).instance; }
-        }
-    }
-    else
-    {
-        protected static typeof(Alloc) _p_alloc;
-        static if (stateSize!(typeof(_p_alloc)))
-        {
-            static this()
-            {
-                _p_alloc = typeof(_p_alloc)(Alloc);
-            }
-        }
-    }
-}
-
 alias UserDataHandler(StringType, alias Alloc) = void delegate(UserDataOperation, string, UserData, Node!(StringType, Alloc), Node!(StringType, Alloc)); // OK
 
 abstract class Node(StringType, alias Alloc)
 {
-    mixin WithAllocator!Alloc;
+    import std.experimental.xml.interfaces: UsesAllocator;
+    mixin UsesAllocator!Alloc;
     
     // REQUIRED BY THE STANDARD; TO BE IMPLEMENTED BY SUBCLASSES
     public abstract
