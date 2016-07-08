@@ -18,12 +18,15 @@ import std.experimental.xml.faststrings;
 import std.range.primitives;
 import std.traits: isArray;
 
+import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
 /++
 +   A lexer that takes a sliceable input.
++   It doesn't really need an allocator. It takes it to have the same parameters
++   as the others.
 +/
-struct SliceLexer(T, alias Alloc = GCAllocator)
+struct SliceLexer(T, Alloc = void)
 {
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
@@ -31,6 +34,12 @@ struct SliceLexer(T, alias Alloc = GCAllocator)
     private T input;
     private size_t pos;
     private size_t begin;
+    
+    static if (!is(Alloc == void))
+    {
+        this(Alloc* alloc) {}
+        this(ref Alloc alloc) {}
+    }
     
     void setSource(T input) @nogc
     {
@@ -48,6 +57,8 @@ struct SliceLexer(T, alias Alloc = GCAllocator)
             return result;
         }
     }
+    
+    void deallocateLast() const {}
     
     auto empty() const @nogc
     {
@@ -110,16 +121,29 @@ struct SliceLexer(T, alias Alloc = GCAllocator)
 /++
 +   A lexer that takes an InputRange.
 +/
-struct RangeLexer(T, alias Alloc = GCAllocator)
+struct RangeLexer(T, Alloc = shared(GCAllocator))
     if (isInputRange!T)
 {
-    mixin UsesAllocator!Alloc;
     import std.experimental.appender;
 
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
+ 
+    static if (is(typeof(Alloc.instance)))
+        private Alloc* allocator = &(Alloc.instance);
+    else
+        private Alloc* allocator;
+
+    private Appender!(CharacterType, Alloc) app;
     
-    private Appender!(CharacterType, _p_alloc) app;
+    this(Alloc* alloc)
+    {
+        allocator = alloc;
+    }
+    this(ref Alloc alloc)
+    {
+        allocator = &alloc;
+    }
     
     import std.string: representation;
     static if (is(typeof(representation!CharacterType(""))))
@@ -149,6 +173,11 @@ struct RangeLexer(T, alias Alloc = GCAllocator)
         }
     }
     
+    void deallocateLast()
+    {
+        allocator.deallocate(cast(void[])app.data);
+    }
+    
     bool empty() const
     {
         return input.empty;
@@ -156,7 +185,7 @@ struct RangeLexer(T, alias Alloc = GCAllocator)
     
     void start()
     {
-        app = typeof(app)();
+        app = typeof(app)(allocator);
     }
     
     CharacterType[] get() const
@@ -212,17 +241,30 @@ struct RangeLexer(T, alias Alloc = GCAllocator)
     }
 }
 
-struct ForwardLexer(T, alias Alloc = GCAllocator)
+struct ForwardLexer(T, Alloc = shared(GCAllocator))
     if (isForwardRange!T)
 {
-    mixin UsesAllocator!Alloc;
     import std.experimental.appender;
     
     alias CharacterType = ElementEncodingType!T;
     alias InputType = T;
     
-    private size_t count;
-    private Appender!(CharacterType, _p_alloc) app;
+    static if (is(typeof(Alloc.instance)))
+        private Alloc* allocator = &(Alloc.instance);
+    else
+        private Alloc* allocator;
+    
+    private size_t count;    
+    private Appender!(CharacterType, Alloc) app;
+    
+    this(Alloc* alloc)
+    {
+        allocator = alloc;
+    }
+    this(ref Alloc alloc)
+    {
+        allocator = &alloc;
+    }
     
     import std.string: representation;
     static if (is(typeof(representation!CharacterType(""))))
@@ -255,6 +297,11 @@ struct ForwardLexer(T, alias Alloc = GCAllocator)
         return result;
     }
     
+    void deallocateLast()
+    {
+        allocator.deallocate(cast(void[])app.data);
+    }
+    
     bool empty() const
     {
         return input.empty;
@@ -262,7 +309,7 @@ struct ForwardLexer(T, alias Alloc = GCAllocator)
     
     void start()
     {
-        app = typeof(app)();
+        app = typeof(app)(allocator);
         input_start = input.save;
         count = 0;
     }
@@ -328,21 +375,35 @@ struct ForwardLexer(T, alias Alloc = GCAllocator)
     }
 }
 
-struct BufferedLexer(T, alias Alloc = GCAllocator)
+struct BufferedLexer(T, Alloc = shared(GCAllocator))
     if (isInputRange!T && isArray!(ElementType!T))
 {
-    mixin UsesAllocator!Alloc;
     import std.experimental.appender;
     
     alias BufferType = ElementType!T;
     alias CharacterType = ElementEncodingType!BufferType;
     alias InputType = T;
     
-    InputType buffers;
-    size_t pos;
-    size_t begin;
-    Appender!(CharacterType, _p_alloc) app;
-    bool onEdge;
+    private InputType buffers;
+    private size_t pos;
+    private size_t begin;
+    
+    static if (is(typeof(Alloc.instance)))
+        private Alloc* allocator = &(Alloc.instance);
+    else
+        private Alloc* allocator;
+        
+    private Appender!(CharacterType, Alloc) app;
+    private bool onEdge;
+    
+    this(Alloc* alloc)
+    {
+        allocator = alloc;
+    }
+    this(ref Alloc alloc)
+    {
+        allocator = &alloc;
+    }
     
     import std.string: representation, assumeUTF;
     static if (is(typeof(representation!CharacterType(""))))
@@ -390,7 +451,7 @@ struct BufferedLexer(T, alias Alloc = GCAllocator)
     
     void start()
     {
-        app = typeof(app)();
+        app = typeof(app)(allocator);
         begin = pos;
         onEdge = false;
     }
@@ -432,6 +493,12 @@ struct BufferedLexer(T, alias Alloc = GCAllocator)
         popBuffer;
         begin = 0;
         pos = 0;
+    }
+    
+    void deallocateLast()
+    {
+        if (onEdge)
+            allocator.deallocate(cast(void[])app.data);
     }
     
     CharacterType[] get() const
@@ -613,10 +680,11 @@ unittest
     testLexer!(BufferedLexer!DumbBufferedReader)(x => DumbBufferedReader(x, 10));
 }
  
-unittest
+@nogc unittest
 {
-
-    void testLexer(T)(T.InputType delegate(string) @nogc conv) @nogc
+    import std.experimental.allocator.mallocator;
+    
+    void testLexer(T)(T.InputType delegate(string) @nogc conv)
     {
         string xml = q{
         <?xml encoding = "utf-8" ?>
@@ -631,7 +699,9 @@ unittest
         </aaa>
         };
         
-        T lexer;
+        auto alloc = Mallocator.instance;
+    
+        T lexer = T(&alloc);
         lexer.setSource(conv(xml));
         
         lexer.dropWhile(" \r\n\t");
@@ -659,10 +729,8 @@ unittest
         assert(!lexer.empty);
     }
     
-    import std.experimental.allocator.mallocator;
-    auto alloc = Mallocator.instance;
-    testLexer!(SliceLexer!(string, alloc))(x => x);
-    testLexer!(RangeLexer!(string, alloc))(x => x);
-    testLexer!(ForwardLexer!(string, alloc))(x => x);
-    testLexer!(BufferedLexer!(DumbBufferedReader, alloc))(x => DumbBufferedReader(x, 10));
+    testLexer!(SliceLexer!(string, shared(Mallocator)))(x => x);
+    testLexer!(RangeLexer!(string, shared(Mallocator)))(x => x);
+    testLexer!(ForwardLexer!(string, shared(Mallocator)))(x => x);
+    testLexer!(BufferedLexer!(DumbBufferedReader, shared(Mallocator)))(x => DumbBufferedReader(x, 10));
 }

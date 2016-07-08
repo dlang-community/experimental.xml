@@ -19,7 +19,7 @@ import core.exception;
 
 class EndOfStreamException: Exception
 {
-    this(string file = __FILE__, int line = __LINE__)
+    this(string file = __FILE__, int line = __LINE__) @nogc
     {
         super("End of XML stream", file, line);
     }
@@ -27,16 +27,19 @@ class EndOfStreamException: Exception
 
 class UnexpectedEndOfStreamException: Exception
 {
-    this(string file = __FILE__, int line = __LINE__)
+    this(string file = __FILE__, int line = __LINE__) @nogc
     {
         super("Unexpected end of XML stream while parsing", file, line);
     }
 }
 
+import std.experimental.allocator.gc_allocator;
+
 enum ParserOptions
 {
     PreserveSpaces,
     CopyStrings,
+    AutomaticDeallocation
 }
 
 /+
@@ -44,7 +47,7 @@ enum ParserOptions
 +   Params:
 +       L              = the underlying lexer type
 +/
-struct Parser(L, options...)
+struct Parser(L, Alloc = shared(GCAllocator), options...)
     if (isLexer!L)
 {
     import std.meta: staticIndexOf;
@@ -57,10 +60,28 @@ struct Parser(L, options...)
     
     alias InputType = L.InputType;
     alias CharacterType = L.CharacterType;
+    
+    static if (is(typeof(Alloc.instance)))
+        Alloc* allocator = &(Alloc.instance);
+    else
+        Alloc* allocator;
 
     /++ Generic constructor; forwards its arguments to the lexer constructor +/
     this(Args...)(Args args)
+        if (!is(Args[0] == Alloc*) && !is(Args[0] == Alloc))
     {
+        lexer = L(args);
+    }
+    /// ditto
+    this(Args...)(Alloc* alloc, Args args)
+    {
+        allocator = alloc;
+        lexer = L(args);
+    }
+    /// ditto
+    this(Args...)(ref Alloc alloc, Args args)
+    {
+        allocator = &alloc;
         lexer = L(args);
     }
     
@@ -83,9 +104,33 @@ struct Parser(L, options...)
     private CharacterType[] fetchContent(size_t start = 0, size_t stop = 0)
     {
         static if (staticIndexOf!(options, ParserOptions.CopyStrings) >= 0)
-            return lexer.get[start..($ - stop)].idup;
+        {
+            import std.experimental.allocator;
+            import core.stdc.string: memcpy;
+            
+            auto s = lexer.get;
+            auto len = s.length - stop - start;
+            auto copy = allocator.allocate(len*CharacterType.sizeof);
+            memcpy(copy.ptr, s.ptr + start, len);
+            lexer.deallocateLast;
+            return cast(CharacterType[])copy;
+        }
         else
             return lexer.get[start..($ - stop)];
+    }
+    
+    void deallocateLast()
+    {
+        static if (staticIndexOf!(options, ParserOptions.CopyStrings) >= 0)
+            allocator.deallocate(cast(void[]) next.content);
+        else
+            lexer.deallocateLast;
+    }
+    
+    void throwException(T)()
+    {
+        import std.experimental.allocator;
+        throw make!(T, Alloc)(*allocator);
     }
     
     bool empty()
@@ -106,7 +151,7 @@ struct Parser(L, options...)
             catch (AssertError exc)
             {
                 if (lexer.empty)
-                    throw new UnexpectedEndOfStreamException();
+                    throwException!UnexpectedEndOfStreamException;
                 else
                     throw exc;
             }
@@ -117,6 +162,8 @@ struct Parser(L, options...)
     {
         front();
         ready = false;
+        static if (staticIndexOf!(options, ParserOptions.AutomaticDeallocation))
+            deallocateLast;
     }
     
     private void fetchNext()
@@ -125,7 +172,7 @@ struct Parser(L, options...)
             lexer.dropWhile(" \r\n\t");
         
         if (lexer.empty)
-            throw new EndOfStreamException();
+            throwException!EndOfStreamException;
         
         lexer.start();
         
@@ -301,10 +348,12 @@ auto parse(T)(auto ref T input)
     return Chain();
 }
 
-unittest
+@nogc unittest
 {
     import std.experimental.xml.lexers;
-    import std.string: splitLines;
+    import std.experimental.allocator.mallocator;
+    import std.string: lineSplitter;
+    import std.algorithm: equal;
     
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -319,7 +368,8 @@ unittest
     </aaa>
     };
     
-    auto parser = Parser!(SliceLexer!string)();
+    auto alloc = Mallocator.instance;
+    auto parser = Parser!(SliceLexer!(string, shared(Mallocator)), shared(Mallocator), ParserOptions.CopyStrings)(alloc, alloc);
     parser.setSource(xml);
     
     alias XMLKind = typeof(parser.front.kind);
@@ -341,8 +391,10 @@ unittest
     parser.popFront();
     
     assert(parser.front.kind == XMLKind.TEXT);
-    // use splitlines so the unittest does not depend on the newline policy of this file
-    assert(parser.front.content.splitLines == ["Lots of Text!", "            On multiple lines!", "        "]);
+    // use lineSplitter so the unittest does not depend on the newline policy of this file
+    static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
+    auto splitter = parser.front.content.lineSplitter;
+    assert(splitter.equal(linesArr));
     parser.popFront();
     
     assert(parser.front.kind == XMLKind.ELEMENT_END);

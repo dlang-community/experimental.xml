@@ -97,6 +97,13 @@ template isLexer(L)
         +   Characters advanced by this method may not be returned by get().
         +/
         lexer.dropWhile(s);
+        
+        /++
+        +   void deallocateLast()
+        +   Deallocate, if possible, the last sequence obtained with get.
+        +   To be called before calling start() again.
+        +/
+        lexer.deallocateLast();
     }));
 }
 
@@ -312,10 +319,10 @@ package mixin template UsesAllocator(alias Alloc)
     {
         import std.experimental.allocator.common;
         
-        protected static typeof(Alloc) _p_alloc;
+        protected static typeof(Alloc)* _p_alloc;
         static if (stateSize!(typeof(_p_alloc)))
         {
-            static this() { _p_alloc = typeof(_p_alloc)(Alloc); }
+            static this() { _p_alloc = &Alloc; }
         }
     }
 }

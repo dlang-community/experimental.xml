@@ -67,7 +67,8 @@ struct XMLChain2(LexerType, InputType)
     auto withParserOptions(Args...)()
     {
         import std.experimental.xml.parser;
-        return withParser!(Parser!(LexerType, Args));
+        import std.experimental.allocator.gc_allocator;
+        return withParser!(Parser!(LexerType, shared(GCAllocator), Args));
     }
     alias withDefaultParser this;
     
