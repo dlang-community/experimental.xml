@@ -1,3 +1,9 @@
+/*
+*             Copyright Lodovico Giaretta 2016 - .
+*  Distributed under the Boost Software License, Version 1.0.
+*      (See accompanying file LICENSE_1_0.txt or copy at
+*            http://www.boost.org/LICENSE_1_0.txt)
+*/
 
 module std.experimental.appender;
 
@@ -113,6 +119,22 @@ struct Appender(T, Alloc)
     public auto data() const
     {
         return cast(T[])arr[0..used];
+    }
+    
+    public void reset()
+    {
+        used = 0;
+    }
+    
+    public void free()
+    {
+        if (arr)
+        {
+            import std.experimental.allocator: dispose;
+            allocator.dispose(arr);
+            used = 0;
+            arr = [];
+        }
     }
 }
 

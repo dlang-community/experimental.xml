@@ -100,7 +100,8 @@ struct XMLChain3(ParserType, InputType)
     auto withCursorOptions(Args...)()
     {
         import std.experimental.xml.cursor;
-        return withCursor!(Cursor!(ParserType, Args));
+        import std.experimental.allocator.gc_allocator;
+        return withCursor!(Cursor!(ParserType, shared(GCAllocator), Args));
     }
     alias withDefaultCursor this;
     

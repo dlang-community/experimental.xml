@@ -393,8 +393,7 @@ auto parse(T)(auto ref T input)
     assert(parser.front.kind == XMLKind.TEXT);
     // use lineSplitter so the unittest does not depend on the newline policy of this file
     static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
-    auto splitter = parser.front.content.lineSplitter;
-    assert(splitter.equal(linesArr));
+    assert(parser.front.content.lineSplitter.equal(linesArr));
     parser.popFront();
     
     assert(parser.front.kind == XMLKind.ELEMENT_END);

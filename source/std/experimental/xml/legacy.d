@@ -17,7 +17,8 @@ import std.experimental.xml.interfaces;
 
 class ElementParser
 {
-    private alias CursorType = Cursor!(Parser!(SliceLexer!string), CursorOptions.DontConflateCDATA);
+    import std.experimental.allocator.gc_allocator;
+    private alias CursorType = Cursor!(Parser!(SliceLexer!string), shared(GCAllocator), CursorOptions.DontConflateCDATA);
 
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);

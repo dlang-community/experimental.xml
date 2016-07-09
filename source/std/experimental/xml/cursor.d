@@ -13,15 +13,17 @@ import std.experimental.xml.faststrings;
 import std.meta: staticIndexOf;
 import std.range.primitives;
 import std.typecons;
+import std.experimental.allocator.gc_allocator;
 
 enum CursorOptions
 {
     DontConflateCDATA,
     CopyStrings,
     InternStrings,
+    NoGC,
 }
 
-struct Cursor(P, options...)
+struct Cursor(P, Alloc = shared(GCAllocator), options...)
     if (isLowLevelParser!P)
 {
     /++
@@ -37,7 +39,10 @@ struct Cursor(P, options...)
     alias StringType = CharacterType[];
     
     /++ The type of the error handler that can be installed on this cursor +/
-    alias ErrorHandler = void delegate(ref typeof(this), Error);
+    static if (staticIndexOf!(options, CursorOptions.NoGC) >= 0)
+        alias ErrorHandler = void delegate(ref typeof(this), Error) @nogc;
+    else
+        alias ErrorHandler = void delegate(ref typeof(this), Error);
     
     /++
     + Enumeration of non-fatal errors that applications can intercept by setting
@@ -49,6 +54,9 @@ struct Cursor(P, options...)
         INVALID_ATTRIBUTE_SYNTAX,
     }
     
+    private enum hasInterning = staticIndexOf!(options, CursorOptions.InternStrings) >= 0;
+    private enum hasCopying = staticIndexOf!(options, CursorOptions.CopyStrings) >= 0;
+    
     private P parser;
     private ElementType!P currentNode;
     private bool starting, _documentEnd;
@@ -57,25 +65,66 @@ struct Cursor(P, options...)
     private bool attributesParsed;
     private ErrorHandler handler;
     
-    static if (staticIndexOf!(options, CursorOptions.InternStrings) >= 0)
+    static if (is(typeof(Alloc.instance)))
+        private Alloc* allocator = &(Alloc.instance);
+    else
+        private Alloc* allocator;
+    
+    static if (hasInterning)
     {
         import std.experimental.interner;
-        Interner!(StringType, staticIndexOf!(options, CursorOptions.CopyStrings) >= 0) interner;
+        static if (hasCopying)
+        {
+            enum canDeallocate = true;
+            Interner!(StringType, OnIntern.Duplicate, Alloc) interner;
+        }
+        else
+        {
+            bool canDeallocate = true;
+            Interner!(StringType, OnIntern.NoAction, Alloc) interner;
+        }
     }
+    else bool canDeallocate = false;
+    
     private static StringType returnStringType(StringType result)
     {
-        static if (staticIndexOf!(options, CursorOptions.InternStrings) >= 0)
-            return interner.intern(result);
-        else static if (staticIndexOf!(options, CursorOptions.CopyStrings) >= 0)
-            return result.idup;
+        static if (hasInterning)
+        {
+            auto interned = interner.intern(result);
+            static if (!hasCopying)
+                if (interned is result)
+                    canDeallocate = false;
+        }
+        else static if (hasCopying)
+        {
+            auto len = val.length * typeof(val[0]).sizeof;
+            auto copy = allocator.allocate(len);
+            memcpy(copy.ptr, val.ptr, len);
+            return cast(StringType)copy;
+        }
         else
             return result;
     }
     
     /++ Generic constructor; forwards its arguments to the parser constructor +/
     this(Args...)(Args args)
+        if (!is(Args[0] == Alloc*) && !is(Args[0] == Alloc))
     {
         parser = P(args);
+        static if (hasInterning)
+            interner = typeof(Interner)(allocator);
+    }
+    /// ditto
+    this(Args...)(Alloc* alloc, Args args)
+    {
+        allocator = alloc;
+        this(args);
+    }
+    /// ditto
+    this(Args...)(ref Alloc alloc, Args args)
+    {
+        allocator = &alloc;
+        this(args);
     }
     
     static if (isSaveableLowLevelParser!P)
@@ -103,6 +152,8 @@ struct Cursor(P, options...)
         attributesParsed = false;
         attributes = [];
         namespaces = [];
+        if (canDeallocate)
+            parser.deallocateLast;
     }
     
     /++
@@ -157,11 +208,19 @@ struct Cursor(P, options...)
     /++ Advances to the end of the parent of the current node. +/
     void exit()
     {
-        while (next()) {}
+        if (next())
+        {
+            static if (!hasInterning)
+                canDeallocate = true;
+            while (next()) {}
+        }
         if (!parser.empty)
             advanceInput();
         else
             _documentEnd = true;
+            
+        static if (!hasInterning)
+            canDeallocate = false;
     }
     
     /++
@@ -185,11 +244,15 @@ struct Cursor(P, options...)
             while (count > 0)
             {
                 advanceInput();
+                static if (!hasInterning)
+                    canDeallocate = true;
                 if (currentNode.kind == XMLKind.ELEMENT_START)
                     count++;
                 else if (currentNode.kind == XMLKind.ELEMENT_END)
                     count--;
             }
+            static if (!hasInterning)
+                canDeallocate = false;
             if (parser.empty)
                 return false;
             if (parser.front.kind == XMLKind.ELEMENT_END)
@@ -277,6 +340,10 @@ struct Cursor(P, options...)
     
     private void parseAttributeList()
     {
+        import std.experimental.appender: Appender;
+        auto attributesApp = Appender!(Attribute!StringType, Alloc)(allocator);
+        auto namespacesApp = Appender!(NamespaceDeclaration!StringType, Alloc)(allocator);
+    
         attributesParsed = true;
         auto nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
         if (nameEnd < 0)
@@ -346,13 +413,15 @@ struct Cursor(P, options...)
             value = currentNode.content[(quote + 1)..attEnd];
             
             if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
-                namespaces ~= NamespaceDeclaration!StringType(returnStringType(name), returnStringType(value));
+                namespacesApp.put(NamespaceDeclaration!StringType(returnStringType(name), returnStringType(value)));
             else
-                attributes ~= Attribute!StringType(returnStringType(prefix), returnStringType(name), returnStringType(value));
+                attributesApp.put(Attribute!StringType(returnStringType(prefix), returnStringType(name), returnStringType(value)));
             
             attStart = attEnd + 1;
             delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
         }
+        attributes = attributesApp.data;
+        namespaces = namespacesApp.data;
     }
     
     /++
@@ -595,12 +664,12 @@ auto children(T)(ref T cursor)
     return XMLRange(&cursor, !cursor.hasChildren);
 }
 
-unittest
+@nogc unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.string: lineSplitter, strip;
-    import std.algorithm: map;
+    import std.algorithm: map, equal;
     import std.array: array;
     
     string xml = q{
@@ -616,7 +685,11 @@ unittest
     </aaa>
     };
     
-    auto cursor = Cursor!(Parser!(SliceLexer!string))();
+    import std.experimental.allocator.mallocator;
+    auto alloc = Mallocator.instance;
+    
+    alias CursorType = Cursor!(Parser!(SliceLexer!string, typeof(alloc)), typeof(alloc), CursorOptions.NoGC, CursorOptions.InternStrings);
+    auto cursor = CursorType(alloc, alloc);
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -624,7 +697,8 @@ unittest
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes() == [Attribute!string("", "encoding", "utf-8")]);
+    assert(cursor.getAttributes().length == 1);
+    assert(cursor.getAttributes()[0] == Attribute!string("", "encoding", "utf-8"));
     assert(cursor.getNamespaceDefinitions() == []);
     assert(cursor.getText() == []);
     assert(cursor.hasChildren());
@@ -637,7 +711,8 @@ unittest
         assert(range1.front.getPrefix() == "");
         assert(range1.front.getLocalName() == "aaa");
         assert(range1.front.getAttributes() == []);
-        assert(range1.front.getNamespaceDefinitions() == [NamespaceDeclaration!string("myns", "something")]);
+        assert(range1.front.getNamespaceDefinitions().length == 1);
+        assert(range1.front.getNamespaceDefinitions()[0] == NamespaceDeclaration!string("myns", "something"));
         assert(range1.front.getText() == []);
         assert(range1.front.hasChildren());
         
@@ -648,7 +723,8 @@ unittest
             assert(range2.front.getName() == "myns:bbb");
             assert(range2.front.getPrefix() == "myns");
             assert(range2.front.getLocalName() == "bbb");
-            assert(range2.front.getAttributes() == [Attribute!string("myns", "att", ">")]);
+            assert(range2.front.getAttributes().length == 1);
+            assert(range2.front.getAttributes()[0] == Attribute!string("myns", "att", ">"));
             assert(range2.front.getNamespaceDefinitions() == []);
             assert(range2.front.getText() == []);
             assert(range2.front.hasChildren());
@@ -676,7 +752,8 @@ unittest
                 assert(range3.front.getAttributes() == []);
                 assert(range3.front.getNamespaceDefinitions() == []);
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
-                assert(range3.front.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!", "On multiple lines!", ""]);
+                static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
+                assert(range3.front.getText().lineSplitter.equal(linesArr));
                 assert(!range3.front.hasChildren());
                 
                 range3.popFront;
