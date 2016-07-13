@@ -277,7 +277,7 @@ unittest
     import std.array: Appender;
     auto app = Appender!string();
     auto writer = Writer!(string, typeof(app))();
-    writer.setSink(app);
+    writer.setSink(&app);
     
     writer.writeXMLDeclaration(10, "utf-8", false);
     assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>");

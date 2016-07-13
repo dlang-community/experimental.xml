@@ -22,7 +22,7 @@ enum ValidationEvent
     END,
 }
 
-private struct ValidatingCursorImpl(P)
+private struct ValidatingCursorImpl(P, Alloc)
 {
     static if (isLowLevelParser!P)
     {
@@ -32,6 +32,8 @@ private struct ValidatingCursorImpl(P)
     {
         P cursor;
     }
+    else static assert(0, "Invalid parser/cursor parameter for ValidatingCursor");
+    
     alias CursorType = typeof(cursor);
     alias cursor this;
     
@@ -44,7 +46,7 @@ private struct ValidatingCursorImpl(P)
     bool performAfter(ValidationEvent ev) { return true; }
 }
 
-private struct ValidatingCursorImpl(P, Validations...)
+private struct ValidatingCursorImpl(P, Alloc, Validations...)
 {
     import std.algorithm: all;
     import std.ascii: isAlphaNum;
@@ -57,7 +59,7 @@ private struct ValidatingCursorImpl(P, Validations...)
     
     static assert(name.all!isAlphaNum, "Invalid field name: " ~ name);
     
-    ValidatingCursorImpl!(P, Validations[2..$]) _p_parent;
+    ValidatingCursorImpl!(P, Alloc, Validations[2..$]) _p_parent;
     alias _p_parent this;
     
     static if (is(T))
@@ -114,9 +116,9 @@ private struct ValidatingCursorImpl(P, Validations...)
     mixin("@property ref typeof(_p_valid) " ~ name ~ "() return { return _p_valid; }");
 }
 
-struct ValidatingCursor(P, T...)
+struct ValidatingCursor(P, Alloc, T...)
 {
-    ValidatingCursorImpl!(P, T) _p_impl;
+    ValidatingCursorImpl!(P, Alloc, T) _p_impl;
     alias _p_impl this;
     
     this(Args...)(Args args)
@@ -160,7 +162,7 @@ template validatingCursor(P, Names...)
     import std.traits: TemplateArgsOf;
     auto validatingCursor(Args...)(Args args)
     {
-        return ValidatingCursor!(P, TemplateArgsOf!(typeof(tuple!Names(args))))(args);
+        return ValidatingCursor!(P, void, TemplateArgsOf!(typeof(tuple!Names(args))))(args);
     }
 }
 
@@ -308,7 +310,7 @@ unittest
         </aaa>
     };
     
-    auto validator = ValidatingCursor!(ParserType, ElementNestingValidator, "nestingValidator")();
+    auto validator = ValidatingCursor!(ParserType, void, ElementNestingValidator, "nestingValidator")();
     validator.setSource(xml);
     
     int count = 0;
@@ -418,7 +420,7 @@ unittest
         </aaa>
     };
     
-    auto cursor = ValidatingCursor!(ParserType, ParentStackSaver, "p")();
+    auto cursor = ValidatingCursor!(ParserType, void, ParentStackSaver, "p")();
     cursor.setSource(xml);
     
     cursor.enter();
@@ -536,7 +538,7 @@ unittest
     
     int count = 0;
     
-    auto cursor = ValidatingCursor!(ParserType, CheckXMLNames, "nameChecker")();
+    auto cursor = ValidatingCursor!(ParserType, void, CheckXMLNames, "nameChecker")();
     cursor.setSource(xml);
     cursor.nameChecker.onInvalidTagName = (s) { count++; return true; };
     cursor.nameChecker.onInvalidAttrName = (s) { count++; return true; };

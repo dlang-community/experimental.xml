@@ -7,165 +7,189 @@
 
 module std.experimental.xml;
 
-import std.experimental.xml.interfaces;
 import std.typecons: Tuple;
+import std.experimental.allocator.gc_allocator;
+
+// building blocks for the chains
+private mixin template Chain()
+{
+    static if (is(Alloc == void))
+        alias ActualAlloc = shared(GCAllocator);
+    else
+        alias ActualAlloc = Alloc;
+
+    private InputType input;
+    private ActualAlloc* allocator;
+    private CtorArgs ctorArgs;
+}
+private mixin template AllocMethods(string thisTemplate)
+{
+    auto withAllocator(Alloc)()
+    {
+        return withAllocator(&Alloc.instance);
+    }
+    auto withAllocator(Alloc)(ref Alloc alloc)
+    {
+        return withAllocator(&alloc);
+    }
+    auto withAllocator(Alloc)(Alloc* alloc)
+    {
+        mixin("return " ~ thisTemplate ~ "!(InputType, CurrentType, Alloc, CtorArgs, Options)(input, alloc, ctorArgs);\n");
+    }
+}
+private mixin template OptionsMethod(string name, string thisTemplate)
+{
+    mixin(
+    "   auto with" ~ name ~ "Options(Opts...)()\n" ~
+    "   {\n" ~
+    "       return " ~ thisTemplate ~ "!(InputType, CurrentType, Alloc, CtorArgs, Options, Opts)(input, allocator, ctorArgs);\n" ~
+    "   }\n"
+    );
+}
+private mixin template BindingTemplate()
+{
+    private static template BindType(alias T)
+    {
+        static if (is(T!(CurrentType, ActualAlloc, Options)))
+            alias BindType = T!(CurrentType, ActualAlloc, Options);
+        else static if (is(T!(InputType, ActualAlloc, Options)))
+            alias BindType = T!(InputType, ActualAlloc, Options);
+        else static if (is(ActualAlloc == void))
+        {
+            static if (is(T!(CurrentType, Options)))
+                alias BindType = T!(CurrentType, Options);
+            else static if (is(T!(InputType, Options)))
+                alias BindType = T!(InputType, Options);
+            else static if (is(T!Options))
+                alias BindType = T!Options;
+            else static if (is(T!CurrentType) && Options.length == 0)
+                alias BindType = T!CurrentType;
+            else static if (is(T!InputType) && Options.length == 0)
+                alias BindType = T!InputType;
+            else static if (is(T) && Options.length == 0)
+                alias BindType = T;
+        }
+        else static if (Options.length == 0)
+        {
+            static if (is(T!(CurrentType, ActualAlloc)))
+                alias BindType = T!(CurrentType, ActualAlloc);
+            else static if (is(T!(InputType, ActualAlloc)))
+                alias BindType = T!(InputType, ActualAlloc);
+            else static if (is(T!ActualAlloc))
+                alias BindType = T!ActualAlloc;
+        }
+        else static if (is(T!(ActualAlloc, Options)))
+            alias BindType = T!(ActualAlloc, Options);
+    }
+}
+private mixin template ChainPrevious(string name)
+{
+    mixin(
+    "   auto as" ~ name ~ "()\n" ~
+    "   {\n" ~
+    "       auto res = CurrentType(ctorArgs.expand);\n" ~
+    "       res.setSource(input);\n" ~
+    "       return res;\n" ~
+    "   }\n"
+    );
+}
+private mixin template ChainNext(string name, string nextTemplate)
+{
+    mixin BindingTemplate;
+
+    mixin(
+    "   auto with" ~ name ~ "(alias Type, Args...)(Args args)\n" ~
+    "   {\n" ~
+    "       static if (!is(Alloc == void))\n" ~
+    "       {\n" ~
+    "           alias CA = Tuple!(typeof(allocator), Args, CtorArgs.Types);\n" ~
+    "           return " ~ nextTemplate ~ "!(InputType, BindType!Type, Alloc, CA)(input, allocator, CA(allocator, args, ctorArgs.expand));\n" ~
+    "       }\n" ~
+    "       else\n" ~
+    "       {\n" ~
+    "           alias CA = Tuple!(Args, CtorArgs.Types);\n" ~
+    "           return " ~ nextTemplate ~ "!(InputType, BindType!Type, Alloc, CA)(input, allocator, CA(args, ctorArgs.expand));\n" ~
+    "       }\n" ~
+    "   }\n"
+    );
+    
+    mixin(
+    "   auto withDefault" ~ name ~ "()\n" ~
+    "   {\n" ~
+    "       return with" ~ name ~ "!Default();\n" ~
+    "   }\n"
+    );
+    
+    mixin ("alias withDefault" ~ name ~ " this;\n");
+}
+
+// the actual chains
 
 auto withInput(InputType)(auto ref InputType input)
 {
-    return XMLChain1!InputType(input);
+    return LexerChain!(InputType, void, void, Tuple!())(input, null, Tuple!()());
 }
 
-struct XMLChain1(InputType)
+struct LexerChain(InputType, CurrentType, Alloc, CtorArgs, Options...)
 {
-    InputType input;
+    import std.experimental.xml.lexers;
     
-    auto withLexer(alias LexerType)()
-    {
-        static if (is(LexerType) && isLexer!LexerType)
-            return XMLChain2!(LexerType, InputType)(input);
-        else static if (is(LexerType!InputType) && isLexer!(LexerType!InputType))
-            return XMLChain2!(LexerType!InputType, InputType)(input);
-        else static assert(0, LexerType.stringof ~ " is not an appropriate lexer for input type " ~ InputType.stringof);
-    }
-    auto withDefaultLexer()
-    {
-        import std.experimental.xml.lexers;
-        static if (__traits(compiles, SliceLexer!InputType))
-        {
-            return withLexer!SliceLexer;
-        }
-        else static if (__traits(compiles, BufferedLexer!InputType))
-        {
-            return withLexer!BufferedLexer;
-        }
-        else static if (__traits(compiles, RangeLexer!InputType))
-        {
-            return withLexer!RangeLexer;
-        }
-        else static assert(0, "Could not find an appropriate lexer for input type " ~ InputType.stringof);
-    }
-    alias withDefaultLexer this;
+    static if (is(SliceLexer!InputType))
+        private alias Default = SliceLexer;
+    else static if (is(BufferedLexer!InputType))
+        private alias Default = BufferedLexer;
+    else
+        private alias Default = RangeLexer;
+    
+    mixin Chain;
+    mixin AllocMethods!"LexerChain";
+    mixin OptionsMethod!("Lexer", "LexerChain");
+    mixin ChainNext!("Lexer", "ParserChain");
 }
 
-struct XMLChain2(LexerType, InputType)
+struct ParserChain(InputType, CurrentType, Alloc, CtorArgs, Options...)
 {
-    InputType input;
+    import std.experimental.xml.parser;
+    private alias Default = Parser;
     
-    auto withParser(alias ParserType)()
-    {
-        static if (is(ParserType) && isLowLevelParser!ParserType)
-            return XMLChain3!(ParserType, InputType)(input);
-        else static if (is(ParserType!LexerType) && isLowLevelParser!(ParserType!LexerType))
-            return XMLChain3!(ParserType!LexerType, InputType)(input);
-        else static assert(0, ParserType.stringof ~ " is not an appropriate parser for lexer " ~ LexerType.stringof);
-    }
-    auto withDefaultParser()
-    {
-        import std.experimental.xml.parser;
-        return withParser!Parser;
-    }
-    auto withParserOptions(Args...)()
-    {
-        import std.experimental.xml.parser;
-        import std.experimental.allocator.gc_allocator;
-        return withParser!(Parser!(LexerType, shared(GCAllocator), Args));
-    }
-    alias withDefaultParser this;
-    
-    auto asLexer(Args...)(Args args)
-    {
-        auto result = LexerType(args);
-        result.setSource(input);
-        return result;
-    }
+    mixin Chain;
+    mixin AllocMethods!"ParserChain";
+    mixin OptionsMethod!("Parser", "ParserChain");
+    mixin ChainNext!("Parser", "CursorChain");
+    mixin ChainPrevious!"Lexer";
 }
 
-struct XMLChain3(ParserType, InputType)
+struct CursorChain(InputType, CurrentType, Alloc, CtorArgs, Options...)
 {
-    InputType input;
+    import std.experimental.xml.cursor;
+    private alias Default = Cursor;
     
-    auto withCursor(alias CursorType)()
-    {
-        static if (is(CursorType) && isCursor!CursorType)
-            return XMLChain4!(CursorType, InputType)(input);
-        else static if (is(CursorType!ParserType) && isCursor!(CursorType!ParserType))
-            return XMLChain4!(CursorType!ParserType, InputType)(input);
-        else static assert(0, CursorType.stringof ~ " is not an appropriate cursor for parser " ~ ParserType.stringof);
-    }
-    auto withDefaultCursor()
-    {
-        import std.experimental.xml.cursor;
-        return withCursor!Cursor;
-    }
-    auto withCursorOptions(Args...)()
-    {
-        import std.experimental.xml.cursor;
-        import std.experimental.allocator.gc_allocator;
-        return withCursor!(Cursor!(ParserType, shared(GCAllocator), Args));
-    }
-    alias withDefaultCursor this;
-    
-    auto asParser(Args...)(Args args)
-    {
-        auto result = ParserType(args);
-        result.setSource(input);
-        return result;
-    }
+    mixin Chain;
+    mixin AllocMethods!"CursorChain";
+    mixin OptionsMethod!("Cursor", "CursorChain");
+    mixin ChainNext!("Cursor", "ValidatingChain");
+    mixin ChainPrevious!"Parser";
 }
 
-struct XMLChain4(CursorType, InputType, Validations...)
+struct ValidatingChain(InputType, CurrentType, Alloc, CtorArgs, Options...)
 {
     import std.experimental.xml.validation;
-    import std.experimental.xml.sax;
-    import std.typecons: Tuple;
+    private alias Default = ValidatingCursor;
     
-    private template TupleType(Validations...)
-    {
-        static if (Validations.length == 0)
-            alias TupleType = Tuple!Validations;
-        else
-            alias TupleType = Tuple!(typeof(ValidatingCursor!(CursorType, Validations[0..2])), Validations[2..$]);
-    }
-    private template SAXParserHandler(alias H)
-    {
-        alias SAXParserHandler = typeof(SAXParser!(ValidatingCursor!(CursorType, Validations), H).handler);
-    }
+    mixin Chain;
+    mixin AllocMethods!("ValidatingChain");
+    mixin ChainPrevious!"Cursor";
+}
 
-    InputType input;
-    TupleType!Validations valids;
-
-    auto withValidation(string name, alias T)()
-    {
-        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, T, name, Validations);
-        return ResultType(input, typeof(ResultType.valids)(typeof(ResultType.valids[$-1]).init, valids.expand));
-    }
-    auto withValidation(string name, alias T)(auto ref T valid)
-    {
-        alias ResultType = XMLChain4!(ParserType, LexerType, InputType, T, name, Validations);
-        return ResultType(input, typeof(ResultType.valids)(valid, valids.expand));
-    }
-    
-    auto asCursor(Args...)(Args args)
-    {
-        auto result = ValidatingCursor!(CursorType, Validations)(valids.expand, args);
-        result.setSource(input);
-        return result;
-    }
-    auto asSAXParser(alias H, Args...)(SAXParserHandler!H handler, Args args)
-    {
-        auto result = SAXParser!(ValidatingCursor!(CursorType, Validations))(valids, args);
-        result.setSource(input);
-        result.handler = handler;
-        return result;
-    }
-    auto asSAXParser(alias H, Args...)(Args args)
-    {
-        return asSAXParser!(H, Args)(SAXParserHandler!H(), args);
-    }
+struct DomChain(InputType, CurrentType, Alloc, CtorArgs, Options...)
+{
+    mixin ChainPrevious!("Cursor");
+    mixin Chain!("Dom", "DomChain");
 }
 
 unittest
 {
+    import std.experimental.xml.interfaces: XMLKind;
     import std.experimental.xml.parser: ParserOptions;
     import std.experimental.xml.cursor: CursorOptions;
    
