@@ -91,24 +91,13 @@ struct Appender(T, Alloc)
     private void enlarge(size_t sz)
     {
         import std.algorithm: max;
-        import std.experimental.allocator: makeArray, dispose;
-        import core.stdc.string: memcpy;
         
-        if(!arr)
-            arr = allocator.makeArray!(Unqual!T)(sz);
+        size_t delta;
+        if (arr.length < 256)
+            delta = max(arr.length, sz);
         else
-        {
-            size_t newSz;
-            if (arr.length < 256)
-                newSz = max(arr.length * 2, arr.length + sz);
-            else
-                newSz = max((arr.length * 3)/2, arr.length + sz);
-            
-            auto newArr = allocator.makeArray!(Unqual!T)(newSz);
-            memcpy(newArr.ptr, arr.ptr, used * T.sizeof);
-            allocator.dispose(arr);
-            arr = newArr;
-        }
+            delta = max(arr.length/2, sz);
+        assert(allocator.expandArray(arr, delta), "Could not grow appender array");
     }
     
     public void reserve(size_t size)
