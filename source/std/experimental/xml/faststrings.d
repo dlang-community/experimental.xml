@@ -90,3 +90,44 @@ unittest
     assert(fastIndexOfNeither("lulublubla", "luck") == 4);
     assert(fastIndexOfNeither([1, 3, 2], [2, 3, 1]) == -1);
 }
+
+import std.experimental.allocator.gc_allocator;
+T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc = Alloc.instance)
+{
+    ptrdiff_t i;
+    if ((i = str.fastIndexOfAny("&<>")) >= 0)
+    {
+        import std.experimental.appender;
+        import std.traits: Unqual;
+        import core.stdc.string: memcpy;
+        
+        auto app = Appender!(T, Alloc)(alloc);
+        do
+        {
+            app.put(str[0..i]);
+            
+            if (str[i] == '&')
+                app.put("&amp;");
+            else if (str[i] == '<')
+                app.put("&lt;");
+            else if (str[i] == '>')
+                app.put("&gt;");
+                
+            str = str[i+1..$];
+        } while ((i = str.fastIndexOfAny("&<>")) >= 0);
+        
+        app.put(str);
+        return app.data;
+    }
+    else
+        return str;
+}
+
+@nogc unittest
+{
+    import std.experimental.allocator.mallocator;
+    auto alloc = Mallocator.instance;
+    assert(xmlEscape("some standard string", alloc) == "some standard string");
+    assert(xmlEscape("& some <standard> string", alloc) == "&amp; some &lt;standard&gt; string");
+    assert(xmlEscape("<&>>><&&", alloc) == "&lt;&amp;&gt;&gt;&gt;&lt;&amp;&amp;");
+}

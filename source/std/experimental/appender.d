@@ -33,15 +33,10 @@ struct Appender(T, Alloc)
     {
         static if (isSomeChar!T && isSomeChar!U && T.sizeof < U.sizeof)
         {
-            /* may throwable operation:
-             * - std.utf.encode
-             */
-            // must do some transcoding around here
-            /*import std.utf : encode;
+            import std.utf : encode, UseReplacementDchar;
             Unqual!T[T.sizeof == 1 ? 4 : 2] encoded;
-            auto len = encode(encoded, item);
-            put(encoded[0 .. len]);*/
-            assert(0);
+            auto len = encode!(UseReplacementDchar.yes)(encoded, item);
+            put(encoded[0 .. len]);
         }
         else
         {
@@ -54,24 +49,24 @@ struct Appender(T, Alloc)
     public void put(Range)(Range range)
         if (isInputRange!Range)
     {
-        static if (__traits(compiles, range.length))
+        static if (isArray!Range)
         {
             alias U = ElementEncodingType!Range;
             auto len = range.length;
-            static if (isSomeChar!T && isSomeChar!U)
+            static if (is(T == U))
             {
-                static if (T.sizeof < U.sizeof)
-                {
-                    /*import std.utf : encode;
-                    Unqual!T[(T.sizeof == 1 ? 4 : 2)*len] encoded;
-                    len = encode(encoded, item);
-                    put(encoded[0 .. len]);*/
-                    assert(0);
-                }
-                else static if (isArray!Range)
-                {
-                    put(range.representation);
-                }
+                import core.stdc.string: memcpy;
+                if (arr.length - used < len)
+                    enlarge(len - (arr.length - used));
+                memcpy(arr.ptr + used, range.ptr, len*U.sizeof);
+                used += len;
+            }
+            else static if (isSomeChar!T && isSomeChar!U)
+            {
+                import std.utf : encode, UseReplacementDchar;
+                Unqual!T[(T.sizeof == 1 ? 4 : 2)*len] encoded;
+                len = encode!(UseReplacementDchar.yes)(encoded, item);
+                put(encoded[0 .. len]);
             }
             else
             {
@@ -80,6 +75,14 @@ struct Appender(T, Alloc)
                 for(; !range.empty; range.popFront)
                     arr[used++] = cast(T)range.front;
             }
+        }
+        else static if (__traits(compiles, range.length))
+        {
+            auto len = range.length;   
+            if (arr.length - used < len)
+                enlarge(len - (arr.length - used));
+            for(; !range.empty; range.popFront)
+                arr[used++] = cast(T)range.front;
         }
         else
         {
