@@ -519,7 +519,7 @@ unittest
     import std.algorithm: map;
     import std.array: array;
     
-    string xml = q{
+    wstring xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
         <myns:bbb myns:att='>'>
@@ -532,7 +532,7 @@ unittest
     </aaa>
     };
     
-    auto cursor = Cursor!(Parser!(SliceLexer!string))();
+    auto cursor = Cursor!(Parser!(SliceLexer!wstring))();
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -540,7 +540,7 @@ unittest
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes() == [Attribute!string("", "encoding", "utf-8")]);
+    assert(cursor.getAttributes() == [Attribute!wstring("", "encoding", "utf-8")]);
     assert(cursor.getNamespaceDefinitions() == []);
     assert(cursor.getText() == []);
     assert(cursor.hasChildren());
@@ -552,7 +552,7 @@ unittest
         assert(cursor.getPrefix() == "");
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
-        assert(cursor.getNamespaceDefinitions() == [NamespaceDeclaration!string("myns", "something")]);
+        assert(cursor.getNamespaceDefinitions() == [NamespaceDeclaration!wstring("myns", "something")]);
         assert(cursor.getText() == []);
         assert(cursor.hasChildren());
         
@@ -562,7 +562,7 @@ unittest
             assert(cursor.getName() == "myns:bbb");
             assert(cursor.getPrefix() == "myns");
             assert(cursor.getLocalName() == "bbb");
-            assert(cursor.getAttributes() == [Attribute!string("myns", "att", ">")]);
+            assert(cursor.getAttributes() == [Attribute!wstring("myns", "att", ">")]);
             assert(cursor.getNamespaceDefinitions() == []);
             assert(cursor.getText() == []);
             assert(cursor.hasChildren());
@@ -588,7 +588,7 @@ unittest
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
-                assert(cursor.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!", "On multiple lines!", ""]);
+                assert(cursor.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!"w, "On multiple lines!"w, ""w]);
                 assert(!cursor.hasChildren());
                 
                 assert(!cursor.next());

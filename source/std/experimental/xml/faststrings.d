@@ -92,10 +92,21 @@ unittest
 }
 
 import std.experimental.allocator.gc_allocator;
-T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc = Alloc.instance)
+T[] xmlEscape(T, Alloc)(T[] str)
 {
+    return xmlEscape(str, Alloc.instance);
+}
+T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc) @nogc
+{
+    import std.conv: to;
+    static immutable amp = to!(T[])("&amp;");
+    static immutable lt = to!(T[])("&lt;");
+    static immutable gt = to!(T[])("&gt;");
+    static immutable apos = to!(T[])("&apos;");
+    static immutable quot = to!(T[])("&quot;");
+
     ptrdiff_t i;
-    if ((i = str.fastIndexOfAny("&<>")) >= 0)
+    if ((i = str.fastIndexOfAny("&<>'\"")) >= 0)
     {
         import std.experimental.appender;
         import std.traits: Unqual;
@@ -107,14 +118,18 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc = Alloc.instance)
             app.put(str[0..i]);
             
             if (str[i] == '&')
-                app.put("&amp;");
+                app.put(amp);
             else if (str[i] == '<')
-                app.put("&lt;");
+                app.put(lt);
             else if (str[i] == '>')
-                app.put("&gt;");
+                app.put(gt);
+            else if (str[i] == '\'')
+                app.put(apos);
+            else if (str[i] == '"')
+                app.put(quot);
                 
             str = str[i+1..$];
-        } while ((i = str.fastIndexOfAny("&<>")) >= 0);
+        } while ((i = str.fastIndexOfAny("&<>'\"")) >= 0);
         
         app.put(str);
         return app.data;
@@ -127,7 +142,9 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc = Alloc.instance)
 {
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
-    assert(xmlEscape("some standard string", alloc) == "some standard string");
-    assert(xmlEscape("& some <standard> string", alloc) == "&amp; some &lt;standard&gt; string");
-    assert(xmlEscape("<&>>><&&", alloc) == "&lt;&amp;&gt;&gt;&gt;&lt;&amp;&amp;");
+    assert(xmlEscape("some standard string"d, alloc) == "some standard string"d);
+    assert(xmlEscape("& \"some\" <standard> 'string'", alloc) == 
+                    "&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;");
+    assert(xmlEscape("<&'>>>\"'\"<&&"w, alloc) ==
+                    "&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w);
 }

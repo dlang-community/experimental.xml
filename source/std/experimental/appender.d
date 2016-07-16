@@ -40,8 +40,7 @@ struct Appender(T, Alloc)
         }
         else
         {
-            if(!arr || arr.length == used)
-                enlarge(1);
+            ensureAddable(1);
             arr[used++] = cast(T)item;
         }
     }
@@ -49,84 +48,118 @@ struct Appender(T, Alloc)
     public void put(Range)(Range range)
         if (isInputRange!Range)
     {
-        static if (isArray!Range)
+        static if (isSomeChar!T && is(ElementEncodingType!Range == T))
         {
-            alias U = ElementEncodingType!Range;
             auto len = range.length;
-            static if (is(T == U))
+            ensureAddable(len);
+            arr[used..(used+len)] = range[];
+            used += len;
+        }
+        else static if (!(isSomeChar!T && isSomeChar!(ElementType!Range)) &&
+                    is(typeof(range.length) == size_t))
+        {
+            auto len = range.length;
+            ensureAddable(len);
+            
+            static if (is(typeof(arr[] = range[])))
             {
-                import core.stdc.string: memcpy;
-                if (arr.length - used < len)
-                    enlarge(len - (arr.length - used));
-                memcpy(arr.ptr + used, range.ptr, len*U.sizeof);
-                used += len;
-            }
-            else static if (isSomeChar!T && isSomeChar!U)
-            {
-                import std.utf : encode, UseReplacementDchar;
-                Unqual!T[(T.sizeof == 1 ? 4 : 2)*len] encoded;
-                len = encode!(UseReplacementDchar.yes)(encoded, item);
-                put(encoded[0 .. len]);
+                arr[used..(used+len)] = range[];
             }
             else
             {
-                if (arr.length - used < len)
-                    enlarge(len - (arr.length - used));
-                for(; !range.empty; range.popFront)
-                    arr[used++] = cast(T)range.front;
+                import std.conv : emplaceRef;
+                foreach (ref it ; arr[used..(used+len)])
+                {
+                    emplaceRef!T(it, range.front);
+                    range.popFront();
+                }
             }
-        }
-        else static if (__traits(compiles, range.length))
-        {
-            auto len = range.length;   
-            if (arr.length - used < len)
-                enlarge(len - (arr.length - used));
-            for(; !range.empty; range.popFront)
-                arr[used++] = cast(T)range.front;
+            used += len;
         }
         else
         {
-            for(; !range.empty; range.popFront)
+            // Generic input range
+            for (; !range.empty; range.popFront())
+            {
                 put(range.front);
+            }
         }
     }
     
-    private void enlarge(size_t sz)
+    private void ensureAddable(size_t sz)
     {
         import std.algorithm: max;
         
+        if (arr.length - used >= sz)
+            return;
+        
+        auto requiredGrowth = sz + used - arr.length;
+        
         size_t delta;
-        if (arr.length < 256)
-            delta = max(arr.length, sz);
+        if (arr.length == 0)
+            delta = max(8, requiredGrowth);
+        if (arr.length < 512)
+            delta = max(arr.length, requiredGrowth);
         else
-            delta = max(arr.length/2, sz);
+            delta = max(arr.length/2, requiredGrowth);
         assert(allocator.expandArray(arr, delta), "Could not grow appender array");
     }
     
-    public void reserve(size_t size)
-    {
-        enlarge(size);
-    }
-    
-    public auto data() const
-    {
-        return cast(T[])arr[0..used];
-    }
-    
-    public void reset()
-    {
-        used = 0;
-    }
-    
-    public void free()
+    /**
+     * Reserve at least newCapacity elements for appending.  Note that more elements
+     * may be reserved than requested.  If newCapacity <= capacity, then nothing is
+     * done.
+     */
+    void reserve(size_t newCapacity)
     {
         if (arr)
         {
-            import std.experimental.allocator: dispose;
-            allocator.dispose(arr);
-            used = 0;
-            arr = [];
+            if (newCapacity > arr.length)
+                ensureAddable(newCapacity - used);
         }
+        else
+        {
+            ensureAddable(newCapacity);
+        }
+    }
+
+    /**
+     * Returns the capacity of the array (the maximum number of elements the
+     * managed array can accommodate before triggering a reallocation).  If any
+     * appending will reallocate, $(D capacity) returns $(D 0).
+     */
+    @property size_t capacity() const
+    {
+        return arr.length;
+    }
+
+    /**
+     * Returns the managed array.
+     */
+    @property inout(T)[] data() inout @trusted
+    {
+        /* @trusted operation:
+         * casting Unqual!T[] to inout(T)[]
+         */
+        return cast(typeof(return))(arr[0..used]);
+    }
+    
+    /**
+     * Clears the managed array.  This allows the elements of the array to be reused
+     * for appending.
+     */
+    void clear() pure nothrow
+    {
+        used = 0;
+    }
+
+    /**
+     * Shrinks the managed array to the given length.
+     */
+    void shrinkTo(size_t newLength) pure nothrow
+    {
+        assert(used >= newLength, "Trying to shrink appender to a greater size");
+        used = newLength;
     }
 }
 

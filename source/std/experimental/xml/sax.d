@@ -94,7 +94,7 @@ unittest
     import std.experimental.xml.parser;
     import std.experimental.xml.lexers;
 
-    string xml = q{
+    dstring xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
         <myns:bbb myns:att='>'>
@@ -131,11 +131,19 @@ unittest
         void onElementEmpty(ref T node) { total_invocations++; }
         void onProcessingInstruction(ref T node) { total_invocations++; }
         void onText(ref T node) { total_invocations++; }
-        void onDocument(ref T node) { total_invocations++; }
-        void onComment(ref T node) { total_invocations++; }
+        void onDocument(ref T node)
+        {
+            assert(node.getAttributes == [Attribute!dstring("", "encoding", "utf-8")]);
+            total_invocations++;
+        }
+        void onComment(ref T node)
+        {
+            assert(node.getText == " lol ");
+            total_invocations++;
+        }
     }
     
-    auto parser = SAXParser!(Cursor!(Parser!(SliceLexer!string)), MyHandler)();
+    auto parser = SAXParser!(Cursor!(Parser!(SliceLexer!dstring)), MyHandler)();
     parser.setSource(xml);
     
     parser.processDocument();
