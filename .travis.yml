@@ -13,4 +13,4 @@ script:
   - if [ ${COV} = "true" ]; then make unittest-cov; fi
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - if [ ${COV} = "true" ]; then bash <(curl -s https://codecov.io/bash); fi

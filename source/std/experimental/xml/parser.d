@@ -288,15 +288,17 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
                                 lexer.advanceUntil('?', true);
                             while (!lexer.testAndAdvance('>'));
                         }
-                        // entity, notation, attlist or comment
+                        // declaration or comment
                         else if (lexer.testAndAdvance('!'))
                         {
+                            // comment
                             if (lexer.testAndAdvance('-'))
                             {
                                 do
                                     lexer.advanceUntil('>', true);
                                 while (!fastEqual(lexer.get()[($-3)..$], "-->"));
                             }
+                            // declaration
                             else
                             {
                                 size_t cc;
@@ -314,6 +316,7 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
                 next.content = fetchContent(9, 1);
                 next.kind = XMLKind.DOCTYPE;
             }
+            // declaration
             else
             {
                 if (c == 2)
@@ -325,8 +328,32 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
                         else
                             lexer.advanceUntil('\'', true);
                 }
-                next.content = fetchContent(2, 1);
-                next.kind = XMLKind.DECLARATION;
+                auto len = lexer.get().length;
+                if (len > 8 && fastEqual(lexer.get()[2..9], "ATTLIST"))
+                {
+                    next.content = fetchContent(9, 1);
+                    next.kind = XMLKind.ATTLIST_DECL;
+                }
+                else if (len > 8 && fastEqual(lexer.get()[2..9], "ELEMENT"))
+                {
+                    next.content = fetchContent(9, 1);
+                    next.kind = XMLKind.ELEMENT_DECL;
+                }
+                else if (len > 9 && fastEqual(lexer.get()[2..10], "NOTATION"))
+                {
+                    next.content = fetchContent(10, 1);
+                    next.kind = XMLKind.NOTATION_DECL;
+                }
+                else if (len > 7 && fastEqual(lexer.get()[2..8], "ENTITY"))
+                {
+                    next.content = fetchContent(8, 1);
+                    next.kind = XMLKind.ENTITY_DECL;
+                }
+                else
+                {
+                    next.content = fetchContent(2, 1);
+                    next.kind = XMLKind.DECLARATION;
+                }
             }
         }
         
@@ -411,6 +438,73 @@ auto parse(T)(auto ref T input)
     assert(parser.front.kind == XMLKind.ELEMENT_END);
     assert(parser.front.content == "aaa");
     parser.popFront();
+    
+    assert(parser.empty);
+}
+
+unittest
+{
+    import std.experimental.xml.lexers;
+    import std.algorithm: find;
+    import std.string: stripRight;
+    
+    string xml = q{
+    <!DOCTYPE mydoc https://myUri.org/bla [
+        <!ELEMENT myelem ANY>
+        <!ENTITY myent "replacement text">
+        <!ATTLIST myelem foo CDATA #REQUIRED>
+    ]>
+    };
+    
+    auto parser = Parser!(SliceLexer!string)();
+    parser.setSource(xml);
+    
+    alias XMLKind = typeof(parser.front.kind);
+    
+    assert(parser.front.kind == XMLKind.DOCTYPE);
+    assert(parser.front.content == xml.find("<!DOCTYPE").stripRight[9..($-1)]);
+    parser.popFront;
+    assert(parser.empty);
+}
+
+unittest
+{
+    import std.experimental.xml.lexers;
+    import std.algorithm: find;
+    import std.string: stripRight;
+    
+    string xml = q{
+        <!ELEMENT myelem ANY>
+        <!ENTITY   myent    "replacement text">
+        <!ATTLIST myelem foo CDATA #REQUIRED >
+        <!NOTATION PUBLIC 'h'>
+        <!FOODECL asdffdsa >
+    };
+    
+    auto parser = Parser!(SliceLexer!string)();
+    parser.setSource(xml);
+    
+    alias XMLKind = typeof(parser.front.kind);
+    
+    assert(parser.front.kind == XMLKind.ELEMENT_DECL);
+    assert(parser.front.content == " myelem ANY");
+    parser.popFront;
+    
+    assert(parser.front.kind == XMLKind.ENTITY_DECL);
+    assert(parser.front.content == "   myent    \"replacement text\"");
+    parser.popFront;
+    
+    assert(parser.front.kind == XMLKind.ATTLIST_DECL);
+    assert(parser.front.content == " myelem foo CDATA #REQUIRED ");
+    parser.popFront;
+    
+    assert(parser.front.kind == XMLKind.NOTATION_DECL);
+    assert(parser.front.content == " PUBLIC 'h'");
+    parser.popFront;
+    
+    assert(parser.front.kind == XMLKind.DECLARATION);
+    assert(parser.front.content == "FOODECL asdffdsa ");
+    parser.popFront;
     
     assert(parser.empty);
 }

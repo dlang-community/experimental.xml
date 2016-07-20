@@ -164,6 +164,14 @@ enum XMLKind
     
     /++ Any kind of declaration, delimited by `<!` and `>` +/
     DECLARATION,
+    /// ditto
+    ATTLIST_DECL,
+    /// ditto
+    ELEMENT_DECL,
+    /// ditto
+    ENTITY_DECL,
+    /// ditto
+    NOTATION_DECL,
     
     /++ A conditional section, delimited by `<![` and `]]>` +/
     CONDITIONAL,
