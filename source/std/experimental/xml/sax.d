@@ -159,7 +159,7 @@ unittest
         }
         void onComment(ref T node)
         {
-            assert(node.getText == " lol ");
+            assert(node.getContent == " lol ");
             total_invocations++;
         }
     }

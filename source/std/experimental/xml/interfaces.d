@@ -276,7 +276,7 @@ template isCursor(CursorType)
         auto s = cursor.getName;
         s = cursor.getLocalName;
         s = cursor.getPrefix;
-        s = cursor.getText;
+        s = cursor.getContent;
         s = cursor.getAll;
         Attribute!S[] atts = cursor.getAttributes;
         NamespaceDeclaration!S[] ns = cursor.getNamespaceDefinitions;

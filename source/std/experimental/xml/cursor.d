@@ -60,10 +60,17 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     private P parser;
     private ElementType!P currentNode;
     private bool starting, _documentEnd;
-    private Attribute!StringType[] attributes;
-    private NamespaceDeclaration!StringType[] namespaces;
-    private bool attributesParsed;
     private ErrorHandler handler;
+    
+    private struct CachedValues
+    {
+        StringType name;
+        ptrdiff_t colon = ptrdiff_t.max;
+        private Attribute!StringType[] attributes;
+        private NamespaceDeclaration!StringType[] namespaces;
+        private bool attributesParsed;
+    }
+    private CachedValues cache;
     
     static if (is(typeof(Alloc.instance)))
         private Alloc* allocator = &(Alloc.instance);
@@ -149,9 +156,7 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     {
         currentNode = parser.front;
         parser.popFront();
-        attributesParsed = false;
-        attributes = [];
-        namespaces = [];
+        cache = CachedValues();
         if (canDeallocate)
             parser.deallocateLast;
     }
@@ -287,40 +292,45 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     +   it it is a processing instruction, return its target;
     +   otherwise, return an empty string;
     +/
-    StringType getName() const
+    StringType getName()
     {
-        ptrdiff_t i;
-        if (currentNode.kind != XMLKind.TEXT && 
-            currentNode.kind != XMLKind.COMMENT &&
-            currentNode.kind != XMLKind.CDATA)
+        switch (currentNode.kind)
         {
-            auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
-            if (nameStart < 0)
+            case XMLKind.DOCUMENT:
+            case XMLKind.TEXT:
+            case XMLKind.CDATA:
+            case XMLKind.COMMENT:
+            case XMLKind.DECLARATION:
+            case XMLKind.CONDITIONAL:
                 return [];
-                
-            StringType result;
-            if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
-                return returnStringType(currentNode.content[nameStart..i]);
-            else
-                return returnStringType(currentNode.content[nameStart..$]);
+            default:
+                if (!cache.name)
+                {
+                    auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
+                    assert(nameStart >= 0, "node doesn't have a name");
+                    
+                    ptrdiff_t i;
+                    if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
+                        cache.name = returnStringType(currentNode.content[nameStart..i]);
+                    else
+                        cache.name = returnStringType(currentNode.content[nameStart..$]);
+                }
+                return cache.name;
         }
-        return [];
     }
     
     /++
     +   If the current node is an element, return its local name (without namespace prefix);
     +   otherwise, return the same result as getName().
     +/
-    StringType getLocalName() const
+    StringType getLocalName()
     {
         auto name = getName();
         if (currentNode.kind == XMLKind.ELEMENT_START || currentNode.kind == XMLKind.ELEMENT_END)
         {
-            auto colon = fastIndexOf(name, ':');
-            if (colon != -1)
-                return name[(colon+1)..$];
-            else
-                return name;
+            if (cache.colon == cache.colon.max)
+                cache.colon = fastIndexOf(name, ':');
+            return name[(cache.colon+1)..$];
         }
         return name;
     }
@@ -329,13 +339,20 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     +   If the current node is an element, return its namespace prefix;
     +   otherwise, the result in unspecified;
     +/
-    StringType getPrefix() const
+    StringType getPrefix()
     {
-        auto colon = fastIndexOf(getName(), ':');
-        if (colon != -1)
-            return returnStringType(currentNode.content[0..colon]);
-        else
-            return [];
+        if (currentNode.kind == XMLKind.ELEMENT_START || currentNode.kind == XMLKind.ELEMENT_END)
+        {
+            auto name = getName;
+            if (cache.colon == cache.colon.max)
+                cache.colon = fastIndexOf(name, ':');
+                
+            if (cache.colon >= 0)
+                return name[0..(cache.colon)];
+            else
+                return [];
+        }
+        return [];
     }
     
     private void parseAttributeList()
@@ -344,7 +361,7 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         auto attributesApp = Appender!(Attribute!StringType, Alloc)(allocator);
         auto namespacesApp = Appender!(NamespaceDeclaration!StringType, Alloc)(allocator);
     
-        attributesParsed = true;
+        cache.attributesParsed = true;
         auto nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
         if (nameEnd < 0)
             return;
@@ -420,8 +437,8 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
             attStart = attEnd + 1;
             delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
         }
-        attributes = attributesApp.data;
-        namespaces = namespacesApp.data;
+        cache.attributes = attributesApp.data;
+        cache.namespaces = namespacesApp.data;
     }
     
     /++
@@ -434,12 +451,10 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         auto kind = currentNode.kind;
         if (kind == XMLKind.ELEMENT_START || kind == XMLKind.PROCESSING_INSTRUCTION)
         {
-            if (!attributesParsed)
+            if (!cache.attributesParsed)
                 parseAttributeList();
         }
-        else
-            namespaces = [];
-        return attributes;
+        return cache.attributes;
     }
     
     /++
@@ -451,43 +466,20 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         auto kind = currentNode.kind;
         if (kind == XMLKind.ELEMENT_START)
         {
-            if (!attributesParsed)
+            if (!cache.attributesParsed)
                 parseAttributeList();
         }
-        else
-            namespaces = [];
-        return namespaces;
+        return cache.namespaces;
     }
     
     /++
     +   Return the text content of a CDATA section, a comment or a text node;
-    +   the content of a processing instruction or a doctype;
-    +   returns an empty string in all other cases.
+    +   in all other cases, returns the entire node without the name
     +/
-    StringType getText() const
+    StringType getContent()
     {
-        switch (currentNode.kind)
-        {
-            case XMLKind.TEXT:
-            case XMLKind.CDATA:
-            case XMLKind.COMMENT:
-                return currentNode.content;
-            case XMLKind.DOCTYPE:
-            case XMLKind.PROCESSING_INSTRUCTION:
-            {
-                auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
-                if (nameStart < 0)
-                    assert(0);
-                auto nameEnd = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t");
-                nameEnd = nameEnd < 0 ? currentNode.content.length : nameEnd;
-                // xml declaration does not have any content
-                if(fastEqual(currentNode.content[nameStart..nameEnd], "xml"))
-                    return [];
-                return currentNode.content[nameEnd..$];
-            }
-            default:
-                return [];
-        }
+        auto nameLen = getName.length;
+        return currentNode.content[nameLen..$];
     }
     
     /++ Returns the entire text of the current node. +/
@@ -542,7 +534,7 @@ unittest
     assert(cursor.getLocalName() == "xml");
     assert(cursor.getAttributes() == [Attribute!wstring("", "encoding", "utf-8")]);
     assert(cursor.getNamespaceDefinitions() == []);
-    assert(cursor.getText() == []);
+    assert(cursor.getContent() == " encoding = \"utf-8\" ");
     assert(cursor.hasChildren());
     
     cursor.enter();
@@ -553,7 +545,7 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
         assert(cursor.getNamespaceDefinitions() == [NamespaceDeclaration!wstring("myns", "something")]);
-        assert(cursor.getText() == []);
+        assert(cursor.getContent() == " xmlns:myns=\"something\"");
         assert(cursor.hasChildren());
         
         cursor.enter();
@@ -564,7 +556,7 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes() == [Attribute!wstring("myns", "att", ">")]);
             assert(cursor.getNamespaceDefinitions() == []);
-            assert(cursor.getText() == []);
+            assert(cursor.getContent() == " myns:att='>'");
             assert(cursor.hasChildren());
             
             cursor.enter();
@@ -575,7 +567,7 @@ unittest
                 assert(cursor.getLocalName() == "");
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
-                assert(cursor.getText() == " lol ");
+                assert(cursor.getContent() == " lol ");
                 assert(!cursor.hasChildren());
                 
                 assert(cursor.next());
@@ -588,7 +580,7 @@ unittest
                 assert(cursor.getAttributes() == []);
                 assert(cursor.getNamespaceDefinitions() == []);
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
-                assert(cursor.getText().lineSplitter.map!"a.strip".array == ["Lots of Text!"w, "On multiple lines!"w, ""w]);
+                assert(cursor.getContent().lineSplitter.map!"a.strip".array == ["Lots of Text!"w, "On multiple lines!"w, ""w]);
                 assert(!cursor.hasChildren());
                 
                 assert(!cursor.next());
@@ -601,7 +593,7 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
-            assert(cursor.getText() == []);
+            assert(cursor.getContent() == []);
             assert(!cursor.hasChildren());
             
             assert(cursor.next());
@@ -612,7 +604,7 @@ unittest
             assert(cursor.getLocalName() == "");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
-            assert(cursor.getText() == " Ciaone! ");
+            assert(cursor.getContent() == " Ciaone! ");
             assert(!cursor.hasChildren());
             
             assert(cursor.next());
@@ -623,7 +615,7 @@ unittest
             assert(cursor.getLocalName() == "ccc");
             assert(cursor.getAttributes() == []);
             assert(cursor.getNamespaceDefinitions() == []);
-            assert(cursor.getText() == []);
+            assert(cursor.getContent() == []);
             assert(!cursor.hasChildren());
             
             assert(!cursor.next());
@@ -636,7 +628,7 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes() == []);
         assert(cursor.getNamespaceDefinitions() == []);
-        assert(cursor.getText() == []);
+        assert(cursor.getContent() == []);
         assert(!cursor.hasChildren());
         
         assert(!cursor.next());
@@ -700,7 +692,7 @@ auto children(T)(ref T cursor)
     assert(cursor.getAttributes().length == 1);
     assert(cursor.getAttributes()[0] == Attribute!string("", "encoding", "utf-8"));
     assert(cursor.getNamespaceDefinitions() == []);
-    assert(cursor.getText() == []);
+    assert(cursor.getContent() == " encoding = \"utf-8\" ");
     assert(cursor.hasChildren());
     
     {
@@ -713,7 +705,7 @@ auto children(T)(ref T cursor)
         assert(range1.front.getAttributes() == []);
         assert(range1.front.getNamespaceDefinitions().length == 1);
         assert(range1.front.getNamespaceDefinitions()[0] == NamespaceDeclaration!string("myns", "something"));
-        assert(range1.front.getText() == []);
+        assert(range1.front.getContent() == " xmlns:myns=\"something\"");
         assert(range1.front.hasChildren());
         
         {
@@ -726,7 +718,7 @@ auto children(T)(ref T cursor)
             assert(range2.front.getAttributes().length == 1);
             assert(range2.front.getAttributes()[0] == Attribute!string("myns", "att", ">"));
             assert(range2.front.getNamespaceDefinitions() == []);
-            assert(range2.front.getText() == []);
+            assert(range2.front.getContent() == " myns:att='>'");
             assert(range2.front.hasChildren());
             
             {
@@ -738,7 +730,7 @@ auto children(T)(ref T cursor)
                 assert(range3.front.getLocalName() == "");
                 assert(range3.front.getAttributes() == []);
                 assert(range3.front.getNamespaceDefinitions() == []);
-                assert(range3.front.getText() == " lol ");
+                assert(range3.front.getContent() == " lol ");
                 assert(!range3.front.hasChildren());
                 
                 range3.popFront;
@@ -753,7 +745,7 @@ auto children(T)(ref T cursor)
                 assert(range3.front.getNamespaceDefinitions() == []);
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
                 static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
-                assert(range3.front.getText().lineSplitter.equal(linesArr));
+                assert(range3.front.getContent().lineSplitter.equal(linesArr));
                 assert(!range3.front.hasChildren());
                 
                 range3.popFront;
@@ -769,7 +761,7 @@ auto children(T)(ref T cursor)
             assert(range2.front.getLocalName() == "");
             assert(range2.front.getAttributes() == []);
             assert(range2.front.getNamespaceDefinitions() == []);
-            assert(range2.front.getText() == " Ciaone! ");
+            assert(range2.front.getContent() == " Ciaone! ");
             assert(!range2.front.hasChildren());
             
             range2.popFront;
@@ -781,7 +773,7 @@ auto children(T)(ref T cursor)
             assert(range2.front.getLocalName() == "ccc");
             assert(range2.front.getAttributes() == []);
             assert(range2.front.getNamespaceDefinitions() == []);
-            assert(range2.front.getText() == []);
+            assert(range2.front.getContent() == []);
             assert(!range2.front.hasChildren());
             
             range2.popFront;

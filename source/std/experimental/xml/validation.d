@@ -359,7 +359,7 @@ struct ParentStackSaver(CursorType)
         Node* parent;
         XMLKind kind;
         StringType name, localName, prefix;
-        StringType text;
+        StringType content;
         Attribute!StringType[] attributes;
         NamespaceDeclaration!StringType[] namespaces;
     }
@@ -376,7 +376,7 @@ struct ParentStackSaver(CursorType)
                 node.name = cursor.getName;
                 node.localName = cursor.getLocalName();
                 node.prefix = cursor.getPrefix();
-                node.text = cursor.getText();
+                node.content = cursor.getContent();
                 node.attributes = cursor.getAttributes();
                 node.namespaces = cursor.getNamespaceDefinitions();
                 node.parent = parent;
