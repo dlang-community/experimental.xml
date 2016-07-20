@@ -3,7 +3,7 @@
 help:
 	@echo Available commands:
 	@echo - benchmark: builds and benchmarks the library
-	@echo - build-all: builds all targets, without executing anything
+	@echo - build-all: builds all targets except unittests, without executing anything
 	@echo - clean: deletes all binaries
 	@echo - clean-random-benchmark: deletes random benchmark files
 	@echo - help: shows this text
@@ -22,7 +22,6 @@ build-all:
 	dub build -c benchmark -b release
 	dub build -c random-benchmark -b release
 	dub build -c test -b debug
-	dub build -b unittest
 	
 .PHONY: clean
 clean:

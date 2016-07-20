@@ -10,7 +10,7 @@ matrix:
 
 script:
   - make build-all
-  - if [ ${COV} = "true" ]; then make unittest-cov; fi
+  - if [ ${COV} = "true" ]; then make unittest-cov; else make unittest; fi
 
 after_success:
   - if [ ${COV} = "true" ]; then bash <(curl -s https://codecov.io/bash); fi

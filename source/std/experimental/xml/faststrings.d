@@ -53,7 +53,7 @@ ptrdiff_t fastIndexOf(T, S)(T[] t, S s) pure @nogc nothrow
 }
 unittest
 {
-    assert(fastIndexOf("FoO", 'O') == 2);
+    assert(fastIndexOf("FoO"w, 'O') == 2);
     assert(fastIndexOf([1, 2], 3.14) == -1);
 }
 
@@ -96,7 +96,7 @@ T[] xmlEscape(T, Alloc)(T[] str)
 {
     return xmlEscape(str, Alloc.instance);
 }
-T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc) @nogc
+T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
 {
     import std.conv: to;
     static immutable amp = to!(T[])("&amp;");
@@ -109,8 +109,6 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc) @nogc
     if ((i = str.fastIndexOfAny("&<>'\"")) >= 0)
     {
         import std.experimental.appender;
-        import std.traits: Unqual;
-        import core.stdc.string: memcpy;
         
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length + 3);
@@ -139,13 +137,100 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc) @nogc
         return str;
 }
 
+struct xmlPredefinedEntities(T)
+{
+    static immutable T[] amp = "&";
+    static immutable T[] lt = "<";
+    static immutable T[] gt = ">";
+    static immutable T[] apos = "'";
+    static immutable T[] quot = "\"";
+    
+    auto opBinaryRight(string op, U)(U key) const @nogc
+        if (op == "in")
+    {
+        switch (key)
+        {
+            case "amp":
+                return &amp;
+            case "lt":
+                return &lt;
+            case "gt":
+                return &gt;
+            case "apos":
+                return &apos;
+            case "quot":
+                return &quot;
+            default:
+                return null;
+        }
+    }
+}
+
+import std.typecons: Flag, Yes;
+T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, U replacements = xmlPredefinedEntities!T())
+{
+    return xmlUnescape!(T, Alloc, strict)(str, Alloc.instance);
+}
+T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
+{
+    ptrdiff_t i;
+    if ((i = str.fastIndexOf('&')) >= 0)
+    {
+        import std.experimental.appender;
+        
+        auto app = Appender!(T, Alloc)(alloc);
+        app.reserve(str.length);
+        do
+        {
+            app.put(str[0..i]);
+        
+            ptrdiff_t j = str[(i+1)..$].fastIndexOf(';');
+            static if (strict == Yes.strict)
+                assert (j > 0, "Missing ';' ending XML entity");
+            else
+                if (j < 0) break;
+            
+            auto repl = str[(i+1)..(i+j+1)] in replacements;
+            static if (strict == Yes.strict)
+                assert (repl, cast(string)str[(i+1)..(i+j+1)]);
+            else
+                if (!repl)
+                {
+                    app.put(str[i]);
+                    str = str[(i+1)..$];
+                    continue;
+                }
+                
+            app.put(*repl);
+            str = str[(i+j+2)..$];
+        } while ((i = str.fastIndexOf('&')) >= 0);
+        
+        app.put(str);
+        return app.data;
+    }
+    else
+        return str;
+}
+
 @nogc unittest
 {
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
     assert(xmlEscape("some standard string"d, alloc) == "some standard string"d);
     assert(xmlEscape("& \"some\" <standard> 'string'", alloc) == 
-                    "&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;");
+                     "&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;");
     assert(xmlEscape("<&'>>>\"'\"<&&"w, alloc) ==
-                    "&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w);
+                     "&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w);
+}
+
+@nogc unittest
+{
+    import std.stdio: writeln;
+    import std.experimental.allocator.mallocator;
+    auto alloc = Mallocator.instance;
+    assert(xmlUnescape("some standard string"d, alloc) == "some standard string"d);
+    assert(xmlUnescape("&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;", alloc)
+                       == "& \"some\" <standard> 'string'");
+    assert(xmlUnescape("&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w, alloc)
+                       == "<&'>>>\"'\"<&&"w);
 }
