@@ -1,9 +1,16 @@
 
 language: d
 
+matrix:
+  include:
+    - d: dmd
+      env: COV="true"
+    - d: ldc-1.1.0-alpha1
+      env: COV="false"
+
 script:
   - make build-all
-  - make unittest-cov
+  - if [ ${COV} = "true" ]; then make unittest-cov; fi
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

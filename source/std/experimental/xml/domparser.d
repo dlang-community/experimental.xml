@@ -10,7 +10,7 @@ module std.experimental.xml.domparser;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
-import std.experimental.xml.dom2;
+import std.experimental.xml.dom;
 /++
 +   Built on top of Cursor, the DOM builder adds to it the ability to 
 +   build a DOM node representing the node at the current position and, if
@@ -28,7 +28,9 @@ struct DOMBuilder(T, Alloc)
     T cursor;
     alias cursor this;
     
-    private Node!(T.StringType, Alloc) currentNode;
+    alias StringType = T.StringType;
+    
+    private Node!StringType currentNode;
     
     void setSource(T.InputType input)
     {
@@ -50,7 +52,7 @@ struct DOMBuilder(T, Alloc)
     void buildRecursive();
     
     /++ Returns the DOM tree built by this builder. +/
-    Document!(T.StringType, Alloc) getDOMTree() const;
+    Document!StringType getDOMTree() const;
 }
 
 unittest
