@@ -113,6 +113,7 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc) @nogc
         import core.stdc.string: memcpy;
         
         auto app = Appender!(T, Alloc)(alloc);
+        app.reserve(str.length + 3);
         do
         {
             app.put(str[0..i]);

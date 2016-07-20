@@ -46,38 +46,59 @@ struct SAXParser(T, alias H)
     +/
     void processDocument()
     {
+        import std.traits: hasMember;
         while (!cursor.documentEnd)
         {
             switch (cursor.getKind)
             {
-                case XMLKind.DOCUMENT:
-                    static if (__traits(compiles, handler.onDocument(cursor)))
+                static if(hasMember!(HandlerType, "onDocument"))
+                {
+                    case XMLKind.DOCUMENT:
                         handler.onDocument(cursor);
-                    break;
-                case XMLKind.ELEMENT_START:
-                    static if (__traits(compiles, handler.onElementStart(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onElementStart"))
+                {
+                    case XMLKind.ELEMENT_START:
                         handler.onElementStart(cursor);
-                    break;
-                case XMLKind.ELEMENT_END:
-                    static if (__traits(compiles, handler.onElementEnd(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onElementEnd"))
+                {
+                    case XMLKind.ELEMENT_END:
                         handler.onElementEnd(cursor);
-                    break;
-                case XMLKind.ELEMENT_EMPTY:
-                    static if (__traits(compiles, handler.onElementEmpty(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onElementEmpty"))
+                {
+                    case XMLKind.ELEMENT_EMPTY:
                         handler.onElementEmpty(cursor);
-                    break;
-                case XMLKind.TEXT:
-                    static if (__traits(compiles, handler.onText(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onText"))
+                {
+                    case XMLKind.TEXT:
                         handler.onText(cursor);
-                    break;
-                case XMLKind.COMMENT:
-                    static if (__traits(compiles, handler.onComment(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onComment"))
+                {
+                    case XMLKind.COMMENT:
                         handler.onComment(cursor);
-                    break;
-                case XMLKind.PROCESSING_INSTRUCTION:
-                    static if (__traits(compiles, handler.onProcessingInstruction(cursor)))
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onProcessingInstruction"))
+                {
+                    case XMLKind.PROCESSING_INSTRUCTION:
                         handler.onProcessingInstruction(cursor);
-                    break;
+                        break;
+                }
+                static if (hasMember!(HandlerType, "onCDataSection"))
+                {
+                    case XMLKind.CDATA:
+                        handler.onCDataSection(cursor);
+                        break;
+                }
                 default: break;
             }
             
