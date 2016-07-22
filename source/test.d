@@ -190,9 +190,9 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
 }
 
 // callback used to ignore missing xml declaration, while throwing on invalid attributes
-void uselessCallback(T)(ref T cur, T.Error err)
+void uselessCallback(T)(ref T cur, CursorError err)
 {
-    if (err != T.Error.MISSING_XML_DECLARATION)
+    if (err != CursorError.MISSING_XML_DECLARATION)
         assert(0);
 }
 
@@ -234,9 +234,8 @@ void parseFile(string filename)
     {
         do
         {
-            if (cursor.hasChildren())
+            if (cursor.enter)
             {
-                cursor.enter();
                 inspectOneLevel(cursor);
                 cursor.exit();
             }

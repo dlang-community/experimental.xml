@@ -97,13 +97,6 @@ template isLexer(L)
         +   Characters advanced by this method may not be returned by get().
         +/
         lexer.dropWhile(s);
-        
-        /++
-        +   void deallocateLast()
-        +   Deallocate, if possible, the last sequence obtained with get.
-        +   To be called before calling start() again.
-        +/
-        lexer.deallocateLast();
     }));
 }
 
@@ -242,11 +235,6 @@ struct Attribute(StringType)
 {
     StringType prefix, name, value;
 }
-
-struct NamespaceDeclaration(StringType)
-{
-    StringType prefix, namespace;
-}
     
 
 template isCursor(CursorType)
@@ -269,8 +257,7 @@ template isCursor(CursorType)
         cursor.setSource(input);
         b = cursor.documentEnd;
         b = cursor.next;
-        b = cursor.hasChildren;
-        cursor.enter;
+        b = cursor.enter;
         cursor.exit;
         XMLKind kind = cursor.getKind;
         auto s = cursor.getName;
@@ -278,8 +265,7 @@ template isCursor(CursorType)
         s = cursor.getPrefix;
         s = cursor.getContent;
         s = cursor.getAll;
-        Attribute!S[] atts = cursor.getAttributes;
-        NamespaceDeclaration!S[] ns = cursor.getNamespaceDefinitions;
+        auto attrs = cursor.getAttributes;
     }
     ));
 }

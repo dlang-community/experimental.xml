@@ -17,8 +17,9 @@ import std.experimental.xml.interfaces;
 
 class ElementParser
 {
-    import std.experimental.allocator.gc_allocator;
-    private alias CursorType = Cursor!(Parser!(SliceLexer!string), shared(GCAllocator), CursorOptions.DontConflateCDATA);
+    import std.typecons: No;
+    static assert(isLowLevelParser!(Parser!(SliceLexer!string)), "Ahhhh!");
+    private alias CursorType = Cursor!(Parser!(SliceLexer!string), No.conflateCDATA);
 
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);
@@ -50,9 +51,8 @@ class ElementParser
     
     void parse()
     {
-        if (cursor.hasChildren)
+        if (cursor.enter)
         {
-            cursor.enter();
             do
             {
                 switch (cursor.getKind)
@@ -113,7 +113,7 @@ class DocumentParser: ElementParser
     
     this(string text)
     {
-        auto handler = delegate(ref CursorType cur, CursorType.Error err) {};
+        auto handler = delegate(ref CursorType cur, CursorError err) {};
         cursor.setErrorHandler(handler);
         cursor.setSource(text);
         super(&cursor);

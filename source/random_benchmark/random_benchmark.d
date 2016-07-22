@@ -108,10 +108,11 @@ void inspectOneLevel(T)(ref T cursor)
 {
     do
     {
-        doNotOptimize(cursor.getAttributes());
-        if (cursor.hasChildren())
+        foreach(attr; cursor.getAttributes)
+            doNotOptimize(attr);
+            
+        if (cursor.enter)
         {
-            cursor.enter();
             inspectOneLevel(cursor);
             cursor.exit();
         }

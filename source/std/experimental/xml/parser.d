@@ -33,21 +33,14 @@ class UnexpectedEndOfStreamException: Exception
     }
 }
 
-import std.experimental.allocator.gc_allocator;
-
-enum ParserOptions
-{
-    PreserveSpaces,
-    CopyStrings,
-    AutomaticDeallocation
-}
+import std.typecons: Flag, Yes, No;
 
 /+
 +   The low level XML parser.
 +   Params:
 +       L              = the underlying lexer type
 +/
-struct Parser(L, Alloc = shared(GCAllocator), options...)
+struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace)
     if (isLexer!L)
 {
     import std.meta: staticIndexOf;
@@ -60,28 +53,10 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
     
     alias InputType = L.InputType;
     alias CharacterType = L.CharacterType;
-    
-    static if (is(typeof(Alloc.instance)))
-        Alloc* allocator = &(Alloc.instance);
-    else
-        Alloc* allocator;
 
     /++ Generic constructor; forwards its arguments to the lexer constructor +/
     this(Args...)(Args args)
-        if (!is(Args[0] == Alloc*) && !is(Args[0] == Alloc))
     {
-        lexer = L(args);
-    }
-    /// ditto
-    this(Args...)(Alloc* alloc, Args args)
-    {
-        allocator = alloc;
-        lexer = L(args);
-    }
-    /// ditto
-    this(Args...)(ref Alloc alloc, Args args)
-    {
-        allocator = &alloc;
         lexer = L(args);
     }
     
@@ -103,39 +78,17 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
     
     private CharacterType[] fetchContent(size_t start = 0, size_t stop = 0)
     {
-        static if (staticIndexOf!(options, ParserOptions.CopyStrings) >= 0)
-        {
-            import std.experimental.allocator;
-            import core.stdc.string: memcpy;
-            
-            auto s = lexer.get;
-            auto len = s.length - stop - start;
-            auto copy = allocator.allocate(len*CharacterType.sizeof);
-            memcpy(copy.ptr, s.ptr + start, len);
-            lexer.deallocateLast;
-            return cast(CharacterType[])copy;
-        }
-        else
-            return lexer.get[start..($ - stop)];
-    }
-    
-    void deallocateLast()
-    {
-        static if (staticIndexOf!(options, ParserOptions.CopyStrings) >= 0)
-            allocator.deallocate(cast(void[]) next.content);
-        else
-            lexer.deallocateLast;
+        return lexer.get[start..($ - stop)];
     }
     
     void throwException(T)()
     {
-        import std.experimental.allocator;
-        throw make!(T, Alloc)(*allocator);
+        assert(0, T.stringof);
     }
     
     bool empty()
     {
-        static if (staticIndexOf!(options, ParserOptions.PreserveSpaces) < 0)
+        static if (preserveWhitespace == No.preserveWhitespace)
             lexer.dropWhile(" \r\n\t");
             
         return !ready && lexer.empty;
@@ -162,13 +115,11 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
     {
         front();
         ready = false;
-        static if (staticIndexOf!(options, ParserOptions.AutomaticDeallocation))
-            deallocateLast;
     }
     
     private void fetchNext()
     {
-        static if (staticIndexOf!(options, ParserOptions.PreserveSpaces) < 0)
+        static if (preserveWhitespace == No.preserveWhitespace)
             lexer.dropWhile(" \r\n\t");
         
         if (lexer.empty)
@@ -361,18 +312,15 @@ struct Parser(L, Alloc = shared(GCAllocator), options...)
     }
 }
 
-auto parse(T)(auto ref T input)
-    if (isLexer!(T.Type))
+template parse(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace)
 {
-    struct Chain
+    auto parse(T)(auto ref T lexer)
+        if (isLexer!T)
     {
-        alias Type = Parser!T;
-        auto finalize()
-        {
-            return Type(input.finalize(), false, Type.NodeType);
-        }
+        auto parser = Parser!(T, preserveWhitespace)();
+        parser.lexer = lexer;
+        return parser;
     }
-    return Chain();
 }
 
 @nogc unittest
@@ -396,7 +344,7 @@ auto parse(T)(auto ref T input)
     };
     
     auto alloc = Mallocator.instance;
-    auto parser = Parser!(SliceLexer!(string, shared(Mallocator)), shared(Mallocator), ParserOptions.CopyStrings)(alloc, alloc);
+    auto parser = Parser!(SliceLexer!(string, shared(Mallocator)))(alloc);
     parser.setSource(xml);
     
     alias XMLKind = typeof(parser.front.kind);

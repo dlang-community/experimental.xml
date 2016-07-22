@@ -102,8 +102,9 @@ struct SAXParser(T, alias H)
                 default: break;
             }
             
-            if (cursor.hasChildren)
-                cursor.enter;
+            if (cursor.enter)
+            {
+            }
             else if (!cursor.next)
                 cursor.exit;
         }
@@ -137,12 +138,9 @@ unittest
         void onElementStart(ref T node)
         {
             total_invocations++;
-            if (node.hasChildren)
-            {
-                current_nesting++;
-                if (current_nesting > max_nesting)
-                    max_nesting = current_nesting;
-            }
+            current_nesting++;
+            if (current_nesting > max_nesting)
+                max_nesting = current_nesting;
         }
         void onElementEnd(ref T node)
         {
@@ -154,7 +152,10 @@ unittest
         void onText(ref T node) { total_invocations++; }
         void onDocument(ref T node)
         {
-            assert(node.getAttributes == [Attribute!dstring("", "encoding", "utf-8")]);
+            auto attrs = node.getAttributes;
+            assert(attrs.front == Attribute!dstring("", "encoding", "utf-8"));
+            attrs.popFront;
+            assert(attrs.empty);
             total_invocations++;
         }
         void onComment(ref T node)

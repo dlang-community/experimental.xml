@@ -72,10 +72,11 @@ void main()
     {
         do
         {
-            doNotOptimize(cursor.getAttributes());
-            if (cursor.hasChildren())
+            foreach(attr; cursor.getAttributes)
+                doNotOptimize(attr);
+                
+            if (cursor.enter)
             {
-                cursor.enter();
                 inspectOneLevel(cursor);
                 cursor.exit();
             }
@@ -86,7 +87,7 @@ void main()
     writeln("SliceLexer:");
     performTests((data) {
         auto cursor = Cursor!(Parser!(SliceLexer!string))();
-        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
+        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, CursorError err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
     });
@@ -94,7 +95,7 @@ void main()
     writeln("RangeLexer:");
     performTests((data) {
         auto cursor = Cursor!(Parser!(RangeLexer!string))();
-        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, typeof(cursor).Error err) { return; });
+        cursor.setErrorHandler(delegate void(ref typeof(cursor) cur, CursorError err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
     });

@@ -58,8 +58,6 @@ struct SliceLexer(T, Alloc = void)
         }
     }
     
-    void deallocateLast() const {}
-    
     auto empty() const @nogc
     {
         return pos >= input.length;
@@ -173,11 +171,6 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
-    void deallocateLast()
-    {
-        allocator.deallocate(cast(void[])app.data);
-    }
-    
     bool empty() const
     {
         return input.empty;
@@ -185,7 +178,7 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
     
     void start()
     {
-        app = typeof(app)(allocator);
+        app.clear;
     }
     
     CharacterType[] get() const
@@ -297,11 +290,6 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         return result;
     }
     
-    void deallocateLast()
-    {
-        allocator.deallocate(cast(void[])app.data);
-    }
-    
     bool empty() const
     {
         return input.empty;
@@ -309,7 +297,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
     
     void start()
     {
-        app = typeof(app)(allocator);
+        app.clear;
         input_start = input.save;
         count = 0;
     }
@@ -451,7 +439,7 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
     
     void start()
     {
-        app = typeof(app)(allocator);
+        app.clear;
         begin = pos;
         onEdge = false;
     }
@@ -493,12 +481,6 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
         popBuffer;
         begin = 0;
         pos = 0;
-    }
-    
-    void deallocateLast()
-    {
-        if (onEdge)
-            allocator.deallocate(cast(void[])app.data);
     }
     
     CharacterType[] get() const
@@ -556,48 +538,42 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
     }
 }
 
-auto withInput(T)(auto ref T input)
+auto chooseLexer(alias Input)()
 {
-    struct Chain
-    {
-        alias Type = T;
-        auto finalize()
-        {
-            return input;
-        }
-    }
-    return Chain();
-}
-
-auto lex(T)(auto ref T input)
-{
-    static if (__traits(compiles, SliceLexer!(T.Type)))
-    {
-        struct Chain
-        {
-            alias Type = SliceLexer!(T.Type);
-            auto finalize()
-            {
-                return Type(input.finalize, 0, 0);
-            }
-        }
-    }
-    else if (__traits(compiles, RangeLexer!(T.Type)))
-    {
-        struct Chain
-        {
-            alias Type = RangeLexer!(T.Type);
-            auto finalize()
-            {
-                return Type(input.finalize, Appender!(Type.CharacterType[])());
-            }
-        }
-    }
+    static if (is(SliceLexer!Input))
+        return SliceLexer!Input();
+    else static if (is(SliceLexer!(typeof(Input))))
+        return SliceLexer!(typeof(Input))();
     else
-    {
         static assert(0);
-    }
-    return chain;
+}
+template chooseLexer(alias Input, Alloc = shared(GCAllocator))
+{
+    import std.traits: hasMember;
+    
+    static if (is(SliceLexer!Input))
+        alias Type = SliceLexer!Input;
+    else static if (is(SliceLexer!(typeof(Input))))
+        alias Type = SliceLexer!(typeof(Input));
+    else static if (is(BufferedLexer!Input))
+        alias Type = BufferedLexer!Input;
+    else static if (is(BufferedLexer!(typeof(Input))))
+        alias Type = BufferedLexer!(typeof(Input));
+    else static if (is(RangeLexer!Input))
+        alias Type = RangeLexer!Input;
+    else static if (is(RangeLexer!(typeof(Input))))
+        alias Type = RangeLexer!(typeof(Input));
+    
+    static if (hasMember(Alloc, "instance"))
+        auto chooseLexer(ref Alloc alloc = Alloc.instance)
+        {
+            return Type(alloc);
+        }
+    else
+        auto chooseLexer(ref Alloc alloc)
+        {
+            return Type(alloc);
+        }
 }
 
 version(unittest) 

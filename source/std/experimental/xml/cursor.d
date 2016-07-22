@@ -13,17 +13,18 @@ import std.experimental.xml.faststrings;
 import std.meta: staticIndexOf;
 import std.range.primitives;
 import std.typecons;
-import std.experimental.allocator.gc_allocator;
 
-enum CursorOptions
+/++
++ Enumeration of non-fatal errors that applications can intercept by setting
++ an handler on a cursor instance.
++/
+enum CursorError
 {
-    DontConflateCDATA,
-    CopyStrings,
-    InternStrings,
-    NoGC,
+    MISSING_XML_DECLARATION,
+    INVALID_ATTRIBUTE_SYNTAX,
 }
-
-struct Cursor(P, Alloc = shared(GCAllocator), options...)
+    
+struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"noGC" noGC = No.noGC)
     if (isLowLevelParser!P)
 {
     /++
@@ -39,99 +40,22 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     alias StringType = CharacterType[];
     
     /++ The type of the error handler that can be installed on this cursor +/
-    static if (staticIndexOf!(options, CursorOptions.NoGC) >= 0)
-        alias ErrorHandler = void delegate(ref typeof(this), Error) @nogc;
+    static if (noGC == Yes.noGC)
+        alias ErrorHandler = void delegate(ref typeof(this), CursorError) @nogc;
     else
-        alias ErrorHandler = void delegate(ref typeof(this), Error);
-    
-    /++
-    + Enumeration of non-fatal errors that applications can intercept by setting
-    + an handler on this cursor.
-    +/
-    enum Error
-    {
-        MISSING_XML_DECLARATION,
-        INVALID_ATTRIBUTE_SYNTAX,
-    }
-    
-    private enum hasInterning = staticIndexOf!(options, CursorOptions.InternStrings) >= 0;
-    private enum hasCopying = staticIndexOf!(options, CursorOptions.CopyStrings) >= 0;
+        alias ErrorHandler = void delegate(ref typeof(this), CursorError);
     
     private P parser;
     private ElementType!P currentNode;
-    private bool starting, _documentEnd;
+    private bool starting, _documentEnd, nextFailed;
+    private ptrdiff_t colon;
+    private size_t nameEnd;
     private ErrorHandler handler;
-    
-    private struct CachedValues
-    {
-        StringType name;
-        ptrdiff_t colon = ptrdiff_t.max;
-        private Attribute!StringType[] attributes;
-        private NamespaceDeclaration!StringType[] namespaces;
-        private bool attributesParsed;
-    }
-    private CachedValues cache;
-    
-    static if (is(typeof(Alloc.instance)))
-        private Alloc* allocator = &(Alloc.instance);
-    else
-        private Alloc* allocator;
-    
-    static if (hasInterning)
-    {
-        import std.experimental.interner;
-        static if (hasCopying)
-        {
-            enum canDeallocate = true;
-            Interner!(StringType, OnIntern.Duplicate, Alloc) interner;
-        }
-        else
-        {
-            bool canDeallocate = true;
-            Interner!(StringType, OnIntern.NoAction, Alloc) interner;
-        }
-    }
-    else bool canDeallocate = false;
-    
-    private static StringType returnStringType(StringType result)
-    {
-        static if (hasInterning)
-        {
-            auto interned = interner.intern(result);
-            static if (!hasCopying)
-                if (interned is result)
-                    canDeallocate = false;
-        }
-        else static if (hasCopying)
-        {
-            auto len = val.length * typeof(val[0]).sizeof;
-            auto copy = allocator.allocate(len);
-            memcpy(copy.ptr, val.ptr, len);
-            return cast(StringType)copy;
-        }
-        else
-            return result;
-    }
     
     /++ Generic constructor; forwards its arguments to the parser constructor +/
     this(Args...)(Args args)
-        if (!is(Args[0] == Alloc*) && !is(Args[0] == Alloc))
     {
         parser = P(args);
-        static if (hasInterning)
-            interner = typeof(Interner)(allocator);
-    }
-    /// ditto
-    this(Args...)(Alloc* alloc, Args args)
-    {
-        allocator = alloc;
-        this(args);
-    }
-    /// ditto
-    this(Args...)(ref Alloc alloc, Args args)
-    {
-        allocator = &alloc;
-        this(args);
     }
     
     static if (isSaveableLowLevelParser!P)
@@ -144,21 +68,26 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         }
     }
     
-    private void callHandler(ref typeof(this) cur, Error err)
+    private void callHandler(CursorError err)
     {
         if (handler != null)
-            handler(cur, err);
+            handler(this, err);
         else
             assert(0);
     }
     
-    private void advanceInput()
+    private bool advanceInput()
     {
-        currentNode = parser.front;
+        colon = colon.max;
+        nameEnd = 0;
         parser.popFront();
-        cache = CachedValues();
-        if (canDeallocate)
-            parser.deallocateLast;
+        if (!parser.empty)
+        {
+            currentNode = parser.front;
+            return true;
+        }
+        _documentEnd = true;
+        return false;
     }
     
     /++
@@ -180,11 +109,11 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         if (!parser.empty)
         {
             if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && fastEqual(parser.front.content[0..3], "xml"))
-                advanceInput();
+                currentNode = parser.front;
             else
             {
                 // document without xml declaration???
-                callHandler(this, Error.MISSING_XML_DECLARATION);
+                callHandler(CursorError.MISSING_XML_DECLARATION);
                 currentNode.kind = XMLKind.PROCESSING_INSTRUCTION;
                 currentNode.content = "xml version = \"1.0\"";
             }
@@ -198,80 +127,69 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         return _documentEnd;
     }
     
-    /++ Advances to the first child of the current node. +/
-    void enter()
+    /++
+    +   Advances to the first child of the current node and returns true.
+    +   If it returns false, the cursor is either on the same node (it wasn't
+    +   an element start) or it is at the close tag of the element it was called on
+    +   (it was a pair open/close tag without any content)
+    +/
+    bool enter()
     {
         if (starting)
         {
             starting = false;
-            advanceInput();
+            if (currentNode.content is parser.front.content)
+                return advanceInput();
+            
+            currentNode = parser.front;
+            return true;
         }
-        else if (hasChildren())
-            advanceInput();
+        else if (currentNode.kind == XMLKind.ELEMENT_START)
+        {
+            return advanceInput() && currentNode.kind != XMLKind.ELEMENT_END;
+        }
+        else
+            return false;
     }
     
     /++ Advances to the end of the parent of the current node. +/
     void exit()
     {
-        if (next())
-        {
-            static if (!hasInterning)
-                canDeallocate = true;
+        if (!nextFailed)
             while (next()) {}
-        }
-        if (!parser.empty)
-            advanceInput();
-        else
-            _documentEnd = true;
-            
-        static if (!hasInterning)
-            canDeallocate = false;
+        
+        nextFailed = false;
     }
     
     /++
     +   Advances to the next sibling of the current node.
     +   Returns whether it succeded. If it fails, either the
-    +   document has ended or the only meaningful operations are enter() or exit().
+    +   document has ended or the only meaningful operation is exit().
     +/
     bool next()
     {
-        if (parser.empty || starting)
+        if (parser.empty || starting || nextFailed)
             return false;
-        else if (currentNode.kind != XMLKind.ELEMENT_START)
+        else if (currentNode.kind == XMLKind.ELEMENT_START)
         {
-            if (parser.front.kind == XMLKind.ELEMENT_END)
-                return false;
-            advanceInput();
-        }
-        else
-        {
+            import std.stdio: writeln;
             int count = 1;
-            while (count > 0)
+            while (count > 0 && !parser.empty)
             {
-                advanceInput();
-                static if (!hasInterning)
-                    canDeallocate = true;
+                if (!advanceInput())
+                    return false;
                 if (currentNode.kind == XMLKind.ELEMENT_START)
                     count++;
                 else if (currentNode.kind == XMLKind.ELEMENT_END)
                     count--;
             }
-            static if (!hasInterning)
-                canDeallocate = false;
-            if (parser.empty)
-                return false;
-            if (parser.front.kind == XMLKind.ELEMENT_END)
-                return false;
-            advanceInput();
+        }
+        if (!advanceInput || currentNode.kind == XMLKind.ELEMENT_END)
+        {
+            nextFailed = true;
+            return false;
         }
         return true;
-    }
-    
-    /++ Returns whether the current node has children, and enter() can thus be used. +/
-    bool hasChildren()
-    {
-        return starting ||
-              (currentNode.kind == XMLKind.ELEMENT_START && !parser.empty && parser.front.kind != XMLKind.ELEMENT_END);
     }
     
     /++ Returns the kind of the current node. +/
@@ -280,7 +198,7 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         if (starting)
             return XMLKind.DOCUMENT;
             
-        static if (staticIndexOf!(options, CursorOptions.DontConflateCDATA) < 0)
+        static if (conflateCDATA == Yes.conflateCDATA)
             if (currentNode.kind == XMLKind.CDATA)
                 return XMLKind.TEXT;
                 
@@ -304,18 +222,15 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
             case XMLKind.CONDITIONAL:
                 return [];
             default:
-                if (!cache.name)
+                if (!nameEnd)
                 {
-                    auto nameStart = fastIndexOfNeither(currentNode.content, " \r\n\t");
-                    assert(nameStart >= 0, "node doesn't have a name");
-                    
                     ptrdiff_t i;
-                    if ((i = fastIndexOfAny(currentNode.content[nameStart..$], " \r\n\t")) >= 0)
-                        cache.name = returnStringType(currentNode.content[nameStart..i]);
+                    if ((i = fastIndexOfAny(currentNode.content, " \r\n\t")) >= 0)
+                        nameEnd = i;
                     else
-                        cache.name = returnStringType(currentNode.content[nameStart..$]);
+                        nameEnd = currentNode.content.length;
                 }
-                return cache.name;
+                return currentNode.content[0..nameEnd];
         }
     }
     
@@ -328,9 +243,9 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         auto name = getName();
         if (currentNode.kind == XMLKind.ELEMENT_START || currentNode.kind == XMLKind.ELEMENT_END)
         {
-            if (cache.colon == cache.colon.max)
-                cache.colon = fastIndexOf(name, ':');
-            return name[(cache.colon+1)..$];
+            if (colon == colon.max)
+                colon = fastIndexOf(name, ':');
+            return name[(colon+1)..$];
         }
         return name;
     }
@@ -344,132 +259,141 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
         if (currentNode.kind == XMLKind.ELEMENT_START || currentNode.kind == XMLKind.ELEMENT_END)
         {
             auto name = getName;
-            if (cache.colon == cache.colon.max)
-                cache.colon = fastIndexOf(name, ':');
+            if (colon == colon.max)
+                colon = fastIndexOf(name, ':');
                 
-            if (cache.colon >= 0)
-                return name[0..(cache.colon)];
+            if (colon >= 0)
+                return name[0..colon];
             else
                 return [];
         }
         return [];
     }
     
-    private void parseAttributeList()
-    {
-        import std.experimental.appender: Appender;
-        auto attributesApp = Appender!(Attribute!StringType, Alloc)(allocator);
-        auto namespacesApp = Appender!(NamespaceDeclaration!StringType, Alloc)(allocator);
-    
-        cache.attributesParsed = true;
-        auto nameEnd = fastIndexOfAny(currentNode.content, " \r\n\t");
-        if (nameEnd < 0)
-            return;
-        auto attStart = nameEnd;
-        auto delta = fastIndexOfNeither(currentNode.content[nameEnd..$], " \r\n\t>");
-        while (delta != -1)
-        {
-            CharacterType[] prefix, name, value;
-            attStart += delta;
-            
-            delta = fastIndexOfAny(currentNode.content[attStart..$], ":=");
-            if (delta == -1)
-            {
-                // attribute without value nor prefix???
-                callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
-            }
-            auto sep = attStart + delta;
-            if (currentNode.content[sep] == ':')
-            {
-                prefix = currentNode.content[attStart..sep];
-                attStart = sep + 1;
-                delta = fastIndexOf(currentNode.content[attStart..$], '=');
-                if (delta == -1)
-                {
-                    // attribute without value???
-                    callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
-                    return;
-                }
-                sep = attStart + delta;
-            }
-            
-            name = currentNode.content[attStart..sep];
-            delta = fastIndexOfAny(name, " \r\n\t");
-            if (delta >= 0)
-                name = name[0..delta];
-            
-            size_t attEnd;
-            size_t quote;
-            delta = (sep + 1 < currentNode.content.length) ? fastIndexOfNeither(currentNode.content[sep + 1..$], " \r\n\t") : -1;
-            if (delta >= 0)
-            {
-                quote = sep + 1 + delta;
-                if (currentNode.content[quote] == '"' || currentNode.content[quote] == '\'')
-                {
-                    delta = fastIndexOf(currentNode.content[(quote + 1)..$], currentNode.content[quote]);
-                    if (delta == -1)
-                    {
-                        // attribute quotes never closed???
-                        callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
-                        return;
-                    }
-                    attEnd = quote + 1 + delta;
-                }
-                else
-                {
-                    callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
-                    return;
-                }
-            }
-            else
-            {
-                // attribute without value???
-                callHandler(this, Error.INVALID_ATTRIBUTE_SYNTAX);
-                return;
-            }
-            value = currentNode.content[(quote + 1)..attEnd];
-            
-            if (prefix.length == 5 && fastEqual(prefix, "xmlns"))
-                namespacesApp.put(NamespaceDeclaration!StringType(returnStringType(name), returnStringType(value)));
-            else
-                attributesApp.put(Attribute!StringType(returnStringType(prefix), returnStringType(name), returnStringType(value)));
-            
-            attStart = attEnd + 1;
-            delta = fastIndexOfNeither(currentNode.content[attStart..$], " \r\t\n>");
-        }
-        cache.attributes = attributesApp.data;
-        cache.namespaces = namespacesApp.data;
-    }
-    
     /++
-    +   If the current node is an element, return its attributes as an array of triplets
+    +   If the current node is an element, return its attributes as a range of triplets
     +   (prefix, name, value); if the current node is the document node, return the attributes
     +   of the xml declaration (encoding, version, ...); otherwise, return an empty array.
     +/
     auto getAttributes()
     {
+        struct AttributesRange
+        {
+            private StringType content;
+            private Attribute!StringType attr;
+            private Cursor* cursor;
+            private bool error;
+            
+            private this(StringType str, ref Cursor cur)
+            {
+                content = str;
+                cursor = &cur;
+            }
+            
+            bool empty()
+            {
+                if (error)
+                    return true;
+                    
+                auto i = content.fastIndexOfNeither(" \r\n\t");
+                if (i >= 0)
+                {
+                    content = content[i..$];
+                    return false;
+                }
+                return true;
+            }
+            
+            auto front()
+            {
+                if (attr == attr.init)
+                {
+                    auto i = content.fastIndexOfNeither(" \r\n\t");
+                    assert(i >= 0, "No more attributes...");
+                    content = content[i..$];
+                    
+                    auto sep = fastIndexOfAny(content[0..$], ":=");
+                    if (sep == -1)
+                    {
+                        // attribute without value nor prefix???
+                        cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
+                        error = true;
+                        return attr.init;
+                    }
+                    size_t nameStart = 0;
+                    if (content[sep] == ':')
+                    {
+                        attr.prefix = content[0..sep];
+                        nameStart = sep + 1;
+                        auto delta = fastIndexOf(content[nameStart..$], '=');
+                        if (delta == -1)
+                        {
+                            // attribute without value???
+                            cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
+                            error = true;
+                            return attr.init;
+                        }
+                        sep = nameStart + delta;
+                    }
+                    
+                    attr.name = content[nameStart..sep];
+                    auto delta = fastIndexOfAny(attr.name, " \r\n\t");
+                    if (delta >= 0)
+                        attr.name = attr.name[0..delta];
+                    
+                    size_t attEnd;
+                    size_t quote;
+                    delta = (sep + 1 < content.length) ? fastIndexOfNeither(content[sep + 1..$], " \r\n\t") : -1;
+                    if (delta >= 0)
+                    {
+                        quote = sep + 1 + delta;
+                        if (content[quote] == '"' || content[quote] == '\'')
+                        {
+                            delta = fastIndexOf(content[(quote + 1)..$], content[quote]);
+                            if (delta == -1)
+                            {
+                                // attribute quotes never closed???
+                                cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
+                                error = true;
+                                return attr.init;
+                            }
+                            attEnd = quote + 1 + delta;
+                        }
+                        else
+                        {
+                            cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
+                            error = true;
+                            return attr.init;
+                        }
+                    }
+                    else
+                    {
+                        // attribute without value???
+                        cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
+                        error = true;
+                        return attr.init;
+                    }
+                    attr.value = content[(quote + 1)..attEnd];
+                    content = content[attEnd+1..$];
+                }
+                return attr;
+            }
+            
+            auto popFront()
+            {
+                front();
+                attr = attr.init;
+            }
+        }
+    
         auto kind = currentNode.kind;
         if (kind == XMLKind.ELEMENT_START || kind == XMLKind.PROCESSING_INSTRUCTION)
         {
-            if (!cache.attributesParsed)
-                parseAttributeList();
+            getName;
+            return AttributesRange(currentNode.content[nameEnd..$], this);
         }
-        return cache.attributes;
-    }
-    
-    /++
-    +   If the current node is an element, return a list of namespace bindings created in this element
-    +   start tag, as an array of pairs (prefix, namespace); otherwise, return an empty array.
-    +/
-    auto getNamespaceDefinitions()
-    {
-        auto kind = currentNode.kind;
-        if (kind == XMLKind.ELEMENT_START)
-        {
-            if (!cache.attributesParsed)
-                parseAttributeList();
-        }
-        return cache.namespaces;
+        else
+            return AttributesRange();
     }
     
     /++
@@ -478,8 +402,7 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     +/
     StringType getContent()
     {
-        auto nameLen = getName.length;
-        return currentNode.content[nameLen..$];
+        return currentNode.content[nameEnd..$];
     }
     
     /++ Returns the entire text of the current node. +/
@@ -489,18 +412,15 @@ struct Cursor(P, Alloc = shared(GCAllocator), options...)
     }
 }
 
-auto asCursor(T)(auto ref T input)
-    if(isLowLevelParser!(T.Type))
+template cursor(Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"noGC" noGC = No.noGC)
 {
-    struct Chain
+    auto cursor(T)(auto ref T parser)
+        if(isLowLevelParser!T)
     {
-        alias Type = Cursor!(T.Type);
-        auto finalize()
-        {
-            return Type(input.finalize(), typeof(Type.currentNode)(), false, [], [], false, null);
-        }
+        auto cursor = Cursor!(T, conflateCDATA, noGC)();
+        cursor.parser = parser;
+        return cursor;
     }
-    return Chain();
 }
 
 unittest
@@ -532,58 +452,28 @@ unittest
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes() == [Attribute!wstring("", "encoding", "utf-8")]);
-    assert(cursor.getNamespaceDefinitions() == []);
+    assert(cursor.getAttributes().array == [Attribute!wstring("", "encoding", "utf-8")]);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
-    assert(cursor.hasChildren());
     
-    cursor.enter();
+    assert(cursor.enter());
         // <aaa xmlns:myns="something">
         assert(cursor.getKind() == XMLKind.ELEMENT_START);
         assert(cursor.getName() == "aaa");
         assert(cursor.getPrefix() == "");
         assert(cursor.getLocalName() == "aaa");
-        assert(cursor.getAttributes() == []);
-        assert(cursor.getNamespaceDefinitions() == [NamespaceDeclaration!wstring("myns", "something")]);
+        assert(cursor.getAttributes().array == [Attribute!wstring("xmlns", "myns", "something")]);
         assert(cursor.getContent() == " xmlns:myns=\"something\"");
-        assert(cursor.hasChildren());
         
-        cursor.enter();
+        assert(cursor.enter());
             // <myns:bbb myns:att='>'>
             assert(cursor.getKind() == XMLKind.ELEMENT_START);
             assert(cursor.getName() == "myns:bbb");
             assert(cursor.getPrefix() == "myns");
             assert(cursor.getLocalName() == "bbb");
-            assert(cursor.getAttributes() == [Attribute!wstring("myns", "att", ">")]);
-            assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getAttributes().array == [Attribute!wstring("myns", "att", ">")]);
             assert(cursor.getContent() == " myns:att='>'");
-            assert(cursor.hasChildren());
             
-            cursor.enter();
-                // <!-- lol -->
-                assert(cursor.getKind() == XMLKind.COMMENT);
-                assert(cursor.getName() == "");
-                assert(cursor.getPrefix() == "");
-                assert(cursor.getLocalName() == "");
-                assert(cursor.getAttributes() == []);
-                assert(cursor.getNamespaceDefinitions() == []);
-                assert(cursor.getContent() == " lol ");
-                assert(!cursor.hasChildren());
-                
-                assert(cursor.next());
-                // Lots of Text!
-                // On multiple lines!
-                assert(cursor.getKind() == XMLKind.TEXT);
-                assert(cursor.getName() == "");
-                assert(cursor.getPrefix() == "");
-                assert(cursor.getLocalName() == "");
-                assert(cursor.getAttributes() == []);
-                assert(cursor.getNamespaceDefinitions() == []);
-                // split and strip so the unittest does not depend on the newline policy or indentation of this file
-                assert(cursor.getContent().lineSplitter.map!"a.strip".array == ["Lots of Text!"w, "On multiple lines!"w, ""w]);
-                assert(!cursor.hasChildren());
-                
-                assert(!cursor.next());
+            assert(cursor.enter());
             cursor.exit();
             
             // </myns:bbb>
@@ -591,10 +481,8 @@ unittest
             assert(cursor.getName() == "myns:bbb");
             assert(cursor.getPrefix() == "myns");
             assert(cursor.getLocalName() == "bbb");
-            assert(cursor.getAttributes() == []);
-            assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == []);
-            assert(!cursor.hasChildren());
             
             assert(cursor.next());
             // <<![CDATA[ Ciaone! ]]>
@@ -602,10 +490,8 @@ unittest
             assert(cursor.getName() == "");
             assert(cursor.getPrefix() == "");
             assert(cursor.getLocalName() == "");
-            assert(cursor.getAttributes() == []);
-            assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == " Ciaone! ");
-            assert(!cursor.hasChildren());
             
             assert(cursor.next());
             // <ccc/>
@@ -613,10 +499,8 @@ unittest
             assert(cursor.getName() == "ccc");
             assert(cursor.getPrefix() == "");
             assert(cursor.getLocalName() == "ccc");
-            assert(cursor.getAttributes() == []);
-            assert(cursor.getNamespaceDefinitions() == []);
+            assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == []);
-            assert(!cursor.hasChildren());
             
             assert(!cursor.next());
         cursor.exit();
@@ -626,10 +510,8 @@ unittest
         assert(cursor.getName() == "aaa");
         assert(cursor.getPrefix() == "");
         assert(cursor.getLocalName() == "aaa");
-        assert(cursor.getAttributes() == []);
-        assert(cursor.getNamespaceDefinitions() == []);
+        assert(cursor.getAttributes().empty);
         assert(cursor.getContent() == []);
-        assert(!cursor.hasChildren());
         
         assert(!cursor.next());
     cursor.exit();
@@ -651,9 +533,7 @@ auto children(T)(ref T cursor)
         
         ~this() { cursor.exit; }
     }
-    if (cursor.hasChildren)
-        cursor.enter;
-    return XMLRange(&cursor, !cursor.hasChildren);
+    return XMLRange(&cursor, cursor.enter);
 }
 
 @nogc unittest
@@ -680,8 +560,8 @@ auto children(T)(ref T cursor)
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
     
-    alias CursorType = Cursor!(Parser!(SliceLexer!string, typeof(alloc)), typeof(alloc), CursorOptions.NoGC, CursorOptions.InternStrings);
-    auto cursor = CursorType(alloc, alloc);
+    alias CursorType = Cursor!(Parser!(RangeLexer!(string, typeof(alloc))), Yes.conflateCDATA, Yes.noGC);
+    auto cursor = CursorType(alloc);
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -689,11 +569,11 @@ auto children(T)(ref T cursor)
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes().length == 1);
-    assert(cursor.getAttributes()[0] == Attribute!string("", "encoding", "utf-8"));
-    assert(cursor.getNamespaceDefinitions() == []);
+    auto attrs = cursor.getAttributes;
+    assert(attrs.front == Attribute!string("", "encoding", "utf-8"));
+    attrs.popFront;
+    assert(attrs.empty);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
-    assert(cursor.hasChildren());
     
     {
         auto range1 = cursor.children;
@@ -702,11 +582,11 @@ auto children(T)(ref T cursor)
         assert(range1.front.getName() == "aaa");
         assert(range1.front.getPrefix() == "");
         assert(range1.front.getLocalName() == "aaa");
-        assert(range1.front.getAttributes() == []);
-        assert(range1.front.getNamespaceDefinitions().length == 1);
-        assert(range1.front.getNamespaceDefinitions()[0] == NamespaceDeclaration!string("myns", "something"));
+        attrs = range1.front.getAttributes;
+        assert(attrs.front == Attribute!string("xmlns", "myns", "something"));
+        attrs.popFront;
+        assert(attrs.empty);
         assert(range1.front.getContent() == " xmlns:myns=\"something\"");
-        assert(range1.front.hasChildren());
         
         {
             auto range2 = range1.front.children();
@@ -715,11 +595,11 @@ auto children(T)(ref T cursor)
             assert(range2.front.getName() == "myns:bbb");
             assert(range2.front.getPrefix() == "myns");
             assert(range2.front.getLocalName() == "bbb");
-            assert(range2.front.getAttributes().length == 1);
-            assert(range2.front.getAttributes()[0] == Attribute!string("myns", "att", ">"));
-            assert(range2.front.getNamespaceDefinitions() == []);
+            attrs = range2.front.getAttributes;
+            assert(attrs.front == Attribute!string("myns", "att", ">"));
+            attrs.popFront;
+            assert(attrs.empty);
             assert(range2.front.getContent() == " myns:att='>'");
-            assert(range2.front.hasChildren());
             
             {
                 auto range3 = range2.front.children();
@@ -728,10 +608,8 @@ auto children(T)(ref T cursor)
                 assert(range3.front.getName() == "");
                 assert(range3.front.getPrefix() == "");
                 assert(range3.front.getLocalName() == "");
-                assert(range3.front.getAttributes() == []);
-                assert(range3.front.getNamespaceDefinitions() == []);
+                assert(range3.front.getAttributes.empty);
                 assert(range3.front.getContent() == " lol ");
-                assert(!range3.front.hasChildren());
                 
                 range3.popFront;
                 assert(!range3.empty);
@@ -741,12 +619,10 @@ auto children(T)(ref T cursor)
                 assert(range3.front.getName() == "");
                 assert(range3.front.getPrefix() == "");
                 assert(range3.front.getLocalName() == "");
-                assert(range3.front.getAttributes() == []);
-                assert(range3.front.getNamespaceDefinitions() == []);
+                assert(range3.front.getAttributes().empty);
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
                 static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
                 assert(range3.front.getContent().lineSplitter.equal(linesArr));
-                assert(!range3.front.hasChildren());
                 
                 range3.popFront;
                 assert(range3.empty);
@@ -759,10 +635,8 @@ auto children(T)(ref T cursor)
             assert(range2.front.getName() == "");
             assert(range2.front.getPrefix() == "");
             assert(range2.front.getLocalName() == "");
-            assert(range2.front.getAttributes() == []);
-            assert(range2.front.getNamespaceDefinitions() == []);
+            assert(range2.front.getAttributes().empty);
             assert(range2.front.getContent() == " Ciaone! ");
-            assert(!range2.front.hasChildren());
             
             range2.popFront;
             assert(!range2.empty());
@@ -771,10 +645,8 @@ auto children(T)(ref T cursor)
             assert(range2.front.getName() == "ccc");
             assert(range2.front.getPrefix() == "");
             assert(range2.front.getLocalName() == "ccc");
-            assert(range2.front.getAttributes() == []);
-            assert(range2.front.getNamespaceDefinitions() == []);
+            assert(range2.front.getAttributes().empty);
             assert(range2.front.getContent() == []);
-            assert(!range2.front.hasChildren());
             
             range2.popFront;
             assert(range2.empty());
@@ -785,4 +657,151 @@ auto children(T)(ref T cursor)
     }
     
     assert(cursor.documentEnd());
+}
+
+import std.traits: isArray;
+
+struct CopyingCursor(CursorType, Alloc, Flag!"intern" intern = No.intern)
+    if (isCursor!CursorType && isArray!(CursorType.StringType))
+{
+    alias StringType = CursorType.StringType;
+
+    private Alloc* allocator;
+    this(ref Alloc alloc)
+    {
+        allocator = &alloc;
+    }
+    this(Alloc* alloc)
+    {
+        allocator = alloc;
+    }
+    @disable this();
+    
+    CursorType cursor;
+    alias cursor this;
+    
+    static if (intern == Yes.intern)
+    {
+        import std.typecons: Rebindable;
+        
+        Rebindable!(immutable StringType)[const StringType] interned;
+    }
+        
+    private auto copy(StringType str)
+    {
+        static if (intern == Yes.intern)
+        {
+            auto match = str in interned;
+            if (match)
+                return *match;
+        }
+        
+        import std.traits: Unqual;
+        import std.experimental.allocator;
+        import std.range.primitives: ElementEncodingType;
+        import core.stdc.string: memcpy;
+        
+        alias ElemType = ElementEncodingType!StringType;
+        auto cp = cast(ElemType[]) allocator.makeArray!(Unqual!ElemType)(str.length);
+        memcpy(cast(void*)cp.ptr, cast(void*)str.ptr, str.length * ElemType.sizeof);
+        
+        static if (intern == Yes.intern)
+        {
+            interned[str] = cp;
+        }
+        
+        return cp;
+    }
+    
+    auto getName()
+    {
+        return copy(cursor.getName);
+    }
+    auto getLocalName()
+    {
+        return copy(cursor.getLocalName);
+    }
+    auto getPrefix()
+    {
+        return copy(cursor.getPrefix);
+    }
+    auto getContent()
+    {
+        return copy(cursor.getContent);
+    }
+    auto getAll()
+    {
+        return copy(cursor.getAll);
+    }
+    
+    auto getAttributes()
+    {
+        struct CopyRange
+        {
+            typeof(cursor.getAttributes()) attrs;
+            alias attrs this;
+            
+            private CopyingCursor* parent;
+            
+            auto front()
+            {
+                auto attr = attrs.front;
+                return Attribute!StringType(
+                        parent.copy(attr.prefix),
+                        parent.copy(attr.name),
+                        parent.copy(attr.value),
+                    );
+            }
+        }
+        return CopyRange(cursor.getAttributes, &this);
+    }
+}
+auto copyingCursor(Flag!"intern" intern = No.intern, CursorType, Alloc)(auto ref CursorType cursor, ref Alloc alloc)
+{
+    auto res = CopyingCursor!(CursorType, Alloc, intern)(alloc);
+    res.cursor = cursor;
+    return res;
+}
+
+unittest
+{
+    import std.experimental.xml.lexers;
+    import std.experimental.xml.parser;
+    import std.experimental.allocator.mallocator;
+    
+    wstring xml = q{
+    <?xml encoding = "utf-8" ?>
+    <aaa>
+        <bbb>
+            <aaa>
+            </aaa>
+        </bbb>
+        Hello, world!
+    </aaa>
+    };
+    
+    auto cursor = 
+         SliceLexer!wstring()
+        .parse
+        .cursor!(Yes.conflateCDATA, Yes.noGC)
+        .copyingCursor!(Yes.intern)(Mallocator.instance);
+    cursor.setSource(xml);
+    
+    assert(cursor.enter);
+    auto a1 = cursor.getName;
+    assert(cursor.enter);
+    auto b1 = cursor.getName;
+    assert(cursor.enter);
+    auto a2 = cursor.getName;
+    assert(!cursor.enter);
+    auto a3 = cursor.getName;
+    cursor.exit;
+    auto b2 = cursor.getName;
+    cursor.exit;
+    auto a4 = cursor.getName;
+    
+    assert(a1 is a2);
+    assert(a2 is a3);
+    assert(a3 is a4);
+    assert(b1 is b2);
 }

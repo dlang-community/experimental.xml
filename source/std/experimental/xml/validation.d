@@ -11,280 +11,72 @@
 module std.experimental.xml.validation;
 
 import std.experimental.xml.interfaces;
-import std.experimental.xml.cursor;
-
-enum ValidationEvent
-{
-    START,
-    ENTER,
-    NEXT,
-    EXIT,
-    END,
-}
-
-private struct ValidatingCursorImpl(P, Alloc)
-{
-    static if (isLowLevelParser!P)
-    {
-        Cursor!P cursor;
-    }
-    else static if (isCursor!P)
-    {
-        P cursor;
-    }
-    else static assert(0, "Invalid parser/cursor parameter for ValidatingCursor");
-    
-    alias CursorType = typeof(cursor);
-    alias cursor this;
-    
-    this(Args...)(Args args)
-    {
-        cursor.__ctor(args);
-    }
-    
-    bool performBefore(ValidationEvent ev) { return true; }
-    bool performAfter(ValidationEvent ev) { return true; }
-}
-
-private struct ValidatingCursorImpl(P, Alloc, Validations...)
-{
-    import std.algorithm: all;
-    import std.ascii: isAlphaNum;
-    
-    static assert(Validations.length > 1, "wrong number of parameters");
-    static assert(is(typeof(Validations[1]) == string), "missing field name");
-    
-    private alias T = Validations[0];
-    private enum string name = Validations[1];
-    
-    static assert(name.all!isAlphaNum, "Invalid field name: " ~ name);
-    
-    ValidatingCursorImpl!(P, Alloc, Validations[2..$]) _p_parent;
-    alias _p_parent this;
-    
-    static if (is(T))
-    {
-        package T _p_valid;
-    }
-    else static if (is(T!(typeof(_p_parent))))
-    {
-        package T!(typeof(_p_parent)) _p_valid;
-    }
-    else static assert(0, "Invalid validation type");
-    
-    this(Args...)(Args args)
-        if (Args.length > 0)
-    {
-        static if (is(Args[0] == typeof(_p_valid)))
-        {
-            _p_parent = typeof(_p_parent)(args[1..$]);
-            _p_valid = args[0];
-        }
-        else
-        {
-            _p_parent = typeof(_p_parent)(args);
-            _p_valid = _p_valid.init;
-        }
-    }
-    
-    auto getValidation(alias Valid)()
-    {
-        static if (__traits(isSame, T, Valid) || is(typeof(_p_valid) == Valid))
-        {
-            return _p_valid;
-        }
-        else return _p_parent.getValidation!Valid;
-    }
-    
-    bool performBefore(ValidationEvent ev)
-    {
-        static if (__traits(compiles, cast(bool)_p_valid.before(_p_parent, ev)))
-            return cast(bool)_p_valid.before(_p_parent, ev);
-        else
-            return _p_parent.performBefore(ev);
-    }
-    bool performAfter(ValidationEvent ev)
-    {
-        static if (__traits(compiles, cast(bool)_p_valid.after(_p_parent, ev)))
-            return cast(bool)_p_valid.after(_p_parent, ev);
-        else static if (__traits(compiles, cast(bool)_p_valid(_p_parent, ev)))
-            return cast(bool)_p_valid(_p_parent, ev);
-        else
-            return _p_parent.performAfter(ev);
-    }
-    
-    mixin("@property ref typeof(_p_valid) " ~ name ~ "() return { return _p_valid; }");
-}
-
-struct ValidatingCursor(P, Alloc, T...)
-{
-    ValidatingCursorImpl!(P, Alloc, T) _p_impl;
-    alias _p_impl this;
-    
-    this(Args...)(Args args)
-    {
-        _p_impl = typeof(_p_impl)(args);
-    }
-    
-    void setSource(typeof(_p_impl).InputType input)
-    {
-        performBefore(ValidationEvent.START);
-        _p_impl.setSource(input);
-        performAfter(ValidationEvent.START);
-    }
-    void enter()
-    {
-        performBefore(ValidationEvent.ENTER);
-        _p_impl.enter;
-        performAfter(ValidationEvent.ENTER);
-    }
-    auto next()
-    {
-        performBefore(ValidationEvent.NEXT);
-        if (_p_impl.next)
-        {
-            performAfter(ValidationEvent.NEXT);
-            return true;
-        }
-        return false;
-    }
-    void exit()
-    {
-        performBefore(ValidationEvent.EXIT);
-        _p_impl.exit;
-        performAfter(ValidationEvent.EXIT);
-    }
-}
-
-template validatingCursor(P, Names...)
-{
-    import std.typecons: tuple;
-    import std.traits: TemplateArgsOf;
-    auto validatingCursor(Args...)(Args args)
-    {
-        return ValidatingCursor!(P, void, TemplateArgsOf!(typeof(tuple!Names(args))))(args);
-    }
-}
-
-unittest
-{
-    import std.experimental.xml.lexers;
-    import std.experimental.xml.parser;
-    
-    alias ParserType = Parser!(SliceLexer!string);
-    
-    auto count = 0;
-    
-    struct Foo
-    {
-        int* count;
-        this(ref int count)
-        {
-            this.count = &count;
-        }
-        bool before(Cursor)(ref Cursor cursor, ValidationEvent ev)
-        {
-            (*count)++;
-            return cursor.performBefore(ev);
-        }
-        bool after(Cursor)(ref Cursor cursor, ValidationEvent ev)
-        {
-            (*count)++;
-            return cursor.performAfter(ev);
-        }
-    }
-    struct Bar
-    {
-        int* count;
-        this(ref int count)
-        {
-            this.count = &count;
-        }
-        bool after(Cursor)(ref Cursor cursor, ValidationEvent ev)
-        {
-            if (cursor.performAfter(ev))
-            {
-                (*count)++;
-                return true;
-            }
-            return false;
-        }
-    }
-    bool fun(ref Cursor!ParserType cursor, ValidationEvent ev)
-    {
-        if (ev == ValidationEvent.ENTER)
-            count++;
-        return false;
-    }
-    
-    auto validator = validatingCursor!(ParserType, "foo", "bar", "baz")(Foo(count), Bar(count), &fun);
-    
-    assert(validator.performBefore(ValidationEvent.NEXT));
-    assert(!validator.performAfter(ValidationEvent.NEXT));
-    
-    Cursor!ParserType cursor;
-    auto myfun = validator.baz;
-    myfun(cursor, ValidationEvent.ENTER);
-    
-    assert(count == 3);
-}
 
 struct ElementNestingValidator(CursorType)
+    if (isCursor!CursorType)
 {
     import std.experimental.xml.interfaces;
     
     alias StringType = CursorType.StringType;
  
     import std.container.array;   
-    Array!StringType stack;
+    private Array!StringType stack;
     
     alias ErrorHandlerType = bool delegate(ref CursorType, ref typeof(stack));
     ErrorHandlerType errorHandler;
     
-    bool before(ref CursorType cursor, ValidationEvent ev)
+    private CursorType cursor;
+    alias cursor this;
+    
+    this(Args...)(Args args)
     {
-        if (cursor.performBefore(ev))
-        {
-            if (ev == ValidationEvent.ENTER && cursor.getKind != XMLKind.DOCUMENT)
-                stack.insert(cursor.getName);
-            return true;
-        }
-        return false;
+        cursor = CursorType(args);
     }
-    bool after(ref CursorType cursor, ValidationEvent ev)
+    
+    bool enter()
     {
-        import std.experimental.xml.faststrings;
-        
-        if (cursor.performAfter(ev))
+        if (cursor.getKind == XMLKind.ELEMENT_START)
         {
-            if (ev == ValidationEvent.EXIT)
+            stack.insertBack(cursor.getName);
+            if (!cursor.enter)
             {
-                if (stack.empty)
-                {
-                    if (!cursor.documentEnd)
-                    {
-                        if (errorHandler != null)
-                            return errorHandler(cursor, stack);
-                        else
-                            assert(0);
-                    }
-                }
-                else
-                {
-                    if (!fastEqual(stack.back, cursor.getName))
-                    {
-                        if (errorHandler != null)
-                            return errorHandler(cursor, stack);
-                        else
-                            assert(0);
-                    }
-                    else
-                        stack.removeBack();
-                }
+                stack.removeBack;
+                return false;
             }
             return true;
         }
-        return false;
+        return cursor.enter;
+    }
+    void exit()
+    {
+        cursor.exit();
+        if (cursor.getKind == XMLKind.ELEMENT_END)
+        {
+            if (stack.empty)
+            {
+                if (!cursor.documentEnd)
+                {
+                    if (errorHandler != null)
+                        errorHandler(cursor, stack);
+                    else
+                        assert(0);
+                }
+            }
+            else
+            {
+                import std.experimental.xml.faststrings;
+        
+                if (!fastEqual(stack.back, cursor.getName))
+                {
+                    if (errorHandler != null)
+                        errorHandler(cursor, stack);
+                    else
+                        assert(0);
+                }
+                else
+                    stack.removeBack();
+            }
+        }
     }
 }
 
@@ -292,8 +84,7 @@ unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    
-    alias ParserType = Parser!(SliceLexer!string);
+    import std.experimental.xml.cursor;
     
     auto xml = q{
         <?xml?>
@@ -310,11 +101,11 @@ unittest
         </aaa>
     };
     
-    auto validator = ValidatingCursor!(ParserType, void, ElementNestingValidator, "nestingValidator")();
+    auto validator = ElementNestingValidator!(Cursor!(Parser!(SliceLexer!string)))();
     validator.setSource(xml);
     
     int count = 0;
-    validator.nestingValidator.errorHandler = (ref cursor, ref stack)
+    validator.errorHandler = (ref cursor, ref stack)
     {
         import std.algorithm: canFind;
         count++;
@@ -327,15 +118,14 @@ unittest
         stack.removeBack();
         return true;
     };
-    assert(validator.nestingValidator.errorHandler != null);
+    assert(validator.errorHandler != null);
     
     void inspectOneLevel(T)(ref T cursor)
     {
         do
         {
-            if (cursor.hasChildren())
+            if (cursor.enter)
             {
-                cursor.enter();
                 inspectOneLevel(cursor);
                 cursor.exit();
             }
@@ -345,93 +135,6 @@ unittest
     inspectOneLevel(validator);
     
     assert(count == 1);
-}
-
-struct ParentStackSaver(CursorType)
-{
-    import std.experimental.xml.interfaces;
-    import std.experimental.allocator;
-    import std.experimental.allocator.mallocator;
-
-    alias StringType = CursorType.StringType;
-    struct Node
-    {
-        Node* parent;
-        XMLKind kind;
-        StringType name, localName, prefix;
-        StringType content;
-        Attribute!StringType[] attributes;
-        NamespaceDeclaration!StringType[] namespaces;
-    }
-    Node* parent;
-    
-    bool before(ref CursorType cursor, ValidationEvent ev)
-    {
-        if (cursor.performBefore(ev))
-        {
-            if (ev == ValidationEvent.ENTER)
-            {
-                Node* node = Mallocator.instance.make!Node;
-                node.kind = cursor.getKind();
-                node.name = cursor.getName;
-                node.localName = cursor.getLocalName();
-                node.prefix = cursor.getPrefix();
-                node.content = cursor.getContent();
-                node.attributes = cursor.getAttributes();
-                node.namespaces = cursor.getNamespaceDefinitions();
-                node.parent = parent;
-                parent = node;
-            }
-            return true;
-        }
-        return false;
-    }
-    bool after(ref CursorType cursor, ValidationEvent ev)
-    {
-        if (cursor.performAfter(ev))
-        {
-            if (ev == ValidationEvent.EXIT)
-            {
-                auto node = parent;
-                parent = parent.parent;
-                Mallocator.instance.dispose(parent);
-            }
-            return true;
-        }
-        return false;
-    }
-}
-
-unittest
-{
-    import std.experimental.xml.lexers;
-    import std.experimental.xml.parser;
-    
-    alias ParserType = Parser!(SliceLexer!string);
-    
-    auto xml = q{
-        <?xml?>
-        <aaa>
-            <bbb>
-                <ccc>
-            </bbb>
-            <ddd>
-            </ddd>
-        </aaa>
-    };
-    
-    auto cursor = ValidatingCursor!(ParserType, void, ParentStackSaver, "p")();
-    cursor.setSource(xml);
-    
-    cursor.enter();
-        assert(cursor.p.parent.kind == XMLKind.DOCUMENT);
-        cursor.enter();
-            assert(cursor.p.parent.kind == XMLKind.ELEMENT_START);
-            assert(cursor.p.parent.parent.kind == XMLKind.DOCUMENT);
-        cursor.exit();
-        assert(cursor.p.parent.kind == XMLKind.DOCUMENT);
-    cursor.exit();
-    assert(cursor.documentEnd);
 }
 
 pure nothrow @nogc @safe bool isValidXMLCharacter10(dchar c)
@@ -489,41 +192,65 @@ pure nothrow @nogc @safe bool isValidXMLPublicIdCharacter(dchar c)
         || "-'()+,./:=?;!*#@$_%".indexOf(c) != -1;
 }
 
-struct CheckXMLNames(CursorType)
+struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
+    if (isCursor!CursorType)
 {
     alias StringType = CursorType.StringType;
-    bool delegate(StringType) onInvalidTagName;
-    bool delegate(StringType) onInvalidAttrName;
-    bool delegate(StringType) onInvalidNSPrefix;
+    InvalidTagHandler onInvalidTagName;
+    InvalidAttrHandler onInvalidAttrName;
     
-    bool after(ref CursorType cursor, ValidationEvent ev)
+    CursorType cursor;
+    alias cursor this;
+    
+    auto getName()
     {
-        if (ev != ValidationEvent.ENTER && ev != ValidationEvent.NEXT)
-            return cursor.performAfter(ev);
-        if (cursor.performAfter(ev))
-        {
-            import std.algorithm: all;
-            auto name = cursor.getName;
-            if ((!name[0].isValidXMLNameStart || !name.all!isValidXMLNameChar) && !onInvalidTagName(name))
-                return false;
-            foreach (attr; cursor.getAttributes)
-                if ((!attr.name[0].isValidXMLNameStart || !attr.name.all!isValidXMLNameChar) && !onInvalidAttrName(attr.name))
-                    return false;
-            foreach (ns; cursor.getNamespaceDefinitions)
-                if ((!ns.prefix[0].isValidXMLNameStart || !ns.prefix.all!isValidXMLNameChar) && !onInvalidNSPrefix(ns.prefix))
-                    return false;
-            return true;
-        }
-        return false;
+        import std.algorithm: all;
+        
+        auto name = cursor.getName;
+        if (!name[0].isValidXMLNameStart || !name.all!isValidXMLNameChar)
+            onInvalidTagName(name);
+        return name;
     }
+    
+    auto getAttributes()
+    {
+        struct CheckedAttributes
+        {
+            typeof(onInvalidAttrName) callback;
+            typeof(cursor.getAttributes()) attrs;
+            alias attrs this;
+            
+            auto front()
+            {
+                import std.algorithm: all;
+        
+                auto attr = attrs.front;
+                if (!attr.name[0].isValidXMLNameStart || !attr.name.all!isValidXMLNameChar)
+                    callback(attr.name);
+                return attr;
+            }
+        }
+        return CheckedAttributes(onInvalidAttrName, cursor.getAttributes);
+    }
+}
+auto checkXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
+                  (auto ref CursorType cursor,
+                   InvalidTagHandler tagHandler = (CursorType.StringType s) {},
+                   InvalidAttrHandler attrHandler = (CursorType.StringType s) {})
+{
+    auto res = CheckXMLNames!(CursorType, InvalidTagHandler, InvalidAttrHandler)();
+    res.cursor = cursor;
+    res.onInvalidTagName = tagHandler;
+    res.onInvalidAttrName = attrHandler;
+    return res;
 }
 
 unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    
-    alias ParserType = Parser!(SliceLexer!string);
+    import std.experimental.xml.cursor;
+    import std.stdio;
     
     auto xml = q{
         <?xml?>
@@ -538,24 +265,25 @@ unittest
     
     int count = 0;
     
-    auto cursor = ValidatingCursor!(ParserType, void, CheckXMLNames, "nameChecker")();
+    auto cursor = checkXMLNames(Cursor!(Parser!(SliceLexer!string))(),
+                                (string s) { count++; },
+                                (string s) { count++; });
     cursor.setSource(xml);
-    cursor.nameChecker.onInvalidTagName = (s) { count++; return true; };
-    cursor.nameChecker.onInvalidAttrName = (s) { count++; return true; };
-    cursor.nameChecker.onInvalidNSPrefix = (s) { count++; return true; };
     
     void inspectOneLevel(T)(ref T cursor)
     {
+        import std.array;
         do
         {
-            if (cursor.hasChildren())
+            auto name = cursor.getName;
+            auto attrs = cursor.getAttributes.array;
+            if (cursor.enter)
             {
-                cursor.enter();
                 inspectOneLevel(cursor);
                 cursor.exit();
             }
         }
-        while (cursor.next());
+        while (cursor.next);
     }
     inspectOneLevel(cursor);
     
