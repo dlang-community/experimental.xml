@@ -13,7 +13,6 @@ struct Appender(T, Alloc)
     import std.array;
     import std.range.primitives;
     import std.traits;
-    import std.string: representation;
     
     Alloc* allocator;
     private Unqual!T[] arr;
@@ -48,7 +47,7 @@ struct Appender(T, Alloc)
     public void put(Range)(Range range)
         if (isInputRange!Range)
     {
-        static if (isSomeChar!T && is(ElementEncodingType!Range == T))
+        static if (isSomeChar!T && is(Unqual!(ElementEncodingType!Range) == Unqual!T))
         {
             auto len = range.length;
             ensureAddable(len);

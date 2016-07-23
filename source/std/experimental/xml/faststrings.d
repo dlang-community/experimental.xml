@@ -98,6 +98,20 @@ T[] xmlEscape(T, Alloc)(T[] str)
 }
 T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
 {
+    if (str.fastIndexOfAny("&<>'\"") >= 0)
+    {
+        import std.experimental.appender;
+        
+        auto app = Appender!(T, Alloc)(alloc);
+        app.reserve(str.length + 3);
+        
+        app.xmlEscapedWrite(str);
+        return app.data;
+    }
+    return str;
+}
+void xmlEscapedWrite(Out, T)(ref Out output, T[] str)
+{
     import std.conv: to;
     static immutable amp = to!(T[])("&amp;");
     static immutable lt = to!(T[])("&lt;");
@@ -106,35 +120,24 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
     static immutable quot = to!(T[])("&quot;");
 
     ptrdiff_t i;
-    if ((i = str.fastIndexOfAny("&<>'\"")) >= 0)
+    while ((i = str.fastIndexOfAny("&<>'\"")) >= 0)
     {
-        import std.experimental.appender;
+        output.put(str[0..i]);
         
-        auto app = Appender!(T, Alloc)(alloc);
-        app.reserve(str.length + 3);
-        do
-        {
-            app.put(str[0..i]);
+        if (str[i] == '&')
+            output.put(amp);
+        else if (str[i] == '<')
+            output.put(lt);
+        else if (str[i] == '>')
+            output.put(gt);
+        else if (str[i] == '\'')
+            output.put(apos);
+        else if (str[i] == '"')
+            output.put(quot);
             
-            if (str[i] == '&')
-                app.put(amp);
-            else if (str[i] == '<')
-                app.put(lt);
-            else if (str[i] == '>')
-                app.put(gt);
-            else if (str[i] == '\'')
-                app.put(apos);
-            else if (str[i] == '"')
-                app.put(quot);
-                
-            str = str[i+1..$];
-        } while ((i = str.fastIndexOfAny("&<>'\"")) >= 0);
-        
-        app.put(str);
-        return app.data;
+        str = str[i+1..$];
     }
-    else
-        return str;
+    output.put(str);
 }
 
 struct xmlPredefinedEntities(T)
@@ -167,30 +170,76 @@ struct xmlPredefinedEntities(T)
 }
 
 import std.typecons: Flag, Yes;
-T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, U replacements = xmlPredefinedEntities!T())
+T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, U replacements = xmlPredefinedEntities!T())
 {
-    return xmlUnescape!(T, Alloc, strict)(str, Alloc.instance);
+    return xmlUnescape!strict(str, Alloc.instance, replacements);
 }
-T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
+T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
 {
-    ptrdiff_t i;
-    if ((i = str.fastIndexOf('&')) >= 0)
+    if (str.fastIndexOf('&') >= 0)
     {
         import std.experimental.appender;
         
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length);
-        do
-        {
-            app.put(str[0..i]);
         
-            ptrdiff_t j = str[(i+1)..$].fastIndexOf(';');
-            static if (strict == Yes.strict)
-                assert (j > 0, "Missing ';' ending XML entity");
+        app.xmlUnescapedWrite!strict(str, replacements);
+        return app.data;
+    }
+    return str;
+}
+void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)(ref Out output, T[] str, U replacements = xmlPredefinedEntities!T())
+{
+    ptrdiff_t i;
+    while ((i = str.fastIndexOf('&')) >= 0)
+    {
+        output.put(str[0..i]);
+    
+        ptrdiff_t j = str[(i+1)..$].fastIndexOf(';');
+        static if (strict == Yes.strict)
+            assert (j > 0, "Missing ';' ending XML entity");
+        else
+            if (j < 0) break;
+        auto ent = str[(i+1)..(i+j+1)];
+        
+        // character entities
+        if (ent[0] == '#')
+        {
+            assert(ent.length > 1);
+            uint num;
+            // hex number
+            if (ent.length > 2 && ent[1] == 'x')
+            {
+                foreach(digit; ent[2..$])
+                {
+                    if ('0' <= digit && digit <= '9')
+                        num = (num << 4) + (digit - '0');
+                    else if ('a' <= digit && digit <= 'f')
+                        num = (num << 4) + (digit - 'a' + 10);
+                    else if ('A' <= digit && digit <= 'F')
+                        num = (num << 4) + (digit - 'A' + 10);
+                    else
+                        assert(0);
+                }
+            }
+            // decimal number
             else
-                if (j < 0) break;
-            
-            auto repl = str[(i+1)..(i+j+1)] in replacements;
+            {
+                foreach(digit; ent[1..$])
+                {
+                    if ('0' <= digit && digit <= '9')
+                        num = (num * 10) + (digit - '0');
+                    else
+                        assert(0);
+                }
+            }
+            assert(num <= 0x10FFFF);
+            output.put(cast(dchar)num);
+        }
+        // named entities
+        else
+        {
+            auto repl = ent in replacements;
             static if (strict == Yes.strict)
                 assert (repl, cast(string)str[(i+1)..(i+j+1)]);
             else
@@ -200,16 +249,12 @@ T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, ref All
                     str = str[(i+1)..$];
                     continue;
                 }
-                
-            app.put(*repl);
-            str = str[(i+j+2)..$];
-        } while ((i = str.fastIndexOf('&')) >= 0);
+            output.put(*repl);
+        }
         
-        app.put(str);
-        return app.data;
+        str = str[(i+j+2)..$];
     }
-    else
-        return str;
+    output.put(str);
 }
 
 @nogc unittest
@@ -225,10 +270,10 @@ T[] xmlUnescape(T, Alloc, Flag!"strict" strict = Yes.strict, U)(T[] str, ref All
 
 @nogc unittest
 {
-    import std.stdio: writeln;
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
     assert(xmlUnescape("some standard string"d, alloc) == "some standard string"d);
+    assert(xmlUnescape("some s&#116;range&#x20;string", alloc) == "some strange string");
     assert(xmlUnescape("&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;", alloc)
                        == "& \"some\" <standard> 'string'");
     assert(xmlUnescape("&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w, alloc)
