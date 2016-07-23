@@ -16,4 +16,4 @@ script:
   - if [ ${PRIMARY} = "true" ]; then make unittest-cov; else make unittest; fi
 
 after_success:
-  - if [ ${PRIMARY} = "true" ]; then bash <(curl -s https://codecov.io/bash); fi
+  - ./travis_after_success.sh

@@ -42,6 +42,10 @@ clean-docs:
 .PHONY: clean-random-benchmark
 clean-random-benchmark:
 	$(RM) -f random-benchmark/*.xml
+	
+.PHONY: docs
+docs:
+	dub build -b ddox
 
 .PHONY: random-benchmark
 random-benchmark:
