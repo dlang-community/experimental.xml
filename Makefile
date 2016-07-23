@@ -5,7 +5,9 @@ help:
 	@echo - benchmark: builds and benchmarks the library
 	@echo - build-all: builds all targets except unittests, without executing anything
 	@echo - clean: deletes all binaries
+	@echo - clean-docs: deletes all documentation files
 	@echo - clean-random-benchmark: deletes random benchmark files
+	@echo - docs: generates documentation with ddox
 	@echo - help: shows this text
 	@echo - random-benchmark: builds the library and executes random benchmarks
 	@echo - random-benchmark-csv: as random-benchmark, but exports the results in CSV
@@ -29,7 +31,13 @@ clean:
 	$(RM) __test__library__
 	$(RM) std-experimental-xml
 	$(RM) lib*.a
-	$(RM) rm -f ..?*.lst .[!.]*.lst *.lst
+	$(RM) ..?*.lst .[!.]*.lst *.lst
+	
+.PHONY: clean-docs
+clean-docs:
+	$(RM) __dummy.html
+	$(RM) docs.json
+	$(RM) -r docs
 	
 .PHONY: clean-random-benchmark
 clean-random-benchmark:

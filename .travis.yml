@@ -2,17 +2,18 @@
 language: d
 
 matrix:
+  fast_finish: true
   include:
     - d: dmd
-      env: COV="true"
+      env: PRIMARY="true"
     - d: ldc-1.1.0-alpha1
-      env: COV="false"
+      env: PRIMARY="false"
   allow_failures:
     - d: ldc-1.1.0-alpha1
 
 script:
   - make build-all
-  - if [ ${COV} = "true" ]; then make unittest-cov; else make unittest; fi
+  - if [ ${PRIMARY} = "true" ]; then make unittest-cov; else make unittest; fi
 
 after_success:
-  - if [ ${COV} = "true" ]; then bash <(curl -s https://codecov.io/bash); fi
+  - if [ ${PRIMARY} = "true" ]; then bash <(curl -s https://codecov.io/bash); fi
