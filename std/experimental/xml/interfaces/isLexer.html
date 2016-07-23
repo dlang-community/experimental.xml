@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum member isLexer</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class="selected module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum member isLexer</h1>
+			<section>
+				<p>Checks whether its argument fulfills all requirements to be used as XML lexer.
+</p>
+<section><p>An XML lexer is the first component in the parsing chain. It masks from the parser
+   the shape of the input and the type of the characters in it.
+</p>
+</section>
+
+					<section>
+						<h3>Declaration</h3>
+						<div class="prototype">
+							<code class="lang-d">
+<span class="kwd">enum</span> <span class="pln">isLexer</span><span class="pun">(</span><span class="pln">L</span><span class="pun">)</span> <span class="pun">=</span> <span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
+{
+</span><span class="kwd">alias </span><span class="pln">C </span><span class="pun">= </span><span class="pln">L<wbr/></span><span class="pun">.</span><span class="typ">CharacterType</span><span class="pun">;
+</span><span class="kwd">alias </span><span class="pln">T </span><span class="pun">= </span><span class="pln">L<wbr/></span><span class="pun">.</span><span class="typ">InputType</span><span class="pun">;
+</span><span class="pln">L lexer</span><span class="pun">;
+</span><span class="pln">T source</span><span class="pun">;
+</span><span class="typ">char </span><span class="pln">c</span><span class="pun">;
+</span><span class="typ">bool </span><span class="pln">b</span><span class="pun">;
+</span><span class="typ">string </span><span class="pln">s</span><span class="pun">;
+</span><span class="pln">C</span><span class="pun">[] </span><span class="pln">cs</span><span class="pun">;
+</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">source</span><span class="pun">);
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">empty</span><span class="pun">;
+</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">start</span><span class="pun">();
+</span><span class="pln">cs </span><span class="pun">= </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">get</span><span class="pun">();
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">testAndAdvance</span><span class="pun">(</span><span class="pln">c</span><span class="pun">);
+</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">advanceUntil</span><span class="pun">(</span><span class="pln">c</span><span class="pun">, </span><span class="pln">b</span><span class="pun">);
+</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">advanceUntilAny</span><span class="pun">(</span><span class="pln">s</span><span class="pun">, </span><span class="pln">b</span><span class="pun">);
+</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">dropWhile</span><span class="pun">(</span><span class="pln">s</span><span class="pun">);
+}
+))</span><span class="pun">;</span>
+							</code>
+						</div>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+
+			</section>
+			<section>
+				<h2>License</h2>
+
+			</section>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum member isSaveableLexer</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class="selected module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum member isSaveableLexer</h1>
+			<section>
+				<p>Checks whether the given lexer is savable.
+</p>
+<section><p>The method save should return an exact copy of the lexer
+   that can be advanced independently of the original.
+</p>
+</section>
+
+					<section>
+						<h3>Declaration</h3>
+						<div class="prototype">
+							<code class="lang-d">
+<span class="kwd">enum</span> <span class="pln">isSaveableLexer</span><span class="pun">(</span><span class="pln">L</span><span class="pun">)</span> <span class="pun">=</span> <span class="pln">isLexer</span><span class="pun">!</span><span class="pln">L </span><span class="pun">&amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
+{
+</span><span class="kwd">const </span><span class="pln">L lexer1</span><span class="pun">;
+</span><span class="pln">L lexer2 </span><span class="pun">= </span><span class="pln">lexer1<wbr/></span><span class="pun">.</span><span class="pln">save</span><span class="pun">();
+}
+))</span><span class="pun">;</span>
+							</code>
+						</div>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+
+			</section>
+			<section>
+				<h2>License</h2>
+
+			</section>
+		</div>
+	</body>
+</html>

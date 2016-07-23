@@ -1,1 +1,131 @@
-Still empty...
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>API documentation</title>
+		<link rel="stylesheet" type="text/css" href="./styles/ddox.css"/>
+		<link rel="stylesheet" href="./prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="./scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="./scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="collapsed tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="collapsed tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="./std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="./std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="./std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="./std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="./std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="./symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "./";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>API documentation</h1>
+			<table>
+				<col class="caption"/>
+				<tr>
+					<th>Module</th>
+					<th>Description</th>
+				</tr>
+			<tr>
+				<td>
+					<a href="./std/experimental/xml/faststrings.html">std.experimental.xml.faststrings</a>
+				</td>
+				<td>
+This module implements fast search and compare
+   functions on slices. In the future, these may be
+   optimized by means of aggressive specialization,
+   inline assembly and SIMD instructions.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./std/experimental/xml/interfaces.html">std.experimental.xml.interfaces</a>
+				</td>
+				<td>
+This module contains some traits that serve as interfaces
+   for some components of the library.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./std/experimental/xml/legacy.html">std.experimental.xml.legacy</a>
+				</td>
+				<td>
+This module tries to mimic the deprecated std.xml module, to ease transition.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./std/experimental/xml/lexers.html">std.experimental.xml.lexers</a>
+				</td>
+				<td>
+This module implements various XML lexers.
+   The methods a lexer should implement are documented in experimental.xml.interfaces.
+
+				</td>
+			</tr>
+			<tr>
+				<td>
+					<a href="./std/experimental/xml/parser.html">std.experimental.xml.parser</a>
+				</td>
+				<td>
+This module implements the low level XML parser.
+   For documentation, see experimental.xml.interfaces.
+
+				</td>
+			</tr>
+			</table>
+			<section>
+				<h2>Authors</h2>
+			</section>
+			<section>
+				<h2>Copyright</h2>
+			</section>
+			<section>
+				<h2>License</h2>
+			</section>
+		</div>
+	</body>
+</html>
