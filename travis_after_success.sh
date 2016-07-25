@@ -10,6 +10,7 @@ then
     git add .
     git commit -m "Documentation updated by Travis CI (build $TRAVIS_BUILD_NUMBER)"
     git push https://${GH_TOKEN}@github.com/lodo1995/experimental.xml.git gh-pages
+    cd ..
     
     bash <(curl -s https://codecov.io/bash)
 fi
