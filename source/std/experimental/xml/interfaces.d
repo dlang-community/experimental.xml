@@ -255,6 +255,7 @@ template isCursor(CursorType)
         bool b;
         
         cursor.setSource(input);
+        b = cursor.atBeginning;
         b = cursor.documentEnd;
         b = cursor.next;
         b = cursor.enter;

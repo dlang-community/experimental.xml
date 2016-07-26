@@ -128,6 +128,16 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
     }
     
     /++
+    +   Returns whether the cursor is at the beginning of the document
+    +   (i.e. whether no enter/next/exit has been performed successfully and thus
+    +   the cursor points to the xml declaration)
+    +/
+    bool atBeginning()
+    {
+        return starting;
+    }
+    
+    /++
     +   Advances to the first child of the current node and returns true.
     +   If it returns false, the cursor is either on the same node (it wasn't
     +   an element start) or it is at the close tag of the element it was called on
@@ -447,6 +457,8 @@ unittest
     auto cursor = Cursor!(Parser!(SliceLexer!wstring))();
     cursor.setSource(xml);
     
+    assert(cursor.atBeginning);
+    
     // <?xml encoding = "utf-8" ?>
     assert(cursor.getKind() == XMLKind.DOCUMENT);
     assert(cursor.getName() == "xml");
@@ -456,6 +468,8 @@ unittest
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
     
     assert(cursor.enter());
+        assert(!cursor.atBeginning);
+    
         // <aaa xmlns:myns="something">
         assert(cursor.getKind() == XMLKind.ELEMENT_START);
         assert(cursor.getName() == "aaa");
@@ -516,7 +530,8 @@ unittest
         assert(!cursor.next());
     cursor.exit();
     
-    assert(cursor.documentEnd());
+    assert(cursor.documentEnd);
+    assert(!cursor.atBeginning);
 }
 
 auto children(T)(ref T cursor)

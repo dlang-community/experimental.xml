@@ -102,7 +102,18 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
         // methods specialized in NodeWithChildren
         override
         {
-            @property dom.NodeList!DOMString childNodes() { return null; }
+            @property dom.NodeList!DOMString childNodes()
+            {
+                class EmptyList: dom.NodeList!DOMString
+                {
+                    @property size_t length() { return 0; }
+                    Node item(size_t i) { return null; }
+                }
+                static EmptyList emptyList;
+                if (!emptyList)
+                    emptyList = allocator.make!EmptyList;
+                return emptyList;
+            }
             @property Node firstChild() { return null; }
             @property Node lastChild() { return null; }
             
@@ -212,6 +223,9 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
             
             Node insertBefore(dom.Node!DOMString _newChild, dom.Node!DOMString _refChild)
             {
+                if (!_refChild)
+                    return appendChild(_newChild);
+                    
                 auto newChild = cast(Node)_newChild;
                 auto refChild = cast(Node)_refChild;
                 if (!newChild || !refChild || newChild.ownerDocument !is ownerDocument)
@@ -220,6 +234,14 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (refChild.parentNode !is this)
                     throw new DOMException(dom.ExceptionCode.NOT_FOUND);
+                    
+                if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
+                {
+                    for (auto child = rebindable(newChild); child !is null; child = child.nextSibling)
+                        insertBefore(child, refChild);
+                    return newChild;
+                }
+                    
                 if (newChild.parentNode)
                     newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = this;
@@ -234,37 +256,10 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     _firstChild = newChild;
                 return newChild;
             }
-            Node replaceChild(dom.Node!DOMString _newChild, dom.Node!DOMString _oldChild)
+            Node replaceChild(dom.Node!DOMString newChild, dom.Node!DOMString oldChild)
             {
-                auto newChild = cast(Node)_newChild;
-                auto oldChild = cast(Node)_oldChild;
-                if (!newChild || !oldChild || newChild.ownerDocument !is ownerDocument)
-                    throw new DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
-                if (this is newChild || newChild.isAncestor(this))
-                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                if (oldChild.parentNode !is this)
-                    throw new DOMException(dom.ExceptionCode.NOT_FOUND);
-                if (newChild.parentNode !is null)
-                    newChild.parentNode.removeChild(newChild);
-                removeChild(oldChild);
-                newChild._parentNode = this;
-                if (oldChild.previousSibling)
-                {
-                    oldChild.previousSibling._nextSibling = newChild;
-                    newChild._previousSibling = oldChild.previousSibling;
-                    oldChild._previousSibling = null;
-                }
-                if (oldChild.nextSibling)
-                {
-                    oldChild.nextSibling._previousSibling = newChild;
-                    newChild._nextSibling = oldChild.nextSibling;
-                    oldChild._nextSibling = null;
-                }
-                if (oldChild is firstChild)
-                    _firstChild = newChild;
-                if (oldChild is lastChild)
-                    _lastChild = newChild;
-                return oldChild;
+                insertBefore(newChild, oldChild);
+                return removeChild(oldChild);
             }
             Node removeChild(dom.Node!DOMString _oldChild)
             {
@@ -294,6 +289,14 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (newChild.parentNode !is null)
                     newChild.parentNode.removeChild(newChild);
+                    
+                if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
+                {
+                    for (auto node = rebindable(newChild.firstChild); node !is null; node = node.nextSibling)
+                        appendChild(node);
+                    return newChild;
+                }
+                    
                 newChild._parentNode = this;
                 if (lastChild)
                 {
@@ -446,8 +449,121 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
             } 
             EntityReference createEntityReference(DOMString name) { return null; }
             
-            dom.NodeList!DOMString getElementsByTagName(DOMString tagname) { return null; }
-            dom.NodeList!DOMString getElementsByTagNameNS(DOMString namespaceURI, DOMString localName) { return null; }
+            dom.NodeList!DOMString getElementsByTagName(DOMString tagname)
+            {
+                class ElementList: dom.NodeList!DOMString
+                {
+                    private Document document;
+                    private DOMString tagname;
+                    
+                    private Element findNext(Node node)
+                    {
+                        auto childList = node.childNodes;
+                        auto len = childList.length;
+                        foreach (i; 0..len)
+                        {
+                            auto item = childList.item(i);
+                            if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                                return cast(Element)item;
+                                
+                            auto res = findNext(cast(Node)item);
+                            if (res !is null)
+                                return res;
+                        }
+                        return null;
+                    }
+                    
+                    // methods specific to NodeList
+                    override
+                    {
+                        @property size_t length()
+                        {
+                            size_t res = 0;
+                            auto node = findNext(document);
+                            while (node !is null)
+                            {
+                                res++;
+                                node = findNext(node);
+                            }
+                            return res;
+                        }
+                        Element item(size_t i)
+                        {
+                            auto res = findNext(document);
+                            while (res && i > 0)
+                            {
+                                res = findNext(res);
+                                i--;
+                            }
+                            return res;
+                        }
+                    }
+                }
+                auto res = allocator.make!ElementList;
+                res.document = this;
+                res.tagname = tagname;
+                return res;
+            }
+            dom.NodeList!DOMString getElementsByTagNameNS(DOMString namespaceURI, DOMString localName)
+            {
+                class ElementList: dom.NodeList!DOMString
+                {
+                    private Document document;
+                    private DOMString namespaceURI, localName;
+                    
+                    private Element findNext(Node node)
+                    {
+                        auto childList = node.childNodes;
+                        auto len = childList.length;
+                        foreach (i; 0..len)
+                        {
+                            auto item = childList.item(i);
+                            if (item.nodeType == dom.NodeType.ELEMENT)
+                            {
+                                auto elem = cast(Element)item;
+                                if (elem.namespaceURI == namespaceURI && elem.localName == localName)
+                                    return elem;
+                            }
+                                
+                            auto res = findNext(cast(Node)item);
+                            if (res !is null)
+                                return res;
+                        }
+                        return null;
+                    }
+                    
+                    // methods specific to NodeList
+                    override
+                    {
+                        @property size_t length()
+                        {
+                            size_t res = 0;
+                            auto node = findNext(document);
+                            while (node !is null)
+                            {
+                                res++;
+                                node = findNext(node);
+                            }
+                            return res;
+                        }
+                        Element item(size_t i)
+                        {
+                            auto res = findNext(document);
+                            while (res && i > 0)
+                            {
+                                res = findNext(res);
+                                i--;
+                            }
+                            return res;
+                        }
+                    }
+                }
+                auto res = allocator.make!ElementList;
+                res.document = this;
+                res.namespaceURI = namespaceURI;
+                res.localName = localName;
+                return res;
+            }
             Element getElementById(DOMString elementId) { return null; }
 
             Node importNode(dom.Node!DOMString importedNode, bool deep) { return null; } 
@@ -508,6 +624,8 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
+                else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
+                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.insertBefore(newChild, refChild);
             }
@@ -531,6 +649,8 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
+                else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
+                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.replaceChild(newChild, oldChild);
             }
@@ -976,30 +1096,40 @@ unittest
 {
     import std.experimental.allocator.gc_allocator;
     auto impl = new DOMImplementation!(string, shared(GCAllocator))();
-    auto doc = impl.createDocument("myNamespaceURI", "myRootElement", null);
+    auto doc = impl.createDocument("myNamespaceURI", "myPrefix:myRootElement", null);
+    auto root = doc.documentElement;
+    assert(root.prefix == "myPrefix");
     
     auto attr = doc.createAttributeNS("myAttrNamespace", "myAttrPrefix:myAttrName");
-    doc.documentElement.setAttributeNode(attr);
-    assert(doc.documentElement.attributes.length == 1);
-    assert(doc.documentElement.getAttributeNodeNS("myAttrNamespace", "myAttrName") is attr);
+    root.setAttributeNode(attr);
+    assert(root.attributes.length == 1);
+    assert(root.getAttributeNodeNS("myAttrNamespace", "myAttrName") is attr);
     
     attr.value = "myAttrValue";
     assert(attr.childNodes.length == 1);
     assert(attr.firstChild.nodeType == dom.NodeType.TEXT);
     assert(attr.firstChild.nodeValue == attr.value);
     
-    auto elem = doc.createElementNS("myOtherNamespace", "myOtherElement");
-    assert(doc.documentElement.ownerDocument is doc);
+    auto elem = doc.createElementNS("myOtherNamespace", "myOtherPrefix:myOtherElement");
+    assert(root.ownerDocument is doc);
     assert(elem.ownerDocument is doc);
-    doc.documentElement.appendChild(elem);
-    assert(doc.documentElement.firstChild is elem);
-    assert(doc.documentElement.firstChild.namespaceURI == "myOtherNamespace");
+    root.appendChild(elem);
+    assert(root.firstChild is elem);
+    assert(root.firstChild.namespaceURI == "myOtherNamespace");
+    
+    auto comm = doc.createComment("myWonderfulComment");
+    doc.insertBefore(comm, root);
+    assert(doc.childNodes.length == 2);
+    assert(doc.firstChild is comm);
     
     auto pi = doc.createProcessingInstruction("myPITarget", "myPIData");
-    auto comm = doc.createComment("myWonderfulComment");
-    doc.appendChild(pi);
-    doc.insertBefore(comm, doc.documentElement);
-    assert(doc.childNodes.length == 3);
-    assert(doc.firstChild is comm);
-    assert(doc.lastChild is pi);
+    elem.appendChild(pi);
+    assert(elem.lastChild is pi);
+    auto cdata = doc.createCDATASection("myCDATAContent");
+    elem.replaceChild(cdata, pi);
+    assert(elem.lastChild is cdata);
+    elem.removeChild(cdata);
+    assert(elem.childNodes.length == 0);
+    
+    assert(doc.getElementsByTagNameNS("myOtherNamespace", "myOtherElement").item(0) is elem);
 };
