@@ -7,7 +7,7 @@ then
     cd gh-pages
     git rm -rf .
     cp -r ../docs/* .
-    git add .
+    git add -A
     git commit -m "Documentation updated by Travis CI (build $TRAVIS_BUILD_NUMBER)"
     git push https://${GH_TOKEN}@github.com/lodo1995/experimental.xml.git gh-pages
     cd ..

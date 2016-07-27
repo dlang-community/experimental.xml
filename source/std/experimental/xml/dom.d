@@ -5,6 +5,11 @@
 *            http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/++
++   This module implements the DOM Level 3 interfaces as stated in the W3C DOM
++   specification.
++/
+
 module std.experimental.xml.dom;
 
 import std.variant: Variant;
