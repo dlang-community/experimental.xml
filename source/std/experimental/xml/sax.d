@@ -153,7 +153,7 @@ unittest
         void onDocument(ref T node)
         {
             auto attrs = node.getAttributes;
-            assert(attrs.front == Attribute!dstring("", "encoding", "utf-8"));
+            assert(attrs.front == Attribute!dstring("encoding", "utf-8"));
             attrs.popFront;
             assert(attrs.empty);
             total_invocations++;

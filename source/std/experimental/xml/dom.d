@@ -204,8 +204,8 @@ interface Node(DOMString)
     bool isSupported(DOMString feature, DOMString version_);
     Object getFeature(DOMString feature, DOMString version_);
     
-    UserData setUserData(string key, UserData data, UserDataHandler!DOMString handler);
     UserData getUserData(string key);
+    UserData setUserData(string key, UserData data, UserDataHandler!DOMString handler);
 
     DocumentPosition compareDocumentPosition(Node!DOMString other); //raises(DOMException)
 

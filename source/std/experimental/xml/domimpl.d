@@ -4,8 +4,9 @@ module std.experimental.xml.domimpl;
 import dom = std.experimental.xml.dom;
 import std.typecons: rebindable;
 import std.experimental.allocator;
+import std.experimental.allocator.gc_allocator;
 
-class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
+class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplementation!DOMString
 {
     static if (is(typeof(Alloc.instance)))
         private Alloc* allocator = &(Alloc.instance);
@@ -278,6 +279,8 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     oldChild.nextSibling._previousSibling = oldChild.previousSibling;
 
                 oldChild._parentNode = null;
+                oldChild._previousSibling = null;
+                oldChild._nextSibling = null;
                 return oldChild;
             }
             Node appendChild(dom.Node!DOMString _newChild)
@@ -326,12 +329,11 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
             
             @property DOMString textContent()
             {
-                DOMString result = [];
+                DOMString result;
                 for (auto child = rebindable(firstChild); child !is null; child = child.nextSibling)
                 {
                     if (child.nodeType != dom.NodeType.COMMENT &&
-                        child.nodeType != dom.NodeType.PROCESSING_INSTRUCTION &&
-                        child.textContent)
+                        child.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
                     {
                         result ~= child.textContent;
                     }
@@ -967,7 +969,7 @@ class DOMImplementation(DOMString, Alloc): dom.DOMImplementation!DOMString
                     if (!attr)
                         throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
-                    auto key = Key(attr.namespaceURI, attr.localName);
+                    auto key = Key(attr.namespaceURI, attr.localName ? attr.localName : attr.nodeName);
                     auto oldAttr = (key in attrs) ? *(key in attrs) : null;
                     attrs[key] = attr;
                     return oldAttr;
@@ -1122,6 +1124,12 @@ unittest
     assert(doc.childNodes.length == 2);
     assert(doc.firstChild is comm);
     
+    assert(comm.substringData(1, 4) == "yWon");
+    comm.replaceData(0, 2, "your");
+    comm.deleteData(4, 9);
+    comm.insertData(4, "Questionable");
+    assert(comm.data == "yourQuestionableComment");
+    
     auto pi = doc.createProcessingInstruction("myPITarget", "myPIData");
     elem.appendChild(pi);
     assert(elem.lastChild is pi);
@@ -1132,4 +1140,13 @@ unittest
     assert(elem.childNodes.length == 0);
     
     assert(doc.getElementsByTagNameNS("myOtherNamespace", "myOtherElement").item(0) is elem);
+    
+    doc.setUserData("userDataKey1", dom.UserData(3.14), null);
+    doc.setUserData("userDataKey2", dom.UserData(new Object()), null);
+    doc.setUserData("userDataKey3", dom.UserData(null), null);
+    assert(doc.getUserData("userDataKey1") == 3.14);
+    assert(doc.getUserData("userDataKey2").type == typeid(Object));
+    assert(doc.getUserData("userDataKey3").peek!long is null);
+    
+    
 };

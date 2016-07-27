@@ -24,6 +24,45 @@ enum CursorError
     INVALID_ATTRIBUTE_SYNTAX,
 }
     
+struct Attribute(StringType)
+{
+    StringType value;
+    private StringType _name;
+    private size_t colon;
+    
+    this(StringType qualifiedName, StringType value)
+    {
+        this.value = value;
+        name = qualifiedName;
+    }
+    
+    @property StringType name()
+    {
+        return _name;
+    }
+    @property void name(StringType _name)
+    {
+        import std.experimental.xml.faststrings;
+        this._name = _name;
+        auto i = _name.fastIndexOf(':');
+        if (i > 0)
+            colon = i;
+        else
+            colon = 0;
+    }
+    @property StringType prefix()
+    {
+        return name[0..colon];
+    }
+    @property StringType localName()
+    {
+        if (colon)
+            return name[colon+1..$];
+        else
+            return name;
+    }
+}
+
 struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"noGC" noGC = No.noGC)
     if (isLowLevelParser!P)
 {
@@ -322,34 +361,30 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
                     assert(i >= 0, "No more attributes...");
                     content = content[i..$];
                     
-                    auto sep = fastIndexOfAny(content[0..$], ":=");
+                    auto sep = fastIndexOf(content[0..$], '=');
                     if (sep == -1)
                     {
-                        // attribute without value nor prefix???
+                        // attribute without value???
                         cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
                         error = true;
                         return attr.init;
                     }
-                    size_t nameStart = 0;
-                    if (content[sep] == ':')
+                    
+                    auto name = content[0..sep];
+                    auto delta = fastIndexOfAny(name, " \r\n\t");
+                    if (delta >= 0)
                     {
-                        attr.prefix = content[0..sep];
-                        nameStart = sep + 1;
-                        auto delta = fastIndexOf(content[nameStart..$], '=');
-                        if (delta == -1)
+                        auto j = name[delta..$].fastIndexOfNeither(" \r\n\t");
+                        if (j != -1)
                         {
-                            // attribute without value???
+                            // attribute name contains spaces???
                             cursor.callHandler(CursorError.INVALID_ATTRIBUTE_SYNTAX);
                             error = true;
                             return attr.init;
                         }
-                        sep = nameStart + delta;
+                        name = name[0..delta];
                     }
-                    
-                    attr.name = content[nameStart..sep];
-                    auto delta = fastIndexOfAny(attr.name, " \r\n\t");
-                    if (delta >= 0)
-                        attr.name = attr.name[0..delta];
+                    attr.name = name;
                     
                     size_t attEnd;
                     size_t quote;
@@ -464,7 +499,7 @@ unittest
     assert(cursor.getName() == "xml");
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
-    assert(cursor.getAttributes().array == [Attribute!wstring("", "encoding", "utf-8")]);
+    assert(cursor.getAttributes().array == [Attribute!wstring("encoding", "utf-8")]);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
     
     assert(cursor.enter());
@@ -475,7 +510,7 @@ unittest
         assert(cursor.getName() == "aaa");
         assert(cursor.getPrefix() == "");
         assert(cursor.getLocalName() == "aaa");
-        assert(cursor.getAttributes().array == [Attribute!wstring("xmlns", "myns", "something")]);
+        assert(cursor.getAttributes().array == [Attribute!wstring("xmlns:myns", "something")]);
         assert(cursor.getContent() == " xmlns:myns=\"something\"");
         
         assert(cursor.enter());
@@ -484,7 +519,7 @@ unittest
             assert(cursor.getName() == "myns:bbb");
             assert(cursor.getPrefix() == "myns");
             assert(cursor.getLocalName() == "bbb");
-            assert(cursor.getAttributes().array == [Attribute!wstring("myns", "att", ">")]);
+            assert(cursor.getAttributes().array == [Attribute!wstring("myns:att", ">")]);
             assert(cursor.getContent() == " myns:att='>'");
             
             assert(cursor.enter());
@@ -585,7 +620,7 @@ auto children(T)(ref T cursor)
     assert(cursor.getPrefix() == "");
     assert(cursor.getLocalName() == "xml");
     auto attrs = cursor.getAttributes;
-    assert(attrs.front == Attribute!string("", "encoding", "utf-8"));
+    assert(attrs.front == Attribute!string("encoding", "utf-8"));
     attrs.popFront;
     assert(attrs.empty);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
@@ -598,7 +633,7 @@ auto children(T)(ref T cursor)
         assert(range1.front.getPrefix() == "");
         assert(range1.front.getLocalName() == "aaa");
         attrs = range1.front.getAttributes;
-        assert(attrs.front == Attribute!string("xmlns", "myns", "something"));
+        assert(attrs.front == Attribute!string("xmlns:myns", "something"));
         attrs.popFront;
         assert(attrs.empty);
         assert(range1.front.getContent() == " xmlns:myns=\"something\"");
@@ -611,7 +646,7 @@ auto children(T)(ref T cursor)
             assert(range2.front.getPrefix() == "myns");
             assert(range2.front.getLocalName() == "bbb");
             attrs = range2.front.getAttributes;
-            assert(attrs.front == Attribute!string("myns", "att", ">"));
+            assert(attrs.front == Attribute!string("myns:att", ">"));
             attrs.popFront;
             assert(attrs.empty);
             assert(range2.front.getContent() == " myns:att='>'");
@@ -675,8 +710,9 @@ auto children(T)(ref T cursor)
 }
 
 import std.traits: isArray;
+import std.experimental.allocator.gc_allocator;
 
-struct CopyingCursor(CursorType, Alloc, Flag!"intern" intern = No.intern)
+struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern)
     if (isCursor!CursorType && isArray!(CursorType.StringType))
 {
     alias StringType = CursorType.StringType;
@@ -690,7 +726,6 @@ struct CopyingCursor(CursorType, Alloc, Flag!"intern" intern = No.intern)
     {
         allocator = alloc;
     }
-    @disable this();
     
     CursorType cursor;
     alias cursor this;
@@ -762,7 +797,6 @@ struct CopyingCursor(CursorType, Alloc, Flag!"intern" intern = No.intern)
             {
                 auto attr = attrs.front;
                 return Attribute!StringType(
-                        parent.copy(attr.prefix),
                         parent.copy(attr.name),
                         parent.copy(attr.value),
                     );
