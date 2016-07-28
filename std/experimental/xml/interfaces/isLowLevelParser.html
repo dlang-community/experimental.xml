@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -63,11 +84,13 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Enum member isLowLevelParser</h1>
 			<section>
-				<p>Checks whether its argument fulfills all requirements to be used as XML lexer.
+				<p>Checks whether its argument fulfills all requirements to be used as XML parser.
 </p>
-<section><p>An XML lexer is the first component in the parsing chain. It masks from the parser
-   the shape of the input and the type of the characters in it. It must be an InputRange
-   of some instantiation of LowLevelNode.
+<section><p>An XML parser is the second component in the parsing chain. It is usually built
+   on top of a lexer and used to feed a cursor.
+   The slices contained in the tokens returned by the parser are ephemeral: every
+   reference to them may or may not be invalidated by subsequent calls to <code class="lang-d"><span class="pln">popFront</span></code>.
+   If the caller needs them, it has to copy them somewhere else.
 </p>
 </section>
 
@@ -75,10 +98,9 @@ $('#symbolSearchPane').show();
 						<h3>Declaration</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<span class="kwd">enum</span> <span class="pln">isLowLevelParser</span><span class="pun">(</span><span class="pln">P</span><span class="pun">)</span> <span class="pun">=</span> <span class="pln">isInputRange</span><span class="pun">!</span><span class="pln">P </span><span class="pun">&amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="typ">ElementType</span><span class="pun">!</span><span class="pln">P </span><span class="pun">: </span><span class="typ">XMLToken</span><span class="pun">!(</span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="typ">CharacterType</span><span class="pun">)) &amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
+<span class="kwd">enum</span> <span class="pln">isLowLevelParser</span><span class="pun">(</span><span class="pln">P</span><span class="pun">)</span> <span class="pun">=</span> <span class="pln">isInputRange</span><span class="pun">!</span><span class="pln">P </span><span class="pun">&amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">ElementType</span><span class="pun">!</span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="pln">kind</span><span class="pun">) == </span><span class="typ">XMLKind</span><span class="pun">) &amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">ElementType</span><span class="pun">!</span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="pln">content</span><span class="pun">) == </span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="typ">CharacterType</span><span class="pun">[]) &amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
 {
 </span><span class="kwd">alias </span><span class="typ">InputType </span><span class="pun">= </span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="typ">InputType</span><span class="pun">;
-</span><span class="kwd">alias </span><span class="typ">CharacterType </span><span class="pun">= </span><span class="pln">P<wbr/></span><span class="pun">.</span><span class="typ">CharacterType</span><span class="pun">;
 </span><span class="pln">P parser</span><span class="pun">;
 </span><span class="typ">InputType </span><span class="pln">input</span><span class="pun">;
 </span><span class="pln">parser<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
@@ -87,18 +109,51 @@ $('#symbolSearchPane').show();
 							</code>
 						</div>
 					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="P">P</td><td> the type to be tested</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p><code class="lang-d"><span class="kwd">true</span></code> if P satisfies the XML parser specification here stated; <code class="lang-d"><span class="kwd">false</span></code> otherwise
+</p>
+</section>
+<section><h3>Specification</h3>
+<p>The parser shall at least:
+   <ul>       <li>have <code class="lang-d"><span class="kwd">alias </span><span class="typ">CharacterType</span></code>: the type of a single source character;</li>
+       <li>have <code class="lang-d"><span class="kwd">alias </span><span class="typ">InputType</span></code>: the type of the input which is used to feed this
+            parser;</li>
+       <li>be an <code class="lang-d"><span class="typ">InputRange</span></code>, whose elements shall support at least the following fields:
+            <ul>               <li><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a><span class="pln"> kind</span></code>: the kind of this node;</li>
+               <li><code class="lang-d"><span class="pln">P<wbr/></span><span class="pun">.</span><span class="typ">CharacterType</span><span class="pun">[] </span><span class="pln">content</span></code>: the contents of this node, excluding
+                     the delimiters specified in the documentation of <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a></code>;</li>
+            </ul></li>
+       <li>have <code class="lang-d"><span class="typ">void </span><span class="pln">setSource</span><span class="pun">(</span><span class="typ">InputType</span><span class="pun">)</span></code>: sets the input source for this parser
+            and eventual underlying components; the parser may perform other
+            initialization work and even consume part of the input during this
+            operation; after (partial or complete) usage, a parser may be reinitialized
+            and used with another input by calling this function;</li>
+   </ul>
+</p>
+</section>
 
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

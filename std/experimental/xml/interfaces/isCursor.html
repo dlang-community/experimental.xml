@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum member isCursor</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class="selected module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum member isCursor</h1>
+			<section>
+				<p>Checks whether its argument fulfills all requirements to be used as XML cursor.
+</p>
+<section><p>The cursor is the hearth of the XML parsing chain. Every higher level component
+   (SAX, DOM, validations) builds on top of this concept.
+   A cursor is a logical pointer inside a stream of XML nodes. It can be queried
+   for properties of the current node (kind, name, attributes, ...) and it can be
+   advanced in the stream. It cannot move backwards. Any reference to the outputs
+   of a cursor may or may not be invalidated by advancing operations.
+</p>
+</section>
+
+					<section>
+						<h3>Declaration</h3>
+						<div class="prototype">
+							<code class="lang-d">
+<span class="kwd">enum</span> <span class="pln">isCursor</span><span class="pun">(</span><span class="typ">CursorType</span><span class="pun">)</span> <span class="pun">=</span> <span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
+{
+</span><span class="kwd">alias </span><span class="pln">T </span><span class="pun">= </span><span class="typ">CursorType<wbr/></span><span class="pun">.</span><span class="typ">InputType</span><span class="pun">;
+</span><span class="kwd">alias </span><span class="pln">S </span><span class="pun">= </span><span class="typ">CursorType<wbr/></span><span class="pun">.</span><span class="typ">StringType</span><span class="pun">;
+</span><span class="typ">CursorType </span><span class="pln">cursor</span><span class="pun">;
+</span><span class="pln">T input</span><span class="pun">;
+</span><span class="typ">bool </span><span class="pln">b</span><span class="pun">;
+</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">atBeginning</span><span class="pun">;
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">documentEnd</span><span class="pun">;
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span><span class="pun">;
+</span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">;
+</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">exit</span><span class="pun">;
+</span><span class="typ">XMLKind </span><span class="pln">kind </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getName</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getLocalName</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getPrefix</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getContent</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getAll</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">attrs </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getAttributes</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">prefix</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">localName</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">value</span><span class="pun">;
+}
+))</span><span class="pun">;</span>
+							</code>
+						</div>
+					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="CursorType">CursorType</td><td> the type to be tested</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p><code class="lang-d"><span class="kwd">true</span></code> if CursorType satisfies the XML cursor specification here stated;
+   <code class="lang-d"><span class="kwd">false</span></code> otherwise
+</p>
+</section>
+<section><h3>Specification</h3>
+<p>A cursor shall support at least these methods and aliases:
+   <ul>       <li><code class="lang-d"><span class="kwd">alias </span><span class="typ">StringType</span></code>: the type of an output string; most methods will
+             return instances of this type;</li>
+       <li><code class="lang-d"><span class="kwd">alias </span><span class="typ">InputType</span></code>: the type of the input which is used to feed this
+             cursor;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">setSource</span><span class="pun">(</span><span class="typ">InputType</span><span class="pun">)</span></code>: sets the input source for this cursor and
+             eventual underlying components; the cursor may perform other initialization
+             work and even consume part of the input during this operation; after
+            (partial or complete) usage, a cursor may be reinitialized and used with
+             another input by calling this function;</li>
+       <li><code class="lang-d"><span class="typ">bool </span><span class="pln">atBeginning</span><span class="pun">()</span></code>: returns true if the cursor has never been advanced;
+             it is thus pointing to the node of type <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.DOCUMENT.html"><span class="typ">XMLKind<wbr/></span><span class="pun">.</span><span class="pln">DOCUMENT</span></a></code> representing
+             the XML declaration of the document;</li>
+       <li><code class="lang-d"><span class="typ">bool </span><span class="pln">documentEnd</span><span class="pun">()</span></code>: returns <code class="lang-d"><span class="kwd">true</span></code> if the input has been completely
+             consumed; if it is the case, any advancing operation will perform no action</li>
+       <li> the following methods can be used to query the current node properties:
+             <ul>               <li><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a><span class="pln"> getKind</span><span class="pun">()</span></code>: returns the <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a></code> of the current node;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getName</span><span class="pun">()</span></code>: returns the qualified name of the current
+                     element or the target of the current processing instruction;
+                     the empty string in all other cases;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getLocalName</span><span class="pun">()</span></code>: returns the local name of the
+                     current element, if it has a prefix; the empty string in all
+                     other cases;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getPrefix</span><span class="pun">()</span></code>: returns the prefix of the current element,
+                     if it has any; the empty string in all other cases;</li>
+               <li><code class="lang-d"><span class="kwd">auto </span><span class="pln">getAttributes</span><span class="pun">()</span></code>: returns a range of all attributes defined
+                     on the current element; if the current node is a processing
+                     instruction, its data section is parsed as if it was the attributes
+                     list of an element (which is quite common); for all other node
+                     kinds, an empty range is returned.
+                     The type returned by this range <code class="lang-d"><span class="pln">front</span></code> method shall at least support
+                     the following fields:
+                     <ul>                       <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">name</span></code>: the qualified name of the attribute;</li>
+                       <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">prefix</span></code>: the prefix of the attribute, if it
+                             has any; the empty string otherwise;</li>
+                       <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">localName</span></code>: the local name of the attribute,
+                             if it has any prefix; the empty string otherwise;</li>
+                       <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">value</span></code>: the value of the attribute;</li>
+                     </ul></li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getContent</span><span class="pun">()</span></code>: returns the text content of the current
+                     comment, text node or CDATA section or the data of the current
+                     processing instruction; the empty string in all other cases;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getAll</span><span class="pun">()</span></code>: returns the entire content of the node;</li>
+             </ul></li>
+       <li> the following methods can be used to advance the cursor in the stream
+             of XML nodes:
+             <ul>               <li><code class="lang-d"><span class="typ">bool </span><span class="pln">enter</span><span class="pun">()</span></code>: tries to advance the cursor to the first child
+                     of the current node; returns <code class="lang-d"><span class="kwd">true</span></code> if the operation succeeded;
+                     otherwise, if the cursor was positioned on the start tag of an
+                     element, it is now positioned on its closing tag; otherwise,
+                     the cursor did not advance;</li>
+               <li><code class="lang-d"><span class="typ">bool </span><span class="pln">next</span><span class="pun">()</span></code>: tries to advance the cursor to the next sibling
+                     of the current node; returns <code class="lang-d"><span class="kwd">true</span></code> if the operation succeded;
+                     otherwise (i.e. the cursor was positioned on the last child
+                     of an element) it is now positioned on the closing tag of the
+                     parent element;</li>
+               <li><code class="lang-d"><span class="typ">void </span><span class="pln">exit</span><span class="pun">()</span></code>: advances the cursor to the closing tag of the
+                     element containing the current node;</li>
+             </ul></li>
+   </ul>
+</p>
+</section>
+<section><h3>Examples</h3>
+<pre class="code"><code class="lang-d"><span class="com">/* recursively prints the kind of each node */
+</span><span class="typ">void </span><span class="pln">recursivePrint</span><span class="pun">(</span><span class="typ">CursorType</span><span class="pun">)(</span><span class="kwd">ref </span><span class="typ">CursorType </span><span class="pln">cursor</span><span class="pun">)
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">isCursor</span><span class="pun">!</span><span class="typ">CursorType</span><span class="pun">)
+{
+    </span><span class="kwd">do
+    </span><span class="pun">{
+        </span><span class="com">// print the kind of the current node
+        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">);
+        </span><span class="com">// if the node has children
+        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">)
+        {
+            </span><span class="com">// recursively print them
+            </span><span class="pln">recursivePrint</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">);
+            </span><span class="com">// back to the current level
+            </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">exit</span><span class="pun">;
+        }
+    }
+    </span><span class="com">// iterate on every sibling
+    </span><span class="kwd">while </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span><span class="pun">)
+}</span></code></pre>
+</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -82,7 +103,7 @@ $('#symbolSearchPane').show();
 								<td>
 									<code>ATTLIST_DECL</code>
 								</td>
-								<td>Any kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
+								<td>An attlist declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span><span class="pln">ATTLIST</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
 </td>
 							</tr>
 							<tr>
@@ -103,14 +124,14 @@ $('#symbolSearchPane').show();
 								<td>
 									<code>CONDITIONAL</code>
 								</td>
-								<td>A conditional section, delimited by <code class="lang-d"><span class="pun">&lt;![</span></code> and <code class="lang-d"><span class="pun">]]&gt;</span></code>
+								<td>A conditional section, delimited by <code class="lang-d"><span class="pun">&lt;![</span></code> <code class="lang-d"><span class="pun">[</span></code> and <code class="lang-d"><span class="pun">]]&gt;</span></code>
 </td>
 							</tr>
 							<tr>
 								<td>
 									<code>DECLARATION</code>
 								</td>
-								<td>Any kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
+								<td>Any unrecognized kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
 </td>
 							</tr>
 							<tr>
@@ -124,14 +145,14 @@ $('#symbolSearchPane').show();
 								<td>
 									<code>DOCUMENT</code>
 								</td>
-								<td>An entire document, starting with an &lt;?xml ?&gt; declaration
+								<td>An entire document, starting with an <code class="lang-d"><span class="pun">&lt;?</span><span class="pln">xml</span></code> <code class="lang-d"><span class="pun">?&gt;</span></code> declaration
 </td>
 							</tr>
 							<tr>
 								<td>
 									<code>ELEMENT_DECL</code>
 								</td>
-								<td>Any kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
+								<td>An element declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span><span class="pln">ELEMENT</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
 </td>
 							</tr>
 							<tr>
@@ -159,14 +180,14 @@ $('#symbolSearchPane').show();
 								<td>
 									<code>ENTITY_DECL</code>
 								</td>
-								<td>Any kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
+								<td>An entity declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span><span class="pln">ENTITY</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
 </td>
 							</tr>
 							<tr>
 								<td>
 									<code>NOTATION_DECL</code>
 								</td>
-								<td>Any kind of declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
+								<td>A notation declaration, delimited by <code class="lang-d"><span class="pun">&lt;!</span><span class="pln">NOTATION</span></code> and <code class="lang-d"><span class="pun">&gt;</span></code>
 </td>
 							</tr>
 							<tr>
@@ -189,14 +210,20 @@ $('#symbolSearchPane').show();
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

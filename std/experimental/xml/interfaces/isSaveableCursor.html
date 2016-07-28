@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Enum member isSaveableCursor</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class="selected module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Enum member isSaveableCursor</h1>
+			<section>
+				<p>Checks whether its argument is a saveable cursor.
+</p>
+<section><p>A saveable cursor is a cursor enhanced with a <code class="lang-d"><span class="pln">save</span></code> method analogous to the <code class="lang-d"><span class="pln">save</span></code>
+   method of <code class="lang-d"><span class="typ">ForwardRange</span></code>s.
+</p>
+</section>
+
+					<section>
+						<h3>Declaration</h3>
+						<div class="prototype">
+							<code class="lang-d">
+<span class="kwd">enum</span> <span class="pln">isSaveableCursor</span><span class="pun">(</span><span class="typ">CursorType</span><span class="pun">)</span> <span class="pun">=</span> <span class="pln">isCursor</span><span class="pun">!</span><span class="typ">CursorType </span><span class="pun">&amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
+{
+</span><span class="typ">CursorType </span><span class="pln">cursor1</span><span class="pun">;
+</span><span class="typ">CursorType </span><span class="pln">cursor2 </span><span class="pun">= </span><span class="pln">cursor1<wbr/></span><span class="pun">.</span><span class="pln">save</span><span class="pun">();
+}
+))</span><span class="pun">;</span>
+							</code>
+						</div>
+					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="CursorType">CursorType</td><td> the type to be tested</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p><code class="lang-d"><span class="kwd">true</span></code> if CursorType is a cursor (as specified by <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isCursor.html"><span class="pln">isCursor</span></a></code>) and also supports the
+   <code class="lang-d"><span class="pln">save</span></code> method as specified here; <code class="lang-d"><span class="kwd">false</span></code> otherwise
+</p>
+</section>
+<section><h3>Specification</h3>
+<p>The type shall support at least:
+   <ul>       <li>all methods and aliases specified by <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isCursor.html"><span class="pln">isCursor</span></a></code></li>
+       <li><code class="lang-d"><span class="typ">CursorType </span><span class="pln">save</span><span class="pun">()</span></code>: returns an independent copy of the current cursor; the
+             copy must start at the position the original cursor was when this method
+             was called; the two copies shall be independent, in that advancing one
+             does not advance the other.</li>
+   </ul>
+</p>
+</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

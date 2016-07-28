@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -63,10 +84,34 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Module std.experimental.xml.lexers</h1>
 			<p>This module implements various XML lexers.
-   The methods a lexer should implement are documented in experimental.xml.interfaces.
 </p>
+<section><p>The methods a lexer should implement are documented in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>;
+   The different lexers here implemented are optimized for different kinds of input
+   and different tradeoffs between speed and memory usage.
+</p>
+</section>
 
 			<section></section>
+			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="chooseLexer" class="public" href="../../../std/experimental/xml/lexers/chooseLexer.html">
+								<code>chooseLexer</code>
+							</a>
+						</td>
+						<td>Instantiates a <code class="lang-d"><a href="../../../std/experimental/xml/lexers/SliceLexer.html"><span class="typ">SliceLexer</span></a></code> specialized for the given input
+</td>
+					</tr>
+				</table>
+			</section>
 			<section>
 				<h2>Structs</h2>
 				<table>
@@ -74,6 +119,24 @@ $('#symbolSearchPane').show();
 					<tr>
 						<th>Name</th>
 						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="BufferedLexer" class="public" href="../../../std/experimental/xml/lexers/BufferedLexer.html">
+								<code>BufferedLexer</code>
+							</a>
+						</td>
+						<td>A lexer that takes an InputRange of slices from the input.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ForwardLexer" class="public" href="../../../std/experimental/xml/lexers/ForwardLexer.html">
+								<code>ForwardLexer</code>
+							</a>
+						</td>
+						<td>A lexer that takes a ForwardRange.
+</td>
 					</tr>
 					<tr>
 						<td>
@@ -91,22 +154,45 @@ $('#symbolSearchPane').show();
 							</a>
 						</td>
 						<td>A lexer that takes a sliceable input.
-   It doesn't really need an allocator. It takes it to have the same parameters
-   as the others.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Templates</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="chooseLexer" class="public" href="../../../std/experimental/xml/lexers/chooseLexer.html">
+								<code>chooseLexer</code>
+							</a>
+						</td>
+						<td>Instantiates a lexer specialized for the given input and allocator
 </td>
 					</tr>
 				</table>
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

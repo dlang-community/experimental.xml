@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -64,29 +85,168 @@ $('#symbolSearchPane').show();
 			<h1>Struct SliceLexer</h1>
 			<section>
 				<p>A lexer that takes a sliceable input.
-   It doesn't really need an allocator. It takes it to have the same parameters
-   as the others.
 </p>
+<section><p>This lexer will always return slices of the original input; thus, it does not
+   allocate memory and calls to <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/SliceLexer.start.html"><span class="pln">start</span></a></code> don't invalidate the outputs of previous
+   calls to <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/SliceLexer.get.html"><span class="pln">get</span></a></code>.
+</p>
+
+<p>   This is the fastest of all lexers, as it only performs very quick searches and
+   slicing operations. It has the downside of requiring the entire input to be loaded
+   in memory at the same time; as such, it is optimal for small file but not suitable
+   for very big ones.
+</p>
+</section>
 
 					<section>
 						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">SliceLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">)</span>;
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">SliceLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span>;
 							</code>
 						</div>
 					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.advanceUntil.html" class="public">
+										<code>advanceUntil</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.advanceUntilAny.html" class="public">
+										<code>advanceUntilAny</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.dropWhile.html" class="public">
+										<code>dropWhile</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.empty.html" class="public">
+										<code>empty</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.get.html" class="public">
+										<code>get</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.setSource.html" class="public">
+										<code>setSource</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.start.html" class="public">
+										<code>start</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.testAndAdvance.html" class="public">
+										<code>testAndAdvance</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.CharacterType.html" class="public">
+										<code>CharacterType</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/lexers/SliceLexer.InputType.html" class="public">
+										<code>InputType</code>
+									</a>
+								</td>
+								<td>See detailed documentation in
+   <a href="../interfaces/isLexer"><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">interfaces<wbr/></span><span class="pun">.</span><span class="pln">isLexer</span></a></code></a>
+</td>
+							</tr>
+						</table>
+					</section>
+<section><h3>Parameters</h3>
+<p>T = a sliceable type used as input for this lexer
+</p>
+</section>
 
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -63,10 +84,13 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Enum member isLexer</h1>
 			<section>
-				<p>Checks whether its argument fulfills all requirements to be used as XML lexer.
+				<p>Checks whether its argument fulfills all requirements to be used as an XML lexer.
 </p>
 <section><p>An XML lexer is the first component in the parsing chain. It masks from the parser
-   the shape of the input and the type of the characters in it.
+   the shape of the input and the type of the characters in it. The slices returned by
+   the lexer are ephemeral: every reference to them may or may not be invalidated when a
+   new slice is requested by the parser. It is thus responsibility of the user to copy the
+   output if necessary.
 </p>
 </section>
 
@@ -97,18 +121,117 @@ $('#symbolSearchPane').show();
 							</code>
 						</div>
 					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="L">L</td><td> the type to be tested</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p><code class="lang-d"><span class="kwd">true</span></code> if L satisfies the XML lexer specification here stated; <code class="lang-d"><span class="kwd">false</span></code> otherwise
+</p>
+</section>
+<section><h3>Specification</h3>
+<p>A lexer shall support at least these methods and aliases:
+   <ul>       <li><code class="lang-d"><span class="kwd">alias </span><span class="typ">CharacterType</span></code>: the type of a single source character; most
+             methods will deal with slices of this type;</li>
+       <li><code class="lang-d"><span class="kwd">alias </span><span class="typ">InputType</span></code>: the type of the input which is used to feed this
+             lexer;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">setSource</span><span class="pun">(</span><span class="typ">InputType</span><span class="pun">)</span></code>: sets the input source for this lexer;
+             the lexer may perform other initialization work and even consume
+             part of the input during this operation; after (partial or complete)
+             usage, a lexer may be reinitialized and used with another input
+             by calling this function;</li>
+       <li><code class="lang-d"><span class="typ">bool </span><span class="pln">empty</span><span class="pun">()</span></code>: returns <code class="lang-d"><span class="kwd">true</span></code> if the entire input has been consumed;
+            <code class="lang-d"><span class="kwd">false</span></code> otherwise;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">start</span><span class="pun">()</span></code>: instructs the lexer that a new token starts at the
+             current positions; the next calls to <code class="lang-d"><span class="pln">get</span></code> will retrive the input
+             from the current position; this call may invalidate any reference
+             to any slice previosly returned from <code class="lang-d"><span class="pln">get</span></code></li>
+       <li><code class="lang-d"><span class="typ">CharacterType</span><span class="pun">[] </span><span class="pln">get</span><span class="pun">()</span></code>: returns the contents of the input going from
+             the last call to <code class="lang-d"><span class="pln">start</span></code> till the current position;</li>
+       <li><code class="lang-d"><span class="typ">bool </span><span class="pln">testAndAdvance</span><span class="pun">(</span><span class="typ">CharacterType</span><span class="pun">)</span></code>: tests whether the input character
+             at the current position matches the one passed as parameter; if
+             it is the case, this method returns <code class="lang-d"><span class="kwd">true</span></code> and advances the input
+             past the said character; otherwise, it returns <code class="lang-d"><span class="kwd">false</span></code> and no action
+             is performed;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">advanceUntil</span><span class="pun">(</span><span class="typ">CharacterType</span><span class="pun">, </span><span class="typ">bool</span><span class="pun">)</span></code>: advances the input until
+             the given character is found; if the second parameter is true, the
+             input is then advanced past the found character;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">advanceUntilAny</span><span class="pun">(</span><span class="typ">CharacterType</span><span class="pun">[], </span><span class="typ">bool</span><span class="pun">)</span></code>: advances the input
+             until any of the given characters is found; if the second parameter
+             is true, the input is then advanced past the found character;</li>
+       <li><code class="lang-d"><span class="typ">void </span><span class="pln">dropWhile</span><span class="pun">(</span><span class="typ">CharacterType</span><span class="pun">[])</span></code>: advances the input until a character
+             different from the given ones is found; the characters advanced by
+             this method may or may not be included in the output of a subsequent
+             <code class="lang-d"><span class="pln">get</span></code>; for this reason, this method should only be called immediately
+             before <code class="lang-d"><span class="pln">start</span></code>, to skip unneeded characters between two tokens.</li>
+   </ul>
+</p>
+</section>
+<section><h3>Examples</h3>
+<pre class="code"><code class="lang-d"><span class="com">/* extract a word surrounded by whitespaces */
+</span><span class="kwd">auto </span><span class="pln">getWord</span><span class="pun">(</span><span class="pln">L</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">L lexer</span><span class="pun">)
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">isLexer</span><span class="pun">!</span><span class="pln">L</span><span class="pun">)
+{
+    </span><span class="com">// drop leading whitespaces
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">dropWhile</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">);
+
+    </span><span class="com">// start building the word
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">start</span><span class="pun">;
+
+    </span><span class="com">// keep advancing until you find the trailing whitespaces
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">advanceUntilAny</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">);
+
+    </span><span class="com">// return what you found
+    </span><span class="kwd">return </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">get</span><span class="pun">;
+}
+
+</span><span class="com">/* extract a key/value pair from a string like " key : value " */
+</span><span class="kwd">auto </span><span class="pln">getKeyValuePair</span><span class="pun">(</span><span class="kwd">ref </span><span class="pln">L lexer</span><span class="pun">)
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">isLexer</span><span class="pun">!</span><span class="pln">L</span><span class="pun">)
+{
+    </span><span class="com">// drop leading whitespaces
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">dropWhile</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">);
+
+    </span><span class="com">// here starts the key, which ends with either a whitespace or a colon
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">start</span><span class="pun">;
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">advanceUntilAny</span><span class="pun">(</span><span class="str">" \n\r\t:"</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">);
+    </span><span class="kwd">auto </span><span class="pln">key </span><span class="pun">= </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">get</span><span class="pun">;
+
+    </span><span class="com">// skip any spaces after the key
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">dropWhile</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">);
+    </span><span class="com">// now there must be a colon
+    </span><span class="kwd">assert</span><span class="pun">(</span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">testAndAdvance</span><span class="pun">(</span><span class="str">':'</span><span class="pun">));
+    </span><span class="com">// skip all space after the colon
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">dropWhile</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">);
+
+    </span><span class="com">// here starts the value, which ends at the first whitespace
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">start</span><span class="pun">;
+    </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">advanceUntilAny</span><span class="pun">(</span><span class="str">" \n\r\t"</span><span class="pun">, </span><span class="kwd">false</span><span class="pun">);
+    </span><span class="kwd">auto </span><span class="pln">value </span><span class="pun">= </span><span class="pln">lexer<wbr/></span><span class="pun">.</span><span class="pln">get</span><span class="pun">;
+
+    </span><span class="com">// return the pair
+    </span><span class="kwd">return </span><span class="pln">tuple</span><span class="pun">(</span><span class="pln">key</span><span class="pun">, </span><span class="pln">value</span><span class="pun">);
+}</span></code></pre>
+</section>
 
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

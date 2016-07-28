@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -62,32 +83,13 @@ $('#symbolSearchPane').show();
 		</nav>
 		<div id="main-contents">
 			<h1>Module std.experimental.xml.interfaces</h1>
-			<p>This module contains some traits that serve as interfaces
-   for some components of the library.
+			<p>This module contains some templates to check whether a type exposes the correct
+   interface to be an xml lexer, parser or cursor; it also contains some simple
+   types used in various parts of the library;
 </p>
+<section></section>
 
 			<section></section>
-			<section>
-				<h2>Structs</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="XMLToken" class="public" href="../../../std/experimental/xml/interfaces/XMLToken.html">
-								<code>XMLToken</code>
-							</a>
-						</td>
-						<td>The structure returned in output from the low level parser.
-   Represents an XML token, delimited by specific patterns, based on its kind.
-   This delimiters shall not be omitted from the content field.
-</td>
-					</tr>
-				</table>
-			</section>
 			<section>
 				<h2>Enums</h2>
 				<table>
@@ -118,13 +120,24 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
+							<a id="isCursor" class="public" href="../../../std/experimental/xml/interfaces/isCursor.html">
+								<code>isCursor</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Checks whether its argument fulfills all requirements to be used as XML cursor.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a id="isLexer" class="public" href="../../../std/experimental/xml/interfaces/isLexer.html">
 								<code>isLexer</code>
 							</a>
 						</td>
 						<td>
 						</td>
-						<td>Checks whether its argument fulfills all requirements to be used as XML lexer.
+						<td>Checks whether its argument fulfills all requirements to be used as an XML lexer.
 </td>
 					</tr>
 					<tr>
@@ -135,7 +148,18 @@ $('#symbolSearchPane').show();
 						</td>
 						<td>
 						</td>
-						<td>Checks whether its argument fulfills all requirements to be used as XML lexer.
+						<td>Checks whether its argument fulfills all requirements to be used as XML parser.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="isSaveableCursor" class="public" href="../../../std/experimental/xml/interfaces/isSaveableCursor.html">
+								<code>isSaveableCursor</code>
+							</a>
+						</td>
+						<td>
+						</td>
+						<td>Checks whether its argument is a saveable cursor.
 </td>
 					</tr>
 					<tr>
@@ -146,7 +170,7 @@ $('#symbolSearchPane').show();
 						</td>
 						<td>
 						</td>
-						<td>Checks whether the given lexer is savable.
+						<td>Checks whether its argument is a saveable lexer.
 </td>
 					</tr>
 					<tr>
@@ -157,21 +181,27 @@ $('#symbolSearchPane').show();
 						</td>
 						<td>
 						</td>
-						<td>Checks whether the given parser is savable.
+						<td>Checks whether its argument is a saveable parser.
 </td>
 					</tr>
 				</table>
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

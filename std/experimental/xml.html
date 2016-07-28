@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Module std.experimental.xml</title>
+		<link rel="stylesheet" type="text/css" href="../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../std/experimental/xml.html" class="selected module">Package members</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+						</ul>
+							</li>
+							<li>
+								<a href="../../std/experimental/appender.html" class=" module">appender</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Module std.experimental.xml</h1>
+			<p>An xml processing library.
+</p>
+<section><p><h2>Quick start</h2>
+   The library offers a simple fluid interface to build an XML parsing chain:
+</p>
+<pre class="code"><code class="lang-d"><span class="kwd">auto </span><span class="pln">input </span><span class="pun">= </span><span class="str">"your xml input here..."</span><span class="pun">;
+
+</span><span class="com">// the following steps are all configurable
+</span><span class="kwd">auto </span><span class="pln">domBuilder </span><span class="pun">=
+     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input  </span><span class="com">// instantiate the best lexer based on the type of input
+    <wbr/></span><span class="pun">.</span><span class="pln">parser             </span><span class="com">// instantiate a parser on top of the lexer
+    <wbr/></span><span class="pun">.</span><span class="pln">cursor             </span><span class="com">// instantiate a cursor on top of the parser
+    <wbr/></span><span class="pun">.</span><span class="pln">domBuilder</span><span class="pun">;        </span><span class="com">// and finally the DOM builder on top of the cursor
+
+// the source is forwarded down the parsing chain and everything is initialized
+</span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
+
+</span><span class="com">// recursively build the entire DOM tree
+</span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">buildRecursive</span><span class="pun">;
+
+</span><span class="com">// enjoy the resulting Document object
+</span><span class="kwd">auto </span><span class="pln">dom </span><span class="pun">= </span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">getDocument</span><span class="pun">;</span></code></pre>
+<p>   Also available is a SAX parser:
+</p>
+<pre class="code"><code class="lang-d"><span class="com">// don't bother about the type of a node: the library will do the right instantiations
+</span><span class="kwd">static struct </span><span class="typ">MyHandler</span><span class="pun">(</span><span class="typ">NodeType</span><span class="pun">)
+{
+    </span><span class="typ">void </span><span class="pln">onElementStart</span><span class="pun">(</span><span class="kwd">ref </span><span class="typ">NodeType </span><span class="pln">node</span><span class="pun">)
+    {
+        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getName</span><span class="pun">);
+    }
+}
+
+</span><span class="kwd">auto </span><span class="pln">saxParser </span><span class="pun">=
+     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input
+    <wbr/></span><span class="pun">.</span><span class="pln">parser
+    <wbr/></span><span class="pun">.</span><span class="pln">cursor
+    <wbr/></span><span class="pun">.</span><span class="pln">saxParser</span><span class="pun">!</span><span class="typ">MyHandler</span><span class="pun">;   </span><span class="com">// only this call changed from the previous example chain
+
+</span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
+</span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">processDocument</span><span class="pun">;  </span><span class="com">// this call triggers the actual work</span></code></pre>
+<p>   You may want to perform extra checks on the input, to guarantee correctness:
+</p>
+<pre class="code"><code class="lang-d"><span class="com">// some very useful error handlers:
+</span><span class="kwd">auto </span><span class="pln">callback1 </span><span class="pun">= (</span><span class="typ">CursorError </span><span class="pln">err</span><span class="pun">)
+{
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">err </span><span class="pun">== </span><span class="typ">CursorError<wbr/></span><span class="pun">.</span><span class="pln">MISSING_XML_DECLARATION</span><span class="pun">)
+        </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Missing XML declaration"</span><span class="pun">);
+    </span><span class="kwd">else
+        assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid attributes syntax"</span><span class="pun">);
+}
+</span><span class="kwd">auto </span><span class="pln">callback2 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML element name"</span><span class="pun">); }
+</span><span class="kwd">auto </span><span class="pln">callback3 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML attribute name"</span><span class="pun">); }
+
+</span><span class="kwd">auto </span><span class="pln">domBuilder </span><span class="pun">=
+     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input
+    <wbr/></span><span class="pun">.</span><span class="pln">parser
+    <wbr/></span><span class="pun">.</span><span class="pln">cursor</span><span class="pun">(</span><span class="pln">callback1</span><span class="pun">)                      </span><span class="com">// optional callback argument
+    <wbr/></span><span class="pun">.</span><span class="pln">checkXMLNames</span><span class="pun">(</span><span class="pln">callback2</span><span class="pun">, </span><span class="pln">callback3</span><span class="pun">)    </span><span class="com">// a validation layer on top of the cursor
+    <wbr/></span><span class="pun">.</span><span class="pln">domBuilder</span><span class="pun">;</span></code></pre>
+<p>   While DOM and SAX are simple, standardized APIs, you may want to directly use
+   the underlying Cursor API, which provides great control, flexibility and speed:
+</p>
+<pre class="code"><code class="lang-d"><span class="com">// A function to inspect the entire document recursively, writing the kind of nodes encountered
+</span><span class="typ">void </span><span class="pln">writeRecursive</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">T cursor</span><span class="pun">)
+{
+    </span><span class="com">// cycle the current node and all its siblings
+    </span><span class="kwd">do
+    </span><span class="pun">{
+        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">);
+        </span><span class="com">// if the current node has children, inspect them recursively
+        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">)
+        {
+            </span><span class="pln">writeRecursive</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">);
+            </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">exit</span><span class="pun">;
+        }
+    }
+    </span><span class="kwd">while </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span><span class="pun">);
+}
+
+</span><span class="kwd">auto </span><span class="pln">cursor </span><span class="pun">=
+     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input
+    <wbr/></span><span class="pun">.</span><span class="pln">parse
+    <wbr/></span><span class="pun">.</span><span class="pln">cursor</span><span class="pun">;                </span><span class="com">// this time we stop here
+
+</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
+</span><span class="pln">writeRecursive</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">);     </span><span class="com">// call our function</span></code></pre>
+
+<p>   <h2>Library overview</h2>
+   <h3>The parsing chain</h3>
+</p>
+
+<p>   <h3>The cursor wrappers</h3>
+</p>
+
+<p>   <h3>The DOM</h3>
+</p>
+
+<p>   <h3>The writer API</h3>
+</p>
+</section>
+
+			<section></section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

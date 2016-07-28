@@ -21,7 +21,19 @@
 								<a href="#" class="package">xml</a>
 						<ul class="tree-view">
 							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -38,7 +50,16 @@
 							<li>
 								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
 						</ul>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/appender.html" class=" module">appender</a>
 							</li>
 						</ul>
 							</li>
@@ -63,10 +84,10 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Enum member isSaveableLexer</h1>
 			<section>
-				<p>Checks whether the given lexer is savable.
+				<p>Checks whether its argument is a saveable lexer.
 </p>
-<section><p>The method save should return an exact copy of the lexer
-   that can be advanced independently of the original.
+<section><p>A saveable lexer is a lexer enhanced with a <code class="lang-d"><span class="pln">save</span></code> method analogous to the <code class="lang-d"><span class="pln">save</span></code>
+   method of <code class="lang-d"><span class="typ">ForwardRange</span></code>s.
 </p>
 </section>
 
@@ -76,25 +97,51 @@ $('#symbolSearchPane').show();
 							<code class="lang-d">
 <span class="kwd">enum</span> <span class="pln">isSaveableLexer</span><span class="pun">(</span><span class="pln">L</span><span class="pun">)</span> <span class="pun">=</span> <span class="pln">isLexer</span><span class="pun">!</span><span class="pln">L </span><span class="pun">&amp;&amp; </span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
 {
-</span><span class="kwd">const </span><span class="pln">L lexer1</span><span class="pun">;
+</span><span class="pln">L lexer1</span><span class="pun">;
 </span><span class="pln">L lexer2 </span><span class="pun">= </span><span class="pln">lexer1<wbr/></span><span class="pun">.</span><span class="pln">save</span><span class="pun">();
 }
 ))</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="L">L</td><td> the type to be tested</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p><code class="lang-d"><span class="kwd">true</span></code> if L is a lexer (as specified by <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">isLexer</span></a></code>) and also supports the <code class="lang-d"><span class="pln">save</span></code>
+   method as specified here; <code class="lang-d"><span class="kwd">false</span></code> otherwise
+</p>
+</section>
+<section><h3>Specification</h3>
+<p>The type shall support at least:
+   <ul>       <li>all methods and aliases specified by <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/isLexer.html"><span class="pln">isLexer</span></a></code></li>
+       <li><code class="lang-d"><span class="pln">L save</span><span class="pun">()</span></code>: returns an independent copy of the current lexer; the
+             copy must start at the position the original lexer was when this method
+             was called; the two copies shall be independent, in that advancing one
+             does not advance the other.</li>
+   </ul>
+</p>
+</section>
 
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>
