@@ -7,7 +7,20 @@
 
 /++
 +   This module implements various XML lexers.
-+   The methods a lexer should implement are documented in experimental.xml.interfaces.
++
++   The methods a lexer should implement are documented in
++   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`);
++   The different lexers here implemented are optimized for different kinds of input
++   and different tradeoffs between speed and memory usage.
++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
 +/
 
 module std.experimental.xml.lexers;
@@ -21,26 +34,38 @@ import std.traits: isArray;
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
+import std.typecons: Flag, Yes;
+
 /++
 +   A lexer that takes a sliceable input.
-+   It doesn't really need an allocator. It takes it to have the same parameters
-+   as the others.
++
++   This lexer will always return slices of the original input; thus, it does not
++   allocate memory and calls to `start` don't invalidate the outputs of previous
++   calls to `get`.
++
++   This is the fastest of all lexers, as it only performs very quick searches and
++   slicing operations. It has the downside of requiring the entire input to be loaded
++   in memory at the same time; as such, it is optimal for small file but not suitable
++   for very big ones.
++
++   Parameters:
++       T = a sliceable type used as input for this lexer
 +/
-struct SliceLexer(T, Alloc = void)
+struct SliceLexer(T)
 {
-    alias CharacterType = ElementEncodingType!T;
-    alias InputType = T;
-    
     private T input;
     private size_t pos;
     private size_t begin;
     
-    static if (!is(Alloc == void))
-    {
-        this(Alloc* alloc) {}
-        this(ref Alloc alloc) {}
-    }
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
+    alias CharacterType = ElementEncodingType!T;
+    /// ditto
+    alias InputType = T;
     
+    /// ditto
     void setSource(T input) @nogc
     {
         this.input = input;
@@ -58,27 +83,32 @@ struct SliceLexer(T, Alloc = void)
         }
     }
     
+    /// ditto
     auto empty() const @nogc
     {
         return pos >= input.length;
     }
     
+    /// ditto
     void start() @nogc
     {
         begin = pos;
     }
     
+    /// ditto
     CharacterType[] get() const @nogc
     {
         return input[begin..pos];
     }
     
+    /// ditto
     void dropWhile(string s) @nogc
     {
         while (pos < input.length && fastIndexOf(s, input[pos]) != -1)
             pos++;
     }
     
+    /// ditto
     bool testAndAdvance(char c) @nogc
     {
         if (input[pos] == c)
@@ -89,6 +119,7 @@ struct SliceLexer(T, Alloc = void)
         return false;
     }
     
+    /// ditto
     void advanceUntil(char c, bool included) @nogc
     {
         auto adv = fastIndexOf(input[pos..$], c);
@@ -105,6 +136,7 @@ struct SliceLexer(T, Alloc = void)
             pos++;
     }
     
+    /// ditto
     size_t advanceUntilAny(string s, bool included) @nogc
     {
         ptrdiff_t res;
@@ -118,13 +150,32 @@ struct SliceLexer(T, Alloc = void)
 
 /++
 +   A lexer that takes an InputRange.
++
++   This lexer copies the needed characters from the input range to an internal
++   buffer, returning slices of it. Whether the buffer is reused (and thus all
++   previously returned slices invalidated) depends on the instantiation parameters.
++
++   This is the most flexible lexer, as it imposes very few requirements on its input,
++   which only needs to be an InputRange. It is also the slowest lexer, as it copies
++   characters one by one, so it shall not be used unless it's the only option.
++   
++   Params:
++       T           = the InputRange to be used as input for this lexer
++       Alloc       = the allocator used to manage internal buffers
++       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
++                     the same buffers, invalidating all previously returned slices
 +/
-struct RangeLexer(T, Alloc = shared(GCAllocator))
+struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T)
 {
     import std.experimental.appender;
-
+    
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     alias CharacterType = ElementEncodingType!T;
+    /// ditto
     alias InputType = T;
  
     static if (is(typeof(Alloc.instance)))
@@ -134,10 +185,12 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
 
     private Appender!(CharacterType, Alloc) app;
     
+    /// Constructs an instance of this lexer with the given allocator
     this(Alloc* alloc)
     {
         allocator = alloc;
     }
+    /// ditto
     this(ref Alloc alloc)
     {
         allocator = &alloc;
@@ -150,6 +203,7 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
         void setSource(T input)
         {
             this.input = input.representation;
+            app = typeof(app)(allocator);
         }
     }
     else
@@ -158,40 +212,53 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
         void setSource(T input)
         {
             this.input = input;
+            app = typeof(app)(allocator);
         }
     }
     
     static if (isForwardRange!T)
     {
-        auto save() const
+        auto save()
         {
             RangeLexer result;
             result.input = input.save;
+            result.app = typeof(app)(allocator);
             return result;
         }
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     bool empty() const
     {
         return input.empty;
     }
     
+    /// ditto
     void start()
     {
-        app.clear;
+        static if (reuseBuffer)
+            app.clear;
+        else
+            app = typeof(app)(allocator);
     }
     
+    /// ditto
     CharacterType[] get() const
     {
         return app.data;
     }
     
+    /// ditto
     void dropWhile(string s)
     {
         while (!input.empty && fastIndexOf(s, input.front) != -1)
             input.popFront();
     }
     
+    /// ditto
     bool testAndAdvance(char c)
     {
         if (input.front == c)
@@ -203,6 +270,7 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
         return false;
     }
     
+    /// ditto
     void advanceUntil(char c, bool included)
     {
         while (input.front != c)
@@ -217,6 +285,7 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
+    /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
         size_t res;
@@ -234,12 +303,33 @@ struct RangeLexer(T, Alloc = shared(GCAllocator))
     }
 }
 
-struct ForwardLexer(T, Alloc = shared(GCAllocator))
+/++
++   A lexer that takes a ForwardRange.
++
++   This lexer copies the needed characters from the forward range to an internal
++   buffer, returning slices of it. Whether the buffer is reused (and thus all
++   previously returned slices invalidated) depends on the instantiation parameters.
++
++   This is slightly faster than `RangeLexer`, but shoudn't be used if a faster
++   lexer is available.
++   
++   Params:
++       T           = the InputRange to be used as input for this lexer
++       Alloc       = the allocator used to manage internal buffers
++       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
++                     the same buffers, invalidating all previously returned slices
++/
+struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isForwardRange!T)
 {
     import std.experimental.appender;
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     alias CharacterType = ElementEncodingType!T;
+    /// ditto
     alias InputType = T;
     
     static if (is(typeof(Alloc.instance)))
@@ -250,13 +340,17 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
     private size_t count;    
     private Appender!(CharacterType, Alloc) app;
     
+    /// Constructs an instance of this lexer with the given allocator
     this(Alloc* alloc)
     {
         allocator = alloc;
+        app = typeof(app)(allocator);
     }
+    /// ditto
     this(ref Alloc alloc)
     {
         allocator = &alloc;
+        app = typeof(app)(allocator);
     }
     
     import std.string: representation;
@@ -281,27 +375,38 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
-    auto save() const
+    auto save()
     {
         ForwardLexer result;
         result.input = input.save();
         result.input_start = input.save();
+        result.app = typeof(app)(allocator);
         result.count = count;
         return result;
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     bool empty() const
     {
         return input.empty;
     }
     
+    /// ditto
     void start()
     {
-        app.clear;
+        static if (reuseBuffer)
+            app.clear;
+        else
+            app = typeof(app)(allocator);
+            
         input_start = input.save;
         count = 0;
     }
     
+    /// ditto
     CharacterType[] get()
     {
         import std.range: take;
@@ -314,6 +419,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         return app.data;
     }
     
+    /// ditto
     void dropWhile(string s)
     {
         while (!input.empty && fastIndexOf(s, input.front) != -1)
@@ -321,6 +427,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         input_start = input.save;
     }
     
+    /// ditto
     bool testAndAdvance(char c)
     {
         if (input.front == c)
@@ -332,6 +439,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         return false;
     }
     
+    /// ditto
     void advanceUntil(char c, bool included)
     {
         while (input.front != c)
@@ -346,6 +454,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
+    /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
         size_t res;
@@ -363,13 +472,38 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator))
     }
 }
 
-struct BufferedLexer(T, Alloc = shared(GCAllocator))
+/++
++   A lexer that takes an InputRange of slices from the input.
++
++   This lexer tries to merge the speed of direct slicing with the low memory requirements
++   of ranges. Its input is a range whose elements are chunks of the input data; this
++   lexer returns slices of the original chunks, unless the output is split between two
++   chunks. If that's the case, a new array is allocated and returned. The various chunks
++   may have different sizes.
++
++   The bigger the chunks are, the better is the performance and higher the memory usage,
++   so finding the correct tradeoff is crucial for maximum performance. This lexer is
++   suitable for very large files, which are read chunk by chunk from the file system.
++   
++   Params:
++       T           = the InputRange to be used as input for this lexer
++       Alloc       = the allocator used to manage internal buffers
++       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
++                     the same buffers, invalidating all previously returned slices
++/
+struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T && isArray!(ElementType!T))
 {
     import std.experimental.appender;
     
     alias BufferType = ElementType!T;
+    
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     alias CharacterType = ElementEncodingType!BufferType;
+    /// ditto
     alias InputType = T;
     
     private InputType buffers;
@@ -384,13 +518,17 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
     private Appender!(CharacterType, Alloc) app;
     private bool onEdge;
     
+    /// Constructs an instance of this lexer with the given allocator
     this(Alloc* alloc)
     {
         allocator = alloc;
+        app = typeof(app)(allocator);
     }
+    /// ditto
     this(ref Alloc alloc)
     {
         allocator = &alloc;
+        app = typeof(app)(allocator);
     }
     
     import std.string: representation, assumeUTF;
@@ -413,6 +551,10 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     void setSource(T input)
     {
         this.buffers = input;
@@ -428,18 +570,28 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
             result.buffer = buffer;
             result.pos = pos;
             result.begin = begin;
+            result.app = typeof(app)(allocator);
             return result;
         }
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     bool empty()
     {
         return buffers.empty && pos >= buffer.length;
     }
     
+    /// ditto
     void start()
     {
-        app.clear;
+        static if (reuseBuffer)
+            app.clear;
+        else
+            app = typeof(app)(allocator);
+            
         begin = pos;
         onEdge = false;
     }
@@ -483,6 +635,10 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
         pos = 0;
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`)
+    +/
     CharacterType[] get() const
     {
         if (onEdge)
@@ -496,12 +652,14 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
         }
     }
     
+    /// ditto
     void dropWhile(string s)
     {
         while (!empty && fastIndexOf(s, buffer[pos]) != -1)
             advance();
     }
     
+    /// ditto
     bool testAndAdvance(char c)
     {
         if (buffer[pos] == c)
@@ -512,6 +670,7 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
         return false;
     }
     
+    /// ditto
     void advanceUntil(char c, bool included)
     {
         ptrdiff_t adv;
@@ -525,6 +684,7 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
             advance();
     }
     
+    /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
         ptrdiff_t res;
@@ -538,6 +698,17 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator))
     }
 }
 
+/++
++   Instantiates a `SliceLexer` specialized for the given input
++
++   Params:
++       Input = a type for which to instantiate a `SliceLexer`, or a value for
++               whose type to instantiate a `SliceLexer`
++
++   Returns:
++   An instance of `SliceLexer` specialized for the given `Input`. Note that even if
++   `Input` is a value, `setSource` is $(B not) called on the returned lexer
++/
 auto chooseLexer(alias Input)()
 {
     static if (is(SliceLexer!Input))
@@ -547,24 +718,52 @@ auto chooseLexer(alias Input)()
     else
         static assert(0);
 }
-template chooseLexer(alias Input, Alloc = shared(GCAllocator))
+
+/++
++   Instantiates a lexer specialized for the given input and allocator
++
++   Returns:
++   An instance of most suitable lexer type specialized for the given `Input` and `Alloc`.
++   Note that even if `Input` is a value, `setSource` is $(B not) called on the returned lexer
++/
+template chooseLexer(alias Input, Alloc = shared(GCAllocator), Options...)
 {
     import std.traits: hasMember;
     
     static if (is(SliceLexer!Input))
-        alias Type = SliceLexer!Input;
+        static if (Options.length)
+            alias Type = SliceLexer!(Input, Options);
+        else
+            alias Type = SliceLexer!Input;
     else static if (is(SliceLexer!(typeof(Input))))
-        alias Type = SliceLexer!(typeof(Input));
+        static if (Options.length)
+            alias Type = SliceLexer!(typeof(Input), Options);
+        else
+            alias Type = SliceLexer!(typeof(Input));
     else static if (is(BufferedLexer!Input))
-        alias Type = BufferedLexer!Input;
+        static if (Options.length)
+            alias Type = BufferedLexer!(Input, Options);
+        else
+            alias Type = BufferedLexer!Input;
     else static if (is(BufferedLexer!(typeof(Input))))
-        alias Type = BufferedLexer!(typeof(Input));
+        static if (Options.length)
+            alias Type = BufferedLexer!(typeof(Input), Options);
+        else
+            alias Type = BufferedLexer!(typeof(Input));
     else static if (is(RangeLexer!Input))
-        alias Type = RangeLexer!Input;
+        static if (Options.length)
+            alias Type = RangeLexer!(Input, Options);
+        else
+            alias Type = RangeLexer!Input;
     else static if (is(RangeLexer!(typeof(Input))))
-        alias Type = RangeLexer!(typeof(Input));
+    {
+        static if (Options.length)
+            alias Type = RangeLexer!(typeof(Input), Options);
+        else
+            alias Type = RangeLexer!(typeof(Input));
+    }
     
-    static if (hasMember(Alloc, "instance"))
+    else static if (hasMember(Alloc, "instance"))
         auto chooseLexer(ref Alloc alloc = Alloc.instance)
         {
             return Type(alloc);
@@ -705,7 +904,6 @@ unittest
         assert(!lexer.empty);
     }
     
-    testLexer!(SliceLexer!(string, shared(Mallocator)))(x => x);
     testLexer!(RangeLexer!(string, shared(Mallocator)))(x => x);
     testLexer!(ForwardLexer!(string, shared(Mallocator)))(x => x);
     testLexer!(BufferedLexer!(DumbBufferedReader, shared(Mallocator)))(x => DumbBufferedReader(x, 10));

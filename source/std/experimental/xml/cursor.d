@@ -5,6 +5,17 @@
 *            http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
++/
+
 module std.experimental.xml.cursor;
 
 import std.experimental.xml.interfaces;
@@ -63,7 +74,7 @@ struct Attribute(StringType)
     }
 }
 
-struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"noGC" noGC = No.noGC)
+struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHandler = void delegate(CursorError))
     if (isLowLevelParser!P)
 {
     /++
@@ -77,12 +88,6 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
     
     /++ The type of sequences of CharacterType, as returned by this parser +/
     alias StringType = CharacterType[];
-    
-    /++ The type of the error handler that can be installed on this cursor +/
-    static if (noGC == Yes.noGC)
-        alias ErrorHandler = void delegate(ref typeof(this), CursorError) @nogc;
-    else
-        alias ErrorHandler = void delegate(ref typeof(this), CursorError);
     
     private P parser;
     private ElementType!P currentNode;
@@ -110,7 +115,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
     private void callHandler(CursorError err)
     {
         if (handler != null)
-            handler(this, err);
+            handler(err);
         else
             assert(0);
     }
@@ -136,6 +141,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
     +/
     void setErrorHandler(ErrorHandler handler)
     {
+        assert(handler, "Trying to set null error handler");
         this.handler = handler;
     }
     
@@ -457,13 +463,14 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"n
     }
 }
 
-template cursor(Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, Flag!"noGC" noGC = No.noGC)
+template cursor(Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA)
 {
-    auto cursor(T)(auto ref T parser)
+    auto cursor(T, EH)(auto ref T parser, EH errorHandler = (CursorError err) { assert(0); })
         if(isLowLevelParser!T)
     {
-        auto cursor = Cursor!(T, conflateCDATA, noGC)();
+        auto cursor = Cursor!(T, conflateCDATA, EH)();
         cursor.parser = parser;
+        cursor.handler = errorHandler;
         return cursor;
     }
 }
@@ -610,8 +617,8 @@ auto children(T)(ref T cursor)
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
     
-    alias CursorType = Cursor!(Parser!(RangeLexer!(string, typeof(alloc))), Yes.conflateCDATA, Yes.noGC);
-    auto cursor = CursorType(alloc);
+    alias ParserType = Parser!(RangeLexer!(string, typeof(alloc)));
+    auto cursor = ParserType(alloc).cursor!(Yes.conflateCDATA);
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -832,7 +839,7 @@ unittest
     auto cursor = 
          SliceLexer!wstring()
         .parse
-        .cursor!(Yes.conflateCDATA, Yes.noGC)
+        .cursor!(Yes.conflateCDATA)
         .copyingCursor!(Yes.intern)(Mallocator.instance);
     cursor.setSource(xml);
     

@@ -5,6 +5,10 @@
 *            http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/++
++   Documentation stub
++/
+
 module std.experimental.appender;
 
 struct Appender(T, Alloc)

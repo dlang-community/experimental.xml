@@ -1,3 +1,20 @@
+/*
+*             Copyright Lodovico Giaretta 2016 - .
+*  Distributed under the Boost Software License, Version 1.0.
+*      (See accompanying file LICENSE_1_0.txt or copy at
+*            http://www.boost.org/LICENSE_1_0.txt)
+*/
+
+/++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
++/
 
 module std.experimental.xml.domimpl;
 
@@ -1147,6 +1164,4 @@ unittest
     assert(doc.getUserData("userDataKey1") == 3.14);
     assert(doc.getUserData("userDataKey2").type == typeid(Object));
     assert(doc.getUserData("userDataKey3").peek!long is null);
-    
-    
 };

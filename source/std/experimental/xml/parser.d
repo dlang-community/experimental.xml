@@ -6,8 +6,19 @@
 */
 
 /++
-+   This module implements the low level XML parser.
-+   For documentation, see experimental.xml.interfaces.
++   This module implements a low level XML parser.
++
++   The methods a parser should implement are documented in
++   $(LINK2 ../interfaces/isParser, `std.experimental.xml.interfaces.isParser`);
++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
 +/
 
 module std.experimental.xml.parser;
@@ -35,31 +46,55 @@ class UnexpectedEndOfStreamException: Exception
 
 import std.typecons: Flag, Yes, No;
 
-/+
-+   The low level XML parser.
+/++
++   A low level XML parser.
++
++   The methods a parser should implement are documented in
++   $(LINK2 ../interfaces/isLexer, `std.experimental.xml.interfaces.isLexer`);
++
 +   Params:
-+       L              = the underlying lexer type
++       L = the underlying lexer type
++       preserveWhitespace = if set to `Yes` (default is `No`), the parser will not remove
++       element content whitespace (i.e. the whitespace that separates tags), but will
++       report it as text
 +/
 struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace)
     if (isLexer!L)
 {
     import std.meta: staticIndexOf;
-
-    private alias NodeType = XMLToken!(L.CharacterType);
+    
+    /++
+    +   The structure returned in output from the low level parser.
+    +   Represents an XML token, delimited by specific patterns, based on its kind.
+    +   This delimiters are not present in the content field.
+    +/
+    struct XMLToken
+    {
+        /++ The content of the token, delimiters excluded +/
+        L.CharacterType[] content;
+        
+        /++ Represents the kind of token +/
+        XMLKind kind;
+    }
 
     private L lexer;
     private bool ready;
-    private NodeType next;
-    
-    alias InputType = L.InputType;
-    alias CharacterType = L.CharacterType;
+    private XMLToken next;
 
     /++ Generic constructor; forwards its arguments to the lexer constructor +/
     this(Args...)(Args args)
     {
         lexer = L(args);
     }
+
     
+    alias InputType = L.InputType;
+    alias CharacterType = L.CharacterType;
+    
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isParser, `std.experimental.xml.interfaces.isParser`)
+    +/
     void setSource(InputType input)
     {
         lexer.setSource(input);
@@ -86,6 +121,10 @@ struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhite
         assert(0, T.stringof);
     }
     
+    /++
+    +   See detailed documentation in 
+    +   $(LINK2 ../interfaces/isParser, `std.experimental.xml.interfaces.isParser`)
+    +/
     bool empty()
     {
         static if (preserveWhitespace == No.preserveWhitespace)
@@ -94,6 +133,7 @@ struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhite
         return !ready && lexer.empty;
     }
     
+    /// ditto
     auto front()
     {
         if (!ready)
@@ -111,6 +151,7 @@ struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhite
         return next;
     }
     
+    /// ditto
     void popFront()
     {
         front();
@@ -312,15 +353,23 @@ struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhite
     }
 }
 
-template parse(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace)
+/++
++   Returns an instance of `Parser` from the given lexer.
++
++   Params:
++       preserveWhitespace = whether the returned `Parser` shall skip element content
++                            whitespace or return it as text nodes
++       lexer = the _lexer to build this `Parser` from
++
++   Returns:
++   A `Parser` instance initialized with the given lexer
++/
+auto parse(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace, T)(auto ref T lexer)
+    if (isLexer!T)
 {
-    auto parse(T)(auto ref T lexer)
-        if (isLexer!T)
-    {
-        auto parser = Parser!(T, preserveWhitespace)();
-        parser.lexer = lexer;
-        return parser;
-    }
+    auto parser = Parser!(T, preserveWhitespace)();
+    parser.lexer = lexer;
+    return parser;
 }
 
 @nogc unittest
@@ -344,7 +393,7 @@ template parse(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitesp
     };
     
     auto alloc = Mallocator.instance;
-    auto parser = Parser!(SliceLexer!(string, shared(Mallocator)))(alloc);
+    auto parser = Parser!(RangeLexer!(string, shared(Mallocator)))(alloc);
     parser.setSource(xml);
     
     alias XMLKind = typeof(parser.front.kind);

@@ -5,12 +5,24 @@
 *            http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
++/
+
 module std.experimental.xml.domparser;
 
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
 import dom = std.experimental.xml.dom;
+
 /++
 +   Built on top of Cursor, the DOM builder adds to it the ability to 
 +   build the DOM tree of the document; as the cursor advances, nodes can be
@@ -146,6 +158,14 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     auto getDocument() { return document; }
 }
 
+auto domBuilder(CursorType, DOMImplementation)(auto ref CursorType, DOMImplementation impl)
+    if (isCursor!CursorType && is(DOMImplementation : dom.DOMImplementation!(CursorType.StringType)))
+{
+    auto res = DOMBuilder!(CursorType, DOMImplementation)();
+    res.domImpl = impl;
+    return res;
+}
+
 unittest
 {
     import std.stdio;
@@ -158,7 +178,7 @@ unittest
     
     alias CursorType = CopyingCursor!(Cursor!(Parser!(SliceLexer!string)));
     alias DOMImplType = domimpl.DOMImplementation!string;
-    auto builder = DOMBuilder!(CursorType, DOMImplType)(new DOMImplType());
+    auto builder = CursorType().domBuilder(new DOMImplType());
     
     string xml = q{
     <?xml encoding = "utf-8" ?>

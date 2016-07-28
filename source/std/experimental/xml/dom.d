@@ -6,8 +6,17 @@
 */
 
 /++
-+   This module implements the DOM Level 3 interfaces as stated in the W3C DOM
++   This module declares the DOM Level 3 interfaces as stated in the W3C DOM
 +   specification.
++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
 +/
 
 module std.experimental.xml.dom;
@@ -386,10 +395,4 @@ interface ProcessingInstruction(DOMString): Node!DOMString
     @property DOMString target();
     @property DOMString data();
     @property void data(DOMString); // raises(DOMException) on setting
-}
-
-// Code to find all DOM implementations available at compile-time
-
-struct RegisterDOMImplementationSource
-{
 }

@@ -190,7 +190,7 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
 }
 
 // callback used to ignore missing xml declaration, while throwing on invalid attributes
-void uselessCallback(T)(ref T cur, CursorError err)
+void uselessCallback(CursorError err)
 {
     if (err != CursorError.MISSING_XML_DECLARATION)
         assert(0);
@@ -205,7 +205,7 @@ void main()
     auto cursor = Cursor!(Parser!(SliceLexer!string))();
     
     // If an index is not well-formed, just tell us but continue parsing
-    cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
+    cursor.setErrorHandler(toDelegate(&uselessCallback));
     
     auto results = Results();
     foreach (i, index; indexes)
@@ -256,7 +256,7 @@ void parseFile(string filename)
     
     auto cursor = Cursor!(Parser!(SliceLexer!string))();
     // lots of tests do not have an xml declaration
-    cursor.setErrorHandler(toDelegate(&uselessCallback!(typeof(cursor))));
+    cursor.setErrorHandler(toDelegate(&uselessCallback));
     cursor.setSource(text);
     inspectOneLevel(cursor);
 }

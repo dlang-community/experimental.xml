@@ -5,6 +5,17 @@
 *            http://www.boost.org/LICENSE_1_0.txt)
 */
 
+/++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
++/
+
 module std.experimental.xml.sax;
 
 import std.experimental.xml.interfaces;
@@ -111,6 +122,23 @@ struct SAXParser(T, alias H)
     }
 }
 
+auto saxParser(alias HandlerType, CursorType)(auto ref CursorType cursor)
+    if (isCursor!CursorType)
+{
+    auto res = SAXParser!(CursorType, HandlerType)();
+    res.cursor = cursor;
+    return res;
+}
+auto saxParser(alias HandlerType, CursorType)(auto ref CursorType cursor,
+                                        auto ref SAXParser!(CursorType, HandlerType).HandlerType handler)
+    if (isCursor!CursorType)
+{
+    auto res = SAXParser!(CursorType, HandlerType)();
+    res.cursor = cursor;
+    res.handler = handler;
+    return res;
+}
+
 unittest
 {
     import std.experimental.xml.parser;
@@ -129,7 +157,7 @@ unittest
     </aaa>
     };
     
-    struct MyHandler(T)
+    static struct MyHandler(T)
     {
         int max_nesting;
         int current_nesting;
@@ -165,9 +193,13 @@ unittest
         }
     }
     
-    auto parser = SAXParser!(Cursor!(Parser!(SliceLexer!dstring)), MyHandler)();
+    auto parser = 
+         chooseLexer!xml
+        .parse
+        .cursor
+        .saxParser!MyHandler;
+        
     parser.setSource(xml);
-    
     parser.processDocument();
     
     assert(parser.handler.max_nesting == 2);

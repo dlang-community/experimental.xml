@@ -113,7 +113,7 @@ class DocumentParser: ElementParser
     
     this(string text)
     {
-        auto handler = delegate(ref CursorType cur, CursorError err) {};
+        auto handler = delegate(CursorError err) {};
         cursor.setErrorHandler(handler);
         cursor.setSource(text);
         super(&cursor);

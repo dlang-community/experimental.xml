@@ -8,6 +8,17 @@
 // TODO: write an in-depth explanation of this module, how to create validations,
 // how validations should behave, etc...
 
+/++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
++/
+
 module std.experimental.xml.validation;
 
 import std.experimental.xml.interfaces;

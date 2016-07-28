@@ -6,8 +6,18 @@
 */
 
 /++
-+   This module contains some traits that serve as interfaces
-+   for some components of the library.
++   This module contains some templates to check whether a type exposes the correct
++   interface to be an xml lexer, parser or cursor; it also contains some simple
++   types used in various parts of the library;
++
++   Authors:
++   Lodovico Giaretta
++
++   License:
++   <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
++
++   Copyright:
++   Copyright Lodovico Giaretta 2016 --
 +/
 
 module std.experimental.xml.interfaces;
@@ -18,23 +28,112 @@ import std.traits;
 // LEVEL 1: LEXERS
 
 /++
-+   Checks whether its argument fulfills all requirements to be used as XML lexer.
++   Checks whether its argument fulfills all requirements to be used as an XML lexer.
 +
 +   An XML lexer is the first component in the parsing chain. It masks from the parser
-+   the shape of the input and the type of the characters in it.
++   the shape of the input and the type of the characters in it. The slices returned by
++   the lexer are ephemeral: every reference to them may or may not be invalidated when a
++   new slice is requested by the parser. It is thus responsibility of the user to copy the
++   output if necessary.
++
++   Params:
++       L = the type to be tested
++
++   Returns:
++   `true` if L satisfies the XML lexer specification here stated; `false` otherwise
++
++   Specification:
++   A lexer shall support at least these methods and aliases:
++   $(UL
++       $(LI `alias CharacterType`: the type of a single source character; most
++             methods will deal with slices of this type;)
++       $(LI `alias InputType`: the type of the input which is used to feed this
++             lexer;)
++       $(LI `void setSource(InputType)`: sets the input source for this lexer;
++             the lexer may perform other initialization work and even consume
++             part of the input during this operation; after (partial or complete)
++             usage, a lexer may be reinitialized and used with another input
++             by calling this function;)
++       $(LI `bool empty()`: returns `true` if the entire input has been consumed;
++            `false` otherwise;)
++       $(LI `void start()`: instructs the lexer that a new token starts at the
++             current positions; the next calls to `get` will retrive the input
++             from the current position; this call may invalidate any reference
++             to any slice previosly returned from `get`)
++       $(LI `CharacterType[] get()`: returns the contents of the input going from
++             the last call to `start` till the current position;)
++       $(LI `bool testAndAdvance(CharacterType)`: tests whether the input character
++             at the current position matches the one passed as parameter; if
++             it is the case, this method returns `true` and advances the input
++             past the said character; otherwise, it returns `false` and no action
++             is performed;)
++       $(LI `void advanceUntil(CharacterType, bool)`: advances the input until
++             the given character is found; if the second parameter is true, the
++             input is then advanced past the found character;)
++       $(LI `void advanceUntilAny(CharacterType[], bool)`: advances the input
++             until any of the given characters is found; if the second parameter
++             is true, the input is then advanced past the found character;)
++       $(LI `void dropWhile(CharacterType[])`: advances the input until a character
++             different from the given ones is found; the characters advanced by
++             this method may or may not be included in the output of a subsequent
++             `get`; for this reason, this method should only be called immediately
++             before `start`, to skip unneeded characters between two tokens.)
++   )
++
++   Examples:
++   ---
++   /* extract a word surrounded by whitespaces */
++   auto getWord(L)(ref L lexer)
++       if (isLexer!L)
++   {
++       // drop leading whitespaces
++       lexer.dropWhile(" \n\r\t");
++       
++       // start building the word
++       lexer.start;
++       
++       // keep advancing until you find the trailing whitespaces
++       lexer.advanceUntilAny(" \n\r\t", false);
++       
++       // return what you found
++       return lexer.get;
++   }
++   
++   /* extract a key/value pair from a string like " key : value " */
++   auto getKeyValuePair(ref L lexer)
++       if (isLexer!L)
++   {
++       // drop leading whitespaces
++       lexer.dropWhile(" \n\r\t");
++       
++       // here starts the key, which ends with either a whitespace or a colon
++       lexer.start;
++       lexer.advanceUntilAny(" \n\r\t:", false);
++       auto key = lexer.get;
++       
++       // skip any spaces after the key
++       lexer.dropWhile(" \n\r\t");
++       // now there must be a colon
++       assert(lexer.testAndAdvance(':'));
++       // skip all space after the colon
++       lexer.dropWhile(" \n\r\t");
++       
++       // here starts the value, which ends at the first whitespace
++       lexer.start;
++       lexer.advanceUntilAny(" \n\r\t", false);
++       auto value = lexer.get;
++       
++       // return the pair
++       return tuple(key, value);
++   }
++   ---
 +/
 template isLexer(L)
 {
     enum bool isLexer = is(typeof(
     (inout int = 0)
     {
-        /++
-        +   The type of a single character from the input.
-        +   The parser will deal with slices of this type.
-        +/
         alias C = L.CharacterType;
-        
-        /++ The type of the input source. +/
         alias T = L.InputType;
         
         L lexer;
@@ -44,79 +143,46 @@ template isLexer(L)
         string s;
         C[] cs;
         
-        /++
-        +   void setSource(InputType);
-        +   Sets the input source for this lexer.
-        +/
         lexer.setSource(source);
-        
-        /++
-        +   bool empty() const;
-        +   Checks whether there are more characters available.
-        +/
         b = lexer.empty;
-        
-        /++
-        +   void start();
-        +   Sets the start of an input sequence,
-        +   that will be returned by a call to get().
-        +/
         lexer.start();
-        
-        /++
-        +   CharacterType[] get() const;
-        +   Return the sequence of characters starting at the last call
-        +   to start() and ending at the actual position in the input.
-        +/
         cs = lexer.get();
-        
-        /++
-        +   bool testAndAdvance(char)
-        +   Tests whether the current character equals to the given one.
-        +   If true, also advances the input to the next character.
-        +/
         b = lexer.testAndAdvance(c);
-        
-        /++
-        +   void advanceUntil(char, bool)
-        +   Advances the input until it finds the given character.
-        +   The boolean argument specifies whether the lexer should also advance past the given character.
-        +/
         lexer.advanceUntil(c, b);
-        
-        /++
-        +   void advanceUntilAny(string, bool)
-        +   Advances the input until it finds any character from the given string.
-        +   The boolean argument specifies whether the lexer should also advance past the character found.
-        +/
         lexer.advanceUntilAny(s, b);
-        
-        /++
-        +   void dropWhile(string)
-        +   While the current input character is present in the given string, advance.
-        +   Characters advanced by this method may not be returned by get().
-        +/
         lexer.dropWhile(s);
     }));
 }
 
 /++
-+   Checks whether the given lexer is savable.
++   Checks whether its argument is a saveable lexer.
 +
-+   The method save should return an exact copy of the lexer
-+   that can be advanced independently of the original.
++   A saveable lexer is a lexer enhanced with a `save` method analogous to the `save`
++   method of `ForwardRange`s.
++
++   Params:
++       L = the type to be tested
++
++   Returns:
++   `true` if L is a lexer (as specified by `isLexer`) and also supports the `save`
++   method as specified here; `false` otherwise
++   
++   Specification:
++   The type shall support at least:
++   $(UL
++       $(LI all methods and aliases specified by `isLexer`)
++       $(LI `L save()`: returns an independent copy of the current lexer; the
++             copy must start at the position the original lexer was when this method
++             was called; the two copies shall be independent, in that advancing one
++             does not advance the other.)
++   )
 +/
 template isSaveableLexer(L)
 {
     enum bool isSaveableLexer = isLexer!L && is(typeof(
     (inout int = 0)
     {
-        const L lexer1;
-        
-        /++
-        +   L save() const;
-        +   Return a copy of the lexer that can be advance independently of the original.
-        +/
+        L lexer1;
         L lexer2 = lexer1.save();
     }));
 }
@@ -128,7 +194,7 @@ template isSaveableLexer(L)
 +/
 enum XMLKind
 {
-    /++ An entire document, starting with an <?xml ?> declaration +/
+    /++ An entire document, starting with an `<?xml` `?>` declaration +/
     DOCUMENT,
     
     /++ A doctype declaration, delimited by `<!DOCTYPE` and `>` +/
@@ -155,74 +221,92 @@ enum XMLKind
     /++ A processing instruction, delimited by `<?` and `?>` +/
     PROCESSING_INSTRUCTION,
     
-    /++ Any kind of declaration, delimited by `<!` and `>` +/
-    DECLARATION,
-    /// ditto
+    /++ An attlist declaration, delimited by `<!ATTLIST` and `>` +/
     ATTLIST_DECL,
-    /// ditto
+    /++ An element declaration, delimited by `<!ELEMENT` and `>` +/
     ELEMENT_DECL,
-    /// ditto
+    /++ An entity declaration, delimited by `<!ENTITY` and `>` +/
     ENTITY_DECL,
-    /// ditto
+    /++ A notation declaration, delimited by `<!NOTATION` and `>` +/
     NOTATION_DECL,
+    /++ Any unrecognized kind of declaration, delimited by `<!` and `>` +/
+    DECLARATION,
     
-    /++ A conditional section, delimited by `<![` and `]]>` +/
+    /++ A conditional section, delimited by `<![` `[` and `]]>` +/
     CONDITIONAL,
 }
 
 /++
-+   The structure returned in output from the low level parser.
-+   Represents an XML token, delimited by specific patterns, based on its kind.
-+   This delimiters shall not be omitted from the content field.
-+/
-struct XMLToken(T)
-{
-    /++ The content of the token +/
-    T[] content;
-    
-    /++ Represents the kind of token +/
-    XMLKind kind;
-}
-
-/++
-+   Checks whether its argument fulfills all requirements to be used as XML lexer.
++   Checks whether its argument fulfills all requirements to be used as XML parser.
 +
-+   An XML lexer is the first component in the parsing chain. It masks from the parser
-+   the shape of the input and the type of the characters in it. It must be an InputRange
-+   of some instantiation of LowLevelNode.
++   An XML parser is the second component in the parsing chain. It is usually built
++   on top of a lexer and used to feed a cursor.
++   The slices contained in the tokens returned by the parser are ephemeral: every
++   reference to them may or may not be invalidated by subsequent calls to `popFront`.
++   If the caller needs them, it has to copy them somewhere else.
++
++   Params:
++       P = the type to be tested
++
++   Returns:
++   `true` if P satisfies the XML parser specification here stated; `false` otherwise
++
++   Specification:
++   The parser shall at least:
++   $(UL
++       $(LI have `alias CharacterType`: the type of a single source character;)
++       $(LI have `alias InputType`: the type of the input which is used to feed this
++            parser;)
++       $(LI be an `InputRange`, whose elements shall support at least the following fields:
++            $(UL
++               $(LI `XMLKind kind`: the kind of this node;)
++               $(LI `P.CharacterType[] content`: the contents of this node, excluding
++                     the delimiters specified in the documentation of `XMLKind`;)
++            ))
++       $(LI have `void setSource(InputType)`: sets the input source for this parser
++            and eventual underlying components; the parser may perform other
++            initialization work and even consume part of the input during this
++            operation; after (partial or complete) usage, a parser may be reinitialized
++            and used with another input by calling this function;)
++   )
 +/
 template isLowLevelParser(P)
 {
-    enum bool isLowLevelParser = isInputRange!P && is(ElementType!P : XMLToken!(P.CharacterType)) && is(typeof(
+    enum bool isLowLevelParser = isInputRange!P && is(typeof(ElementType!P.kind) == XMLKind)
+                                 && is(typeof(ElementType!P.content) == P.CharacterType[]) && is(typeof(
     (inout int = 0)
     {
-        /++
-        +   The type of input this parser accepts,
-        +   i.e. the type of input the underlying lexer accepts.
-        +/
         alias InputType = P.InputType;
-        
-        /++
-        +   The type of a single character from the input.
-        +   The parser will deal with slices of this type.
-        +/
-        alias CharacterType = P.CharacterType;
         
         P parser;
         InputType input;
         
-        /++
-        +   void setSource(InputType);
-        +   Initializes the parser (and the underlying lexer) with the given input.
-        +/
         parser.setSource(input);
     }));
 }
 
 /++
-+   Checks whether the given parser is savable.
++   Checks whether its argument is a saveable parser.
 +
-+   Being an InputRange, the parser is savable if and only if it is also a ForwardRange.
++   A saveable parser is a parser enhanced with a `save` method analogous to the `save`
++   method of `ForwardRange`s.
++
++   Params:
++       P = the type to be tested
++
++   Returns:
++   `true` if P is a parser (as specified by `isLowLevelParser`) and also supports the
++   `save` method as specified here; `false` otherwise
++   
++   Specification:
++   The type shall support at least:
++   $(UL
++       $(LI all methods and aliases specified by `isLowLevelParser`)
++       $(LI `P save()`: returns an independent copy of the current parser; the
++             copy must start at the position the original parser was when this method
++             was called; the two copies shall be independent, in that advancing one
++             does not advance the other.)
++   )
 +/
 template isSaveableLowLevelParser(P)
 {
@@ -231,17 +315,119 @@ template isSaveableLowLevelParser(P)
 
 // LEVEL 3: CURSORS   
 
+/++
++   Checks whether its argument fulfills all requirements to be used as XML cursor.
++
++   The cursor is the hearth of the XML parsing chain. Every higher level component
++   (SAX, DOM, validations) builds on top of this concept.
++   A cursor is a logical pointer inside a stream of XML nodes. It can be queried
++   for properties of the current node (kind, name, attributes, ...) and it can be
++   advanced in the stream. It cannot move backwards. Any reference to the outputs
++   of a cursor may or may not be invalidated by advancing operations.
++
++   Params:
++       CursorType = the type to be tested
++
++   Returns:
++   `true` if CursorType satisfies the XML cursor specification here stated;
++   `false` otherwise
++
++   Specification:
++   A cursor shall support at least these methods and aliases:
++   $(UL
++       $(LI `alias StringType`: the type of an output string; most methods will
++             return instances of this type;)
++       $(LI `alias InputType`: the type of the input which is used to feed this
++             cursor;)
++       $(LI `void setSource(InputType)`: sets the input source for this cursor and
++             eventual underlying components; the cursor may perform other initialization
++             work and even consume part of the input during this operation; after
++            (partial or complete) usage, a cursor may be reinitialized and used with
++             another input by calling this function;)
++       $(LI `bool atBeginning()`: returns true if the cursor has never been advanced;
++             it is thus pointing to the node of type `XMLKind.DOCUMENT` representing
++             the XML declaration of the document;)
++       $(LI `bool documentEnd()`: returns `true` if the input has been completely
++             consumed; if it is the case, any advancing operation will perform no action)
++       $(LI  the following methods can be used to query the current node properties:
++             $(UL
++               $(LI `XMLKind getKind()`: returns the `XMLKind` of the current node;)
++               $(LI `StringType getName()`: returns the qualified name of the current
++                     element or the target of the current processing instruction;
++                     the empty string in all other cases;)
++               $(LI `StringType getLocalName()`: returns the local name of the
++                     current element, if it has a prefix; the empty string in all
++                     other cases;)
++               $(LI `StringType getPrefix()`: returns the prefix of the current element,
++                     if it has any; the empty string in all other cases;)
++               $(LI `auto getAttributes()`: returns a range of all attributes defined
++                     on the current element; if the current node is a processing
++                     instruction, its data section is parsed as if it was the attributes
++                     list of an element (which is quite common); for all other node
++                     kinds, an empty range is returned.
++                     The type returned by this range `front` method shall at least support
++                     the following fields:
++                     $(UL
++                       $(LI `StringType name`: the qualified name of the attribute;)
++                       $(LI `StringType prefix`: the prefix of the attribute, if it
++                             has any; the empty string otherwise;)
++                       $(LI `StringType localName`: the local name of the attribute,
++                             if it has any prefix; the empty string otherwise;)
++                       $(LI `StringType value`: the value of the attribute;)
++                     ))
++               $(LI `StringType getContent()`: returns the text content of the current
++                     comment, text node or CDATA section or the data of the current
++                     processing instruction; the empty string in all other cases;)
++               $(LI `StringType getAll()`: returns the entire content of the node;)
++             ))
++       $(LI  the following methods can be used to advance the cursor in the stream
++             of XML nodes:
++             $(UL
++               $(LI `bool enter()`: tries to advance the cursor to the first child
++                     of the current node; returns `true` if the operation succeeded;
++                     otherwise, if the cursor was positioned on the start tag of an
++                     element, it is now positioned on its closing tag; otherwise,
++                     the cursor did not advance;)
++               $(LI `bool next()`: tries to advance the cursor to the next sibling
++                     of the current node; returns `true` if the operation succeded;
++                     otherwise (i.e. the cursor was positioned on the last child
++                     of an element) it is now positioned on the closing tag of the
++                     parent element;)
++               $(LI `void exit()`: advances the cursor to the closing tag of the
++                     element containing the current node;)
++             ))
++   )
++
++   Examples:
++   ---
++   /* recursively prints the kind of each node */
++   void recursivePrint(CursorType)(ref CursorType cursor)
++       if (isCursor!CursorType)
++   {
++       do
++       {
++           // print the kind of the current node
++           writeln(cursor.getKind);
++           // if the node has children
++           if (cursor.enter)
++           {
++               // recursively print them
++               recursivePrint(cursor);
++               // back to the current level
++               cursor.exit;
++           }
++       }
++       // iterate on every sibling
++       while (cursor.next)
++   }
++   ---
++/
 template isCursor(CursorType)
 {
     enum bool isCursor = is(typeof(
     (inout int = 0)
     {
-        /++
-        +   The type of input accepted by this parser,
-        +   i.e., the one accepted by the underlying low level parser.
-        +/
-        alias T = CursorType.InputType;
-        
+        alias T = CursorType.InputType;   
         alias S = CursorType.StringType;
         
         CursorType cursor;
@@ -261,21 +447,43 @@ template isCursor(CursorType)
         s = cursor.getContent;
         s = cursor.getAll;
         auto attrs = cursor.getAttributes;
+        s = attrs.front.prefix;
+        s = attrs.front.localName;
+        s = attrs.front.name;
+        s = attrs.front.value;
     }
     ));
 }
 
+/++
++   Checks whether its argument is a saveable cursor.
++
++   A saveable cursor is a cursor enhanced with a `save` method analogous to the `save`
++   method of `ForwardRange`s.
++
++   Params:
++       CursorType = the type to be tested
++
++   Returns:
++   `true` if CursorType is a cursor (as specified by `isCursor`) and also supports the
++   `save` method as specified here; `false` otherwise
++   
++   Specification:
++   The type shall support at least:
++   $(UL
++       $(LI all methods and aliases specified by `isCursor`)
++       $(LI `CursorType save()`: returns an independent copy of the current cursor; the
++             copy must start at the position the original cursor was when this method
++             was called; the two copies shall be independent, in that advancing one
++             does not advance the other.)
++   )
++/
 template isSaveableCursor(CursorType)
 {
     enum bool isSaveableCursor = isCursor!CursorType && is(typeof(
     (inout int = 0)
     {
-        const CursorType cursor1;
-        
-        /++
-        +   L save() const;
-        +   Return a copy of the lexer that can be advance independently of the original.
-        +/
+        CursorType cursor1;
         CursorType cursor2 = cursor1.save();
     }));
 }
