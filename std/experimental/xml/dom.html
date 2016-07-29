@@ -86,9 +86,130 @@ $('#symbolSearchPane').show();
 			<p>This module declares the DOM Level 3 interfaces as stated in the W3C DOM
    specification.
 </p>
-<section></section>
+<section><p>For a more complete reference, see the
+   <a href="https://www.w3.org/TR/DOM-Level-3-Core/">official specification</a>,
+   from which all documentation in this module is taken.
+</p>
+</section>
 
 			<section></section>
+			<section>
+				<h2>Classes</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMException" class="public" href="../../../std/experimental/xml/dom/DOMException.html">
+								<code>DOMException</code>
+							</a>
+						</td>
+						<td>DOM operations only raise exceptions in "exceptional" circumstances, i.e.,
+   when an operation is impossible to perform (either for logical reasons, because
+   data is lost, or because the implementation has become unstable). In general,
+   DOM methods return specific error values in ordinary processing situations,
+   such as out-of-bound errors when using NodeList.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Enums</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="DocumentPosition" class="public" href="../../../std/experimental/xml/dom/DocumentPosition.html">
+								<code>DocumentPosition</code>
+							</a>
+						</td>
+						<td>A bitmask indicating the relative document position of a node with respect to another node.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ErrorSeverity" class="public" href="../../../std/experimental/xml/dom/ErrorSeverity.html">
+								<code>ErrorSeverity</code>
+							</a>
+						</td>
+						<td>An integer indicating the severity of the error.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ExceptionCode" class="public" href="../../../std/experimental/xml/dom/ExceptionCode.html">
+								<code>ExceptionCode</code>
+							</a>
+						</td>
+						<td>An integer indicating the type of error generated.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="NodeType" class="public" href="../../../std/experimental/xml/dom/NodeType.html">
+								<code>NodeType</code>
+							</a>
+						</td>
+						<td>An integer indicating which type of node this is.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="UserDataOperation" class="public" href="../../../std/experimental/xml/dom/UserDataOperation.html">
+								<code>UserDataOperation</code>
+							</a>
+						</td>
+						<td>An integer indicating the type of operation being performed on a node.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Aliases</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Type</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="UserData" class="public" href="../../../std/experimental/xml/dom/UserData.html">
+								<code>UserData</code>
+							</a>
+						</td>
+						<td>
+<code class="prettyprint lang-d"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">variant<wbr/></span><span class="pun">.</span><span class="typ">VariantN</span>!(32L)</code>
+						</td>
+						<td>The DOMUserData type is used to store application data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="UserDataHandler" class="public" href="../../../std/experimental/xml/dom/UserDataHandler.html">
+								<code>UserDataHandler</code>
+							</a>
+						</td>
+						<td>
+<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../../std/experimental/xml/dom/UserDataOperation.html"><span class="typ">UserDataOperation</span></a><span class="pun">, </span><span class="typ">DOMString</span><span class="pun">, </span><a href="../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a><span class="pun">, </span><span class="typ">Node</span>!DOMString<span class="pun">, </span><span class="typ">Node</span>!DOMString<span class="pun">)</span></code>
+						</td>
+						<td>When associating an object to a key on a node using Node.setUserData() the
+   application can provide a handler that gets called when the node the object
+   is associated to is being cloned, imported, or renamed. This can be used by
+   the application to implement various behaviors regarding the data it associates
+   to the DOM nodes.
+</td>
+					</tr>
+				</table>
+			</section>
 			<section>
 				<h2>Authors</h2>
 <p>Lodovico Giaretta
