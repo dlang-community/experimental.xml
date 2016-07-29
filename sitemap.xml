@@ -83,8 +83,6 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.setSource.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.start.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.testAndAdvance.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.this.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.this.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/chooseLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/chooseLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.html</loc></url>
@@ -97,8 +95,6 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.InputType.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.start.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.testAndAdvance.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.this.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.this.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.advanceUntil.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.advanceUntilAny.html</loc></url>
@@ -109,8 +105,6 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.InputType.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.start.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.testAndAdvance.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.this.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/RangeLexer.this.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/SliceLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/SliceLexer.advanceUntil.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/SliceLexer.advanceUntilAny.html</loc></url>
