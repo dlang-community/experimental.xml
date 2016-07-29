@@ -1,6 +1,7 @@
 
 [![Build Status](https://travis-ci.org/lodo1995/experimental.xml.svg?branch=master)](https://travis-ci.org/lodo1995/experimental.xml)
 [![codecov](https://codecov.io/gh/lodo1995/experimental.xml/branch/master/graph/badge.svg)](https://codecov.io/gh/lodo1995/experimental.xml)
+[![Dub version](https://img.shields.io/dub/v/std-experimental-xml.svg)](https://code.dlang.org/packages/std-experimental-xml)
 
 # std.experimental.xml (GSoC 2016)
 

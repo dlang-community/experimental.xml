@@ -1,11 +1,10 @@
 {
     "name": "std-experimental-xml",
-    "description": "A replacement for Phobos std.xml",
+    "description": "A replacement for Phobos std.xml, developed as a GSoC 2016 project",
     "authors": ["Lodovico Giaretta"],
     "homepage": "https://github.com/lodo1995/experimental.xml",
     "targetType": "library",
     "license": "BSL-1.0",
-    "version": "0.1.0",
     "excludedSourceFiles": ["source/benchmark.d", "source/test.d", "source/random_benchmark/*"],
     "configurations":
     [
