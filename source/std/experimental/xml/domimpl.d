@@ -45,7 +45,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         {
             auto doctype = cast(DocumentType)_doctype;
             if (_doctype && !doctype)
-                throw new DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
                 
             auto doc = allocator.make!Document;
             doc.outer = this;
@@ -55,7 +55,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             if (namespaceURI)
             {
                 if (!qualifiedName)
-                    throw new DOMException(dom.ExceptionCode.NAMESPACE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.NAMESPACE);
                 doc.appendChild(doc.createElementNS(namespaceURI, qualifiedName));
             }
             else if (qualifiedName)
@@ -137,19 +137,19 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             
             Node insertBefore(dom.Node!DOMString _newChild, dom.Node!DOMString _refChild)
             {
-                throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
             }
             Node replaceChild(dom.Node!DOMString newChild, dom.Node!DOMString oldChild)
             {
-                throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
             }
             Node removeChild(dom.Node!DOMString oldChild)
             {
-                throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
             }
             Node appendChild(dom.Node!DOMString newChild)
             {
-                throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
             }
             bool hasChildNodes() const { return false; }
         }
@@ -247,11 +247,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 auto newChild = cast(Node)_newChild;
                 auto refChild = cast(Node)_refChild;
                 if (!newChild || !refChild || newChild.ownerDocument !is ownerDocument)
-                    throw new DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                    throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
                 if (this is newChild || newChild.isAncestor(this) || newChild is refChild)
-                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (refChild.parentNode !is this)
-                    throw new DOMException(dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
                     
                 if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
                 {
@@ -283,7 +283,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             {
                 auto oldChild = cast(Node)_oldChild;
                 if (!oldChild || oldChild.parentNode !is this)
-                    throw new DOMException(dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
 
                 if (oldChild is firstChild)
                     _firstChild = oldChild.nextSibling;
@@ -304,9 +304,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             {
                 auto newChild = cast(Node)_newChild;
                 if (!newChild || newChild.ownerDocument !is ownerDocument)
-                    throw new DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                    throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
                 if (this is newChild || newChild.isAncestor(this))
-                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (newChild.parentNode !is null)
                     newChild.parentNode.removeChild(newChild);
                     
@@ -628,7 +628,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 if (newChild.nodeType == dom.NodeType.ELEMENT)
                 {
                     if (_root)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.insertBefore(newChild, refChild);
                     _root = cast(Element)newChild;
@@ -637,14 +637,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
                 {
                     if (_doctype)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.insertBefore(newChild, refChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
                 else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
-                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.insertBefore(newChild, refChild);
             }
@@ -653,7 +653,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 if (newChild.nodeType == dom.NodeType.ELEMENT)
                 {
                     if (oldChild !is _root)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.replaceChild(newChild, oldChild);
                     _root = cast(Element)newChild;
@@ -662,14 +662,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
                 {
                     if (oldChild !is _doctype)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.replaceChild(newChild, oldChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
                 else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
-                    throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.replaceChild(newChild, oldChild);
             }
@@ -695,7 +695,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 if (newChild.nodeType == dom.NodeType.ELEMENT)
                 {
                     if (_root)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.appendChild(newChild);
                     _root = cast(Element)newChild;
@@ -704,7 +704,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
                 {
                     if (_doctype)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto res = super.appendChild(newChild);
                     _doctype = cast(DocumentType)newChild;
@@ -727,7 +727,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             DOMString substringData(size_t offset, size_t count)
             {
                 if (offset > length)
-                    throw new DOMException(dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 import std.algorithm: min;
                 return _data[offset..min(offset + count, length)];
@@ -739,14 +739,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             void insertData(size_t offset, DOMString arg)
             {
                 if (offset > length)
-                    throw new DOMException(dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 _data = _data[0..offset] ~ arg ~ _data[offset..$];
             }
             void deleteData(size_t offset, size_t count)
             {
                 if (offset > length)
-                    throw new DOMException(dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 import std.algorithm: min;
                 data = _data[0..offset] ~ _data[min(offset + count, length)..$];
@@ -754,7 +754,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             void replaceData(size_t offset, size_t count, DOMString arg)
             {
                 if (offset > length)
-                    throw new DOMException(dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 import std.algorithm: min;
                 _data = _data[0..offset] ~ arg ~ _data[min(offset + count, length)..$];
@@ -981,10 +981,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 Attr setNamedItemNS(dom.Node!DOMString arg)
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
-                        throw new DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                        throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
                     Attr attr = cast(Attr)arg;
                     if (!attr)
-                        throw new DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                         
                     auto key = Key(attr.namespaceURI, attr.localName ? attr.localName : attr.nodeName);
                     auto oldAttr = (key in attrs) ? *(key in attrs) : null;
@@ -1001,7 +1001,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                         return result;
                     }
                     else
-                        throw new DOMException(dom.ExceptionCode.NOT_FOUND);
+                        throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
                 }
             }
             private alias Key = Tuple!(DOMString, "namespaceURI", DOMString, "localName");
@@ -1016,7 +1016,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             Text splitText(size_t offset)
             {
                 if (offset > data.length)
-                    throw new DOMException(dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
                 auto second = ownerDocument.createTextNode(data[offset..$]);
                 data = data[0..offset];
                 if (parentNode)

@@ -150,6 +150,12 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     +/
     void setSource(InputType input)
     {
+        // reset private fields
+        nextFailed = false;
+        _documentEnd = false;
+        colon = colon.max;
+        nameEnd = 0;
+        
         parser.setSource(input);
         if (!parser.empty)
         {
@@ -227,7 +233,6 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             return false;
         else if (currentNode.kind == XMLKind.ELEMENT_START)
         {
-            import std.stdio: writeln;
             int count = 1;
             while (count > 0 && !parser.empty)
             {

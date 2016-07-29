@@ -108,9 +108,11 @@ Results handleTestcases(T)(string directory, ref T cursor, int depth)
                     write(" -- ", att.value);
             writeln();
             
-            cursor.enter();
-            results += handleTestcases(directory, cursor, depth + 1);
-            cursor.exit();
+            if (cursor.enter())
+            {
+                results += handleTestcases(directory, cursor, depth + 1);
+                cursor.exit();
+            }
         }
         else if (cursor.getName() == "TEST")
         {
@@ -118,7 +120,6 @@ Results handleTestcases(T)(string directory, ref T cursor, int depth)
         }
     }
     while (cursor.next());
-    
     printResults(results, depth);
     writeln();
     return results;
@@ -213,13 +214,7 @@ void main()
         writeln(i, " -- ", index);
         
         cursor.setSource(readText(index));
-        if (cursor.getKind() == XMLKind.DOCUMENT)
-            cursor.enter();
-        else
-        {
-            // indexes may be missing the xml-declaration;
-            // if that's the case, we must not use enter() initially;
-        }
+        cursor.enter();
         
         results += handleTestcases(dirName(index), cursor, 1);
     }

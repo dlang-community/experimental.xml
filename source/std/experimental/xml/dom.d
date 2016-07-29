@@ -9,6 +9,10 @@
 +   This module declares the DOM Level 3 interfaces as stated in the W3C DOM
 +   specification.
 +
++   For a more complete reference, see the
++   $(LINK2 https://www.w3.org/TR/DOM-Level-3-Core/, official specification),
++   from which all documentation in this module is taken.
++
 +   Authors:
 +   Lodovico Giaretta
 +
@@ -22,12 +26,30 @@
 module std.experimental.xml.dom;
 
 import std.variant: Variant;
+
+/++
++   The DOMUserData type is used to store application data.
++/
 alias UserData = Variant;
+
+/++
++   When associating an object to a key on a node using Node.setUserData() the
++   application can provide a handler that gets called when the node the object
++   is associated to is being cloned, imported, or renamed. This can be used by
++   the application to implement various behaviors regarding the data it associates
++   to the DOM nodes.
++/
 alias UserDataHandler(DOMString) = void delegate(UserDataOperation, DOMString, UserData, Node!DOMString, Node!DOMString);
 
+/++
++   An integer indicating which type of node this is.
++
++   Note:
++   Numeric codes up to 200 are reserved to W3C for possible future use.
++/
 enum NodeType: ushort
 {
-    ELEMENT,
+    ELEMENT = 1,
     ATTRIBUTE,
     TEXT,
     CDATA_SECTION,
@@ -40,6 +62,59 @@ enum NodeType: ushort
     DOCUMENT_FRAGMENT,
     NOTATION,
 }
+
+/++
++   A bitmask indicating the relative document position of a node with respect to another node.
++
++   If the two nodes being compared are the same node, then no flags are set on the return.
++
++   Otherwise, the order of two nodes is determined by looking for common containers --
++   containers which contain both. A node directly contains any child nodes. A node
++   also directly contains any other nodes attached to it such as attributes contained
++   in an element or entities and notations contained in a document type. Nodes contained
++   in contained nodes are also contained, but less-directly as the number of intervening
++   containers increases.
++
++   If there is no common container node, then the order is based upon order between
++   the root container of each node that is in no container. In this case, the result
++   is disconnected and implementation-specific. This result is stable as long as these
++   outer-most containing nodes remain in memory and are not inserted into some other
++   containing node. This would be the case when the nodes belong to different documents
++   or fragments, and cloning the document or inserting a fragment might change the order.
++
++   If one of the nodes being compared contains the other node, then the container precedes
++   the contained node, and reversely the contained node follows the container. For example,
++   when comparing an element against its own attribute or child, the element node precedes
++   its attribute node and its child node, which both follow it.
++
++   If neither of the previous cases apply, then there exists a most-direct container
++   common to both nodes being compared. In this case, the order is determined based
++   upon the two determining nodes directly contained in this most-direct common
++   container that either are or contain the corresponding nodes being compared.
++
++   If these two determining nodes are both child nodes, then the natural DOM order
++   of these determining nodes within the containing node is returned as the order
++   of the corresponding nodes. This would be the case, for example, when comparing
++   two child elements of the same element.
++
++   If one of the two determining nodes is a child node and the other is not, then
++   the corresponding node of the child node follows the corresponding node of the
++   non-child node. This would be the case, for example, when comparing an attribute
++   of an element with a child element of the same element.
++
++   If neither of the two determining node is a child node and one determining node
++   has a greater value of nodeType than the other, then the corresponding node precedes
++   the other. This would be the case, for example, when comparing an entity of a document
++   type against a notation of the same document type.
++
++   If neither of the two determining node is a child node and nodeType is the same
++   for both determining nodes, then an implementation-dependent order between the
++   determining nodes is returned. This order is stable as long as no nodes of the
++   same nodeType are inserted into or removed from the direct container. This would
++   be the case, for example, when comparing two attributes of the same element, and
++   inserting or removing additional attributes might change the order between existing
++   attributes.
++/
 enum DocumentPosition: ushort
 {
     DISCONNECTED,
@@ -49,40 +124,95 @@ enum DocumentPosition: ushort
     CONTAINED_BY,
     IMPLEMENTATION_SPECIFIC,
 }
+
+/++
++   An integer indicating the type of operation being performed on a node.
++/
 enum UserDataOperation: ushort
 {
-    NODE_CLONED,
+    /// The node is cloned, using Node.cloneNode().
+    NODE_CLONED = 1,
+    /// The node is imported, using Document.importNode().
     NODE_IMPORTED,
+    /++
+    +   The node is deleted.
+    +   Note:
+    +   This may not be supported or may not be reliable in certain environments,
+    +   where the implementation has no real control over when objects are actually deleted.
+    +/
     NODE_DELETED,
+    /// The node is renamed, using Document.renameNode().
     NODE_RENAMED,
+    /// The node is adopted, using Document.adoptNode().
     NODE_ADOPTED,
 }
+
+/++
++   An integer indicating the type of error generated.
++
++   Note:
++   Other numeric codes are reserved for W3C for possible future use.
++/
 enum ExceptionCode: ushort
 {
+    /// If index or size is negative, or greater than the allowed value.
     INDEX_SIZE,
+    /// If the specified range of text does not fit into a DOMString.
     DOMSTRING_SIZE,
+    /// If any Node is inserted somewhere it doesn't belong.
     HIERARCHY_REQUEST,
+    /// If a Node is used in a different document than the one that created it (that doesn't support it).
     WRONG_DOCUMENT,
+    /// If an invalid or illegal character is specified, such as in an XML name.
     INVALID_CHARACTER,
+    /// If data is specified for a Node which does not support data.
     NO_DATA_ALLOWED,
+    /// If an attempt is made to modify an object where modifications are not allowed.
     NO_MODIFICATION_ALLOWED,
+    /// If an attempt is made to reference a Node in a context where it does not exist.
     NOT_FOUND,
+    /// If the implementation does not support the requested type of object or operation.
     NOT_SUPPORTED,
+    /// If an attempt is made to add an attribute that is already in use elsewhere.
     INUSE_ATTRIBUTE,
+    /// If an attempt is made to use an object that is not, or is no longer, usable.
     INVALID_STATE,
+    /// If an invalid or illegal string is specified.
     SYNTAX,
+    /// If an attempt is made to modify the type of the underlying object.
     INVALID_MODIFICATION,
+    /// If an attempt is made to create or change an object in a way which is incorrect with regard to namespaces.
     NAMESPACE,
+    /// If a parameter or an operation is not supported by the underlying object.
     INVALID_ACCESS,
+    /// If a call to a method such as insertBefore or removeChild would make the Node invalid.
     VALIDATION,
+    /// If the type of an object is incompatible with the expected type of the parameter associated to the object.
     TYPE_MISMATCH,
 }
+
+/// An integer indicating the severity of the error.
 enum ErrorSeverity: ushort
 {
+    /++
+    +   The severity of the error described by the DOMError is warning. A SEVERITY_WARNING
+    +   will not cause the processing to stop, unless DOMErrorHandler.handleError() returns false.
+    +/
     SEVERITY_WARNING,
+    /++
+    +   The severity of the error described by the DOMError is error. A SEVERITY_ERROR
+    +   may not cause the processing to stop if the error can be recovered, unless
+    +   DOMErrorHandler.handleError() returns false.
+    +/
     SEVERITY_ERROR,
+    /++
+    +   The severity of the error described by the DOMError is fatal error. A SEVERITY_FATAL_ERROR
+    +   will cause the normal processing to stop. The return value of DOMErrorHandler.handleError()
+    +   is ignored unless the implementation chooses to continue, in which case the behavior becomes undefined.
+    +/
     SEVERITY_FATAL_ERROR,
 }
+
 enum DerivationMethod: ulong
 {
     DERIVATION_RESTRICTION = 0x00000001,
@@ -91,6 +221,17 @@ enum DerivationMethod: ulong
     DERIVATION_LIST        = 0x00000008,
 }
 
+/++
++   DOM operations only raise exceptions in "exceptional" circumstances, i.e.,
++   when an operation is impossible to perform (either for logical reasons, because
++   data is lost, or because the implementation has become unstable). In general,
++   DOM methods return specific error values in ordinary processing situations,
++   such as out-of-bound errors when using NodeList.
++
++   Implementations should raise other exceptions under other circumstances. For
++   example, implementations should raise an implementation-dependent exception
++   if a null argument is passed when null was not expected.
++/
 abstract class DOMException: Exception
 {
     @property ExceptionCode code();
