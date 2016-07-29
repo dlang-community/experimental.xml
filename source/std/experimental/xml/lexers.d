@@ -50,8 +50,10 @@ import std.typecons: Flag, Yes;
 +
 +   Parameters:
 +       T = a sliceable type used as input for this lexer
++       Alloc = a dummy allocator parameter, never used; kept for uniformity with
++               the other lexers
 +/
-struct SliceLexer(T)
+struct SliceLexer(T, Alloc = shared(GCAllocator))
 {
     private T input;
     private size_t pos;
@@ -65,6 +67,8 @@ struct SliceLexer(T)
     /// ditto
     alias InputType = T;
     
+    mixin UsesAllocator!Alloc;
+    
     /// ditto
     void setSource(T input) @nogc
     {
@@ -74,11 +78,10 @@ struct SliceLexer(T)
     
     static if(isForwardRange!T)
     {
-        auto save() const @nogc
+        auto save() @nogc
         {
-            SliceLexer result;
-            result.input = input;
-            result.pos = pos;
+            SliceLexer result = this;
+            result.input = input.save;
             return result;
         }
     }
@@ -178,23 +181,9 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
     /// ditto
     alias InputType = T;
  
-    static if (is(typeof(Alloc.instance)))
-        private Alloc* allocator = &(Alloc.instance);
-    else
-        private Alloc* allocator;
+    mixin UsesAllocator!Alloc;
 
     private Appender!(CharacterType, Alloc) app;
-    
-    /// Constructs an instance of this lexer with the given allocator
-    this(Alloc* alloc)
-    {
-        allocator = alloc;
-    }
-    /// ditto
-    this(ref Alloc alloc)
-    {
-        allocator = &alloc;
-    }
     
     import std.string: representation;
     static if (is(typeof(representation!CharacterType(""))))
@@ -332,26 +321,10 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
     /// ditto
     alias InputType = T;
     
-    static if (is(typeof(Alloc.instance)))
-        private Alloc* allocator = &(Alloc.instance);
-    else
-        private Alloc* allocator;
-    
+    mixin UsesAllocator!Alloc;
+            
     private size_t count;    
     private Appender!(CharacterType, Alloc) app;
-    
-    /// Constructs an instance of this lexer with the given allocator
-    this(Alloc* alloc)
-    {
-        allocator = alloc;
-        app = typeof(app)(allocator);
-    }
-    /// ditto
-    this(ref Alloc alloc)
-    {
-        allocator = &alloc;
-        app = typeof(app)(allocator);
-    }
     
     import std.string: representation;
     static if (is(typeof(representation!CharacterType(""))))
@@ -360,6 +333,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
         private typeof(input) input_start;
         void setSource(T input)
         {
+            app = typeof(app)(allocator);
             this.input = input.representation;
             this.input_start = this.input;
         }
@@ -370,6 +344,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
         private T input_start;
         void setSource(T input)
         {
+            app = typeof(app)(allocator);
             this.input = input;
             this.input_start = input;
         }
@@ -509,27 +484,11 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     private InputType buffers;
     private size_t pos;
     private size_t begin;
-    
-    static if (is(typeof(Alloc.instance)))
-        private Alloc* allocator = &(Alloc.instance);
-    else
-        private Alloc* allocator;
         
     private Appender!(CharacterType, Alloc) app;
     private bool onEdge;
     
-    /// Constructs an instance of this lexer with the given allocator
-    this(Alloc* alloc)
-    {
-        allocator = alloc;
-        app = typeof(app)(allocator);
-    }
-    /// ditto
-    this(ref Alloc alloc)
-    {
-        allocator = &alloc;
-        app = typeof(app)(allocator);
-    }
+    mixin UsesAllocator!Alloc;
     
     import std.string: representation, assumeUTF;
     static if (is(typeof(representation!CharacterType(""))))
@@ -557,6 +516,7 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     +/
     void setSource(T input)
     {
+        app = typeof(app)(allocator);
         this.buffers = input;
         popBuffer;
     }

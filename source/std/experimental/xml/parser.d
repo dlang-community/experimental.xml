@@ -186,7 +186,6 @@ struct Parser(L, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhite
         // processing instruction
         else if (lexer.testAndAdvance('?'))
         {
-            size_t c;
             do
                 lexer.advanceUntil('?', true);
             while (!lexer.testAndAdvance('>'));

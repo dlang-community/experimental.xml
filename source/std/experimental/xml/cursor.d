@@ -729,15 +729,7 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
 {
     alias StringType = CursorType.StringType;
 
-    private Alloc* allocator;
-    this(ref Alloc alloc)
-    {
-        allocator = &alloc;
-    }
-    this(Alloc* alloc)
-    {
-        allocator = alloc;
-    }
+    mixin UsesAllocator!Alloc;
     
     CursorType cursor;
     alias cursor this;

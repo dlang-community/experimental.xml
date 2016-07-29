@@ -18,6 +18,7 @@
 
 module std.experimental.xml.domimpl;
 
+import std.experimental.xml.interfaces;
 import dom = std.experimental.xml.dom;
 import std.typecons: rebindable;
 import std.experimental.allocator;
@@ -25,10 +26,7 @@ import std.experimental.allocator.gc_allocator;
 
 class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplementation!DOMString
 {
-    static if (is(typeof(Alloc.instance)))
-        private Alloc* allocator = &(Alloc.instance);
-    else
-        private Alloc* allocator;
+    mixin UsesAllocator!(Alloc, true);
     
     override
     {

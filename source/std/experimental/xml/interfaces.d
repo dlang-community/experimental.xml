@@ -487,3 +487,40 @@ template isSaveableCursor(CursorType)
         CursorType cursor2 = cursor1.save();
     }));
 }
+
+// PRIVATE STUFF
+
+package mixin template UsesAllocator(Alloc, bool genDefaultCtor = false)
+{
+    static if (is(Alloc == class))
+        private alias TrueAlloc = Alloc;
+    else
+        private alias TrueAlloc = Alloc*;
+
+    static if (is(typeof(Alloc.instance) == Alloc))
+    {
+        static if (is(Alloc == class))
+            private TrueAlloc allocator = Alloc.instance;
+        else
+            private TrueAlloc allocator = &(Alloc.instance);
+            
+        static if (genDefaultCtor)
+            this() {}
+    }
+    else
+    {
+        private TrueAlloc allocator;
+        @disable this();
+    }
+    
+    this(TrueAlloc allocator)
+    {
+        this.allocator = allocator;
+    }
+    
+    static if (!is(Alloc == class))
+        this(ref Alloc allocator)
+        {
+            this.allocator = &allocator;
+        }
+}
