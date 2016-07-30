@@ -91,6 +91,13 @@ struct ElementNestingValidator(CursorType)
     }
 }
 
+auto elementNestingValidator(CursorType)(auto ref CursorType cursor)
+{
+    auto res = ElementNestingValidator!CursorType();
+    res.cursor = cursor;
+    return res;
+}
+
 unittest
 {
     import std.experimental.xml.lexers;
@@ -112,7 +119,12 @@ unittest
         </aaa>
     };
     
-    auto validator = ElementNestingValidator!(Cursor!(Parser!(SliceLexer!string)))();
+    auto validator = 
+         chooseLexer!xml
+        .parse
+        .cursor
+        .elementNestingValidator;
+        
     validator.setSource(xml);
     
     int count = 0;
@@ -276,9 +288,11 @@ unittest
     
     int count = 0;
     
-    auto cursor = checkXMLNames(Cursor!(Parser!(SliceLexer!string))(),
-                                (string s) { count++; },
-                                (string s) { count++; });
+    auto cursor =
+         chooseLexer!xml
+        .parse
+        .cursor
+        .checkXMLNames((string s) { count++; }, (string s) { count++; });
     cursor.setSource(xml);
     
     void inspectOneLevel(T)(ref T cursor)

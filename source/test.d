@@ -7,10 +7,7 @@
 
 module test;
 
-import std.experimental.xml.interfaces;
-import std.experimental.xml.lexers;
-import std.experimental.xml.parser;
-import std.experimental.xml.cursor;
+import std.experimental.xml;
 
 import std.encoding: transcode, Latin1String;
 import std.file: read, readText;
@@ -203,10 +200,10 @@ void uselessCallback(CursorError err)
 +/
 void main()
 {
-    auto cursor = Cursor!(Parser!(SliceLexer!string))();
-    
-    // If an index is not well-formed, just tell us but continue parsing
-    cursor.setErrorHandler(toDelegate(&uselessCallback));
+    auto cursor = 
+         chooseLexer!string
+        .parse
+        .cursor(&uselessCallback); // If an index is not well-formed, just tell us but continue parsing
     
     auto results = Results();
     foreach (i, index; indexes)
@@ -249,9 +246,10 @@ void parseFile(string filename)
         transcode(cast(Latin1String)raw, text);
     }
     
-    auto cursor = Cursor!(Parser!(SliceLexer!string))();
-    // lots of tests do not have an xml declaration
-    cursor.setErrorHandler(toDelegate(&uselessCallback));
+    auto cursor = 
+         chooseParser!text(() { throw new Exception("AAAAHHHHH"); })
+        .cursor(&uselessCallback); // lots of tests do not have an xml declaration
+    
     cursor.setSource(text);
     inspectOneLevel(cursor);
 }

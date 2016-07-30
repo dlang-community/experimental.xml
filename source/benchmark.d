@@ -7,9 +7,7 @@
 
 module benchmark;
 
-import std.experimental.xml.lexers;
-import std.experimental.xml.parser;
-import std.experimental.xml.cursor;
+import std.experimental.xml;
 
 import std.stdio;
 import std.file;
@@ -48,7 +46,7 @@ void main()
     
     writeln("SliceLexer:");
     performTests((data) {
-        auto parser = Parser!(SliceLexer!string)();
+        auto parser = Parser!(SliceLexer!(string, void delegate()), void delegate())();
         parser.setSource(data);
         foreach (e; parser)
         {
@@ -58,7 +56,7 @@ void main()
     
     writeln("RangeLexer:");
     performTests((data) {
-        auto parser = Parser!(RangeLexer!string)();
+        auto parser = Parser!(RangeLexer!(string, void delegate()), void delegate())();
         parser.setSource(data);
         foreach (e; parser)
         {
@@ -86,7 +84,7 @@ void main()
     
     writeln("SliceLexer:");
     performTests((data) {
-        auto cursor = Cursor!(Parser!(SliceLexer!string))();
+        auto cursor = Cursor!(Parser!(SliceLexer!(string, void delegate()), void delegate()))();
         cursor.setErrorHandler(delegate void(CursorError err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);
@@ -94,7 +92,7 @@ void main()
     
     writeln("RangeLexer:");
     performTests((data) {
-        auto cursor = Cursor!(Parser!(RangeLexer!string))();
+        auto cursor = Cursor!(Parser!(RangeLexer!(string, void delegate()), void delegate()))();
         cursor.setErrorHandler(delegate void(CursorError err) { return; });
         cursor.setSource(data);
         inspectOneLevel(cursor);

@@ -90,8 +90,7 @@
 +   }
 +
 +   auto cursor =
-+        chooseLexer!input
-+       .parse
++        chooseParser!input     // this is a shorthand for chooseLexer.parse
 +       .cursor;                // this time we stop here
 +
 +   cursor.setSource(input);
@@ -120,6 +119,17 @@
 
 module std.experimental.xml;
 
+public import std.experimental.xml.interfaces;
+public import std.experimental.xml.lexers;
+public import std.experimental.xml.parser;
+public import std.experimental.xml.cursor;
+public import std.experimental.xml.validation;
+public import std.experimental.xml.writer;
+public import std.experimental.xml.domparser;
+public import std.experimental.xml.domimpl;
+public import std.experimental.xml.sax;
+public import std.experimental.xml.faststrings;
+
 @nogc unittest
 {
     import std.experimental.xml.interfaces: XMLKind;
@@ -128,9 +138,6 @@ module std.experimental.xml;
     import std.experimental.xml.cursor;
     import std.experimental.xml.validation;
     import std.typecons: Yes, No;
-   
-    SliceLexer!string lexer;
-    auto parser = lexer.parse;
    
     string xml = q{
     <?xml encoding = "utf-8" ?>

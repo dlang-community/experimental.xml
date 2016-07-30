@@ -10,9 +10,7 @@ module random_benchmark;
 import genxml;
 import std.experimental.statistical;
 
-import std.experimental.xml.lexers;
-import std.experimental.xml.parser;
-import std.experimental.xml.cursor;
+import std.experimental.xml;
 
 import std.array;
 import std.stdio;
@@ -25,14 +23,14 @@ import core.time: Duration, nsecs;
 
 enum BenchmarkConfig theBenchmark = {
     components: [
-        ComponentConfig("Memory_bound", "to!string", "iterateString"),
-        //ComponentConfig("Parser_BufferedLexer_1K", "makeDumbBufferedReader!1024", "parserTest!(BufferedLexer, DumbBufferedReader)"),
-        //ComponentConfig("Parser_BufferedLexer_64K", "makeDumbBufferedReader!65536", "parserTest!(BufferedLexer, DumbBufferedReader)"),
+        //ComponentConfig("Memory_bound", "to!string", "iterateString"),
+        ComponentConfig("Parser_BufferedLexer_1K", "makeDumbBufferedReader!1024", "parserTest!(BufferedLexer, DumbBufferedReader)"),
+        ComponentConfig("Parser_BufferedLexer_64K", "makeDumbBufferedReader!65536", "parserTest!(BufferedLexer, DumbBufferedReader)"),
         ComponentConfig("Parser_SliceLexer", "to!string", "parserTest!SliceLexer"),
         //ComponentConfig("Parser_ForwardLexer", "to!string", "parserTest!ForwardLexer"),
         //ComponentConfig("Parser_RangeLexer", "to!string", "parserTest!RangeLexer"),
-        //ComponentConfig("Cursor_BufferedLexer_1K", "makeDumbBufferedReader!1024", "cursorTest!(BufferedLexer, DumbBufferedReader)"),
-        //ComponentConfig("Cursor_BufferedLexer_64K", "makeDumbBufferedReader!65536", "cursorTest!(BufferedLexer, DumbBufferedReader)"),
+        ComponentConfig("Cursor_BufferedLexer_1K", "makeDumbBufferedReader!1024", "cursorTest!(BufferedLexer, DumbBufferedReader)"),
+        ComponentConfig("Cursor_BufferedLexer_64K", "makeDumbBufferedReader!65536", "cursorTest!(BufferedLexer, DumbBufferedReader)"),
         ComponentConfig("Cursor_SliceLexer", "to!string", "cursorTest!SliceLexer"),
         //ComponentConfig("Cursor_ForwardLexer", "to!string", "cursorTest!ForwardLexer"),
         //ComponentConfig("Cursor_RangeLexer", "to!string", "cursorTest!RangeLexer"),
@@ -83,6 +81,31 @@ enum GenXmlConfig K100 = { name: "K100",
 
 // FUNCTIONS USED FOR TESTING
 
+struct DumbBufferedReader
+{
+    string content;
+    size_t chunk_size;
+    
+    void popFront() @nogc
+    {
+        if (content.length > chunk_size)
+            content = content[chunk_size..$];
+        else
+            content = [];
+    }
+    string front() const @nogc
+    {
+        if (content.length >= chunk_size)
+            return content[0..chunk_size];
+        else
+            return content[0..$];
+    }
+    bool empty() const @nogc
+    {
+        return !content.length;
+    }
+}
+
 DumbBufferedReader makeDumbBufferedReader(size_t bufferSize)(string s)
 {
     return DumbBufferedReader(s, bufferSize);
@@ -90,7 +113,7 @@ DumbBufferedReader makeDumbBufferedReader(size_t bufferSize)(string s)
 
 void parserTest(alias Lexer, T = string)(T data)
 {
-    auto parser = Parser!(Lexer!T)();
+    auto parser = Parser!(Lexer!(T, void delegate()), void delegate())();
     parser.setSource(data);
     foreach(e; parser)
     {
@@ -100,7 +123,7 @@ void parserTest(alias Lexer, T = string)(T data)
 
 void cursorTest(alias Lexer, T = string)(T data)
 {
-    auto cursor = Cursor!(Parser!(Lexer!T))();
+    auto cursor = Cursor!(Parser!(Lexer!(T, void delegate()), void delegate()))();
     cursor.setSource(data);
     inspectOneLevel(cursor);
 }

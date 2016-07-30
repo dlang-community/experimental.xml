@@ -18,9 +18,8 @@ import std.experimental.xml.interfaces;
 class ElementParser
 {
     import std.typecons: No;
-    static assert(isLowLevelParser!(Parser!(SliceLexer!string)), "Ahhhh!");
-    private alias CursorType = Cursor!(Parser!(SliceLexer!string), No.conflateCDATA);
-
+    private alias CursorType = typeof(chooseLexer!string.parse.cursor!(No.conflateCDATA));
+    
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);
     alias Handler = void delegate(string);
@@ -113,8 +112,11 @@ class DocumentParser: ElementParser
     
     this(string text)
     {
-        auto handler = delegate(CursorError err) {};
-        cursor.setErrorHandler(handler);
+        cursor = cursor.init;
+        cursor =
+             chooseLexer!text
+            .parse
+            .cursor!(No.conflateCDATA);
         cursor.setSource(text);
         super(&cursor);
     }

@@ -176,9 +176,7 @@ unittest
     import std.experimental.allocator.gc_allocator;
     import domimpl = std.experimental.xml.domimpl;
     
-    alias CursorType = CopyingCursor!(Cursor!(Parser!(SliceLexer!string)));
     alias DOMImplType = domimpl.DOMImplementation!string;
-    auto builder = CursorType().domBuilder(new DOMImplType());
     
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -192,6 +190,13 @@ unittest
         <ccc/>
     </aaa>
     };
+    
+    auto builder =
+         chooseLexer!xml
+        .parse
+        .cursor
+        .copyingCursor
+        .domBuilder(new DOMImplType());
     
     builder.setSource(xml);
     builder.buildRecursive;

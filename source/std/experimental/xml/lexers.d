@@ -50,10 +50,14 @@ import std.typecons: Flag, Yes;
 +
 +   Parameters:
 +       T = a sliceable type used as input for this lexer
++       ErrorHandler = a delegate type, used to report the impossibility to complete
++                      operations like `advanceUntil` or `advanceUntilAny`
 +       Alloc = a dummy allocator parameter, never used; kept for uniformity with
 +               the other lexers
++       reuseBuffer = a dummy flag, never used; kept for uniformity with the other
++                     lexers
 +/
-struct SliceLexer(T, Alloc = shared(GCAllocator))
+struct SliceLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
 {
     private T input;
     private size_t pos;
@@ -68,9 +72,10 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
     alias InputType = T;
     
     mixin UsesAllocator!Alloc;
+    mixin UsesErrorHandler!ErrorHandler;
     
     /// ditto
-    void setSource(T input) @nogc
+    void setSource(T input)
     {
         this.input = input;
         pos = 0;
@@ -78,7 +83,7 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
     
     static if(isForwardRange!T)
     {
-        auto save() @nogc
+        auto save()
         {
             SliceLexer result = this;
             result.input = input.save;
@@ -87,33 +92,35 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
     }
     
     /// ditto
-    auto empty() const @nogc
+    auto empty() const
     {
         return pos >= input.length;
     }
     
     /// ditto
-    void start() @nogc
+    void start()
     {
         begin = pos;
     }
     
     /// ditto
-    CharacterType[] get() const @nogc
+    CharacterType[] get() const
     {
         return input[begin..pos];
     }
     
     /// ditto
-    void dropWhile(string s) @nogc
+    void dropWhile(string s)
     {
         while (pos < input.length && fastIndexOf(s, input[pos]) != -1)
             pos++;
     }
     
     /// ditto
-    bool testAndAdvance(char c) @nogc
+    bool testAndAdvance(char c)
     {
+        if (empty)
+            handler();
         if (input[pos] == c)
         {
             pos++;
@@ -123,12 +130,16 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
     }
     
     /// ditto
-    void advanceUntil(char c, bool included) @nogc
+    void advanceUntil(char c, bool included)
     {
+        if (empty)
+            handler();
         auto adv = fastIndexOf(input[pos..$], c);
         if (adv != -1)
         {
             pos += adv;
+            if (empty)
+                handler();
         }
         else
         {
@@ -140,11 +151,15 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
     }
     
     /// ditto
-    size_t advanceUntilAny(string s, bool included) @nogc
+    size_t advanceUntilAny(string s, bool included)
     {
+        if (empty)
+            handler();
+            
         ptrdiff_t res;
         while ((res = fastIndexOf(s, input[pos])) == -1)
-            pos++;
+            if (++pos >= input.length)
+                handler();
         if (included)
             pos++;
         return res;
@@ -164,11 +179,13 @@ struct SliceLexer(T, Alloc = shared(GCAllocator))
 +   
 +   Params:
 +       T           = the InputRange to be used as input for this lexer
++       ErrorHandler = a delegate type, used to report the impossibility to complete
++                      operations like `advanceUntil` or `advanceUntilAny`
 +       Alloc       = the allocator used to manage internal buffers
 +       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
 +                     the same buffers, invalidating all previously returned slices
 +/
-struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
+struct RangeLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T)
 {
     import std.experimental.appender;
@@ -182,6 +199,7 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
     alias InputType = T;
  
     mixin UsesAllocator!Alloc;
+    mixin UsesErrorHandler!ErrorHandler;
 
     private Appender!(CharacterType, Alloc) app;
     
@@ -250,6 +268,8 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
     /// ditto
     bool testAndAdvance(char c)
     {
+        if (input.empty)
+            handler();
         if (input.front == c)
         {
             app.put(input.front);
@@ -262,10 +282,14 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
     /// ditto
     void advanceUntil(char c, bool included)
     {
+        if (input.empty)
+            handler();
         while (input.front != c)
         {
             app.put(input.front);
             input.popFront();
+            if (input.empty)
+                handler();
         }
         if (included)
         {
@@ -277,11 +301,15 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
     /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
+        if (input.empty)
+            handler();
         size_t res;
         while ((res = fastIndexOf(s, input.front)) == -1)
         {
             app.put(input.front);
             input.popFront;
+            if (input.empty)
+                handler();
         }
         if (included)
         {
@@ -304,11 +332,13 @@ struct RangeLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer
 +   
 +   Params:
 +       T           = the InputRange to be used as input for this lexer
++       ErrorHandler = a delegate type, used to report the impossibility to complete
++                      operations like `advanceUntil` or `advanceUntilAny`
 +       Alloc       = the allocator used to manage internal buffers
 +       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
 +                     the same buffers, invalidating all previously returned slices
 +/
-struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
+struct ForwardLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isForwardRange!T)
 {
     import std.experimental.appender;
@@ -322,6 +352,7 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
     alias InputType = T;
     
     mixin UsesAllocator!Alloc;
+    mixin UsesErrorHandler!ErrorHandler;
             
     private size_t count;    
     private Appender!(CharacterType, Alloc) app;
@@ -405,6 +436,8 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
     /// ditto
     bool testAndAdvance(char c)
     {
+        if (input.empty)
+            handler();
         if (input.front == c)
         {
             count++;
@@ -417,10 +450,14 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
     /// ditto
     void advanceUntil(char c, bool included)
     {
+        if (input.empty)
+            handler();
         while (input.front != c)
         {
             count++;
             input.popFront();
+            if (input.empty)
+                handler();
         }
         if (included)
         {
@@ -432,11 +469,15 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
     /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
+        if (input.empty)
+            handler();
         size_t res;
         while ((res = fastIndexOf(s, input.front)) == -1)
         {
             count++;
             input.popFront;
+            if (input.empty)
+                handler();
         }
         if (included)
         {
@@ -462,11 +503,13 @@ struct ForwardLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuff
 +   
 +   Params:
 +       T           = the InputRange to be used as input for this lexer
++       ErrorHandler = a delegate type, used to report the impossibility to complete
++                      operations like `advanceUntil` or `advanceUntilAny`
 +       Alloc       = the allocator used to manage internal buffers
 +       reuseBuffer = if set to `Yes` (the default) this parser will always reuse
 +                     the same buffers, invalidating all previously returned slices
 +/
-struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
+struct BufferedLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T && isArray!(ElementType!T))
 {
     import std.experimental.appender;
@@ -489,6 +532,7 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     private bool onEdge;
     
     mixin UsesAllocator!Alloc;
+    mixin UsesErrorHandler!ErrorHandler;
     
     import std.string: representation, assumeUTF;
     static if (is(typeof(representation!CharacterType(""))))
@@ -558,6 +602,8 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     
     private void advance()
     {
+        if (empty)
+            handler();
         if (pos + 1 >= buffer.length)
         {
             if (onEdge)
@@ -583,6 +629,8 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     }
     private void advanceNextBuffer()
     {
+        if (empty)
+            handler();
         if (onEdge)
             app.put(buffer[pos..$]);
         else
@@ -622,6 +670,8 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     /// ditto
     bool testAndAdvance(char c)
     {
+        if (empty)
+            handler();
         if (buffer[pos] == c)
         {
             advance();
@@ -633,6 +683,8 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     /// ditto
     void advanceUntil(char c, bool included)
     {
+        if (empty)
+            handler();
         ptrdiff_t adv;
         while ((adv = fastIndexOf(buffer[pos..$], c)) == -1)
         {
@@ -647,6 +699,8 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     /// ditto
     size_t advanceUntilAny(string s, bool included)
     {
+        if (empty)
+            handler();
         ptrdiff_t res;
         while ((res = fastIndexOf(s, buffer[pos])) == -1)
         {
@@ -658,81 +712,46 @@ struct BufferedLexer(T, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuf
     }
 }
 
-/++
-+   Instantiates a `SliceLexer` specialized for the given input
-+
-+   Params:
-+       Input = a type for which to instantiate a `SliceLexer`, or a value for
-+               whose type to instantiate a `SliceLexer`
-+
-+   Returns:
-+   An instance of `SliceLexer` specialized for the given `Input`. Note that even if
-+   `Input` is a value, `setSource` is $(B not) called on the returned lexer
-+/
-auto chooseLexer(alias Input)()
+auto chooseLexer(Input, Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Alloc, Handler)
+                (ref Alloc alloc, Handler handler = () { assert(0, "Unexpected input end while lexing"); })
 {
-    static if (is(SliceLexer!Input))
-        return SliceLexer!Input();
-    else static if (is(SliceLexer!(typeof(Input))))
-        return SliceLexer!(typeof(Input))();
-    else
-        static assert(0);
+    static if (is(SliceLexer!(Input, Handler, Alloc, reuseBuffer)))
+    {
+        auto res = SliceLexer!(Input, Handler, Alloc, reuseBuffer)(alloc);
+        res.errorHandler = handler;
+        return res;
+    }
+    else static if (is(BufferedLexer!(Input, Handler, Alloc, reuseBuffer)))
+    {
+        auto res = BufferedLexer!(Input, Handler, Alloc, reuseBuffer)(alloc);
+        res.errorHandler = handler;
+        return res;
+    }
+    else static if (is(RangeLexer!(Input, Handler, Alloc, reuseBuffer)))
+    {
+        auto res = RangeLexer!(Input, Handler, Alloc, reuseBuffer)(alloc);
+        res.errorHandler = handler;
+        return res;
+    }
+    else static assert(0);
+}
+auto chooseLexer(alias Input, Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Alloc, Handler)
+                (ref Alloc alloc, Handler handler = () { assert(0, "Unexpected input end while lexing"); })
+{
+    return chooseLexer!(typeof(Input), reuseBuffer, Alloc, Handler)(alloc, handler);
 }
 
-/++
-+   Instantiates a lexer specialized for the given input and allocator
-+
-+   Returns:
-+   An instance of most suitable lexer type specialized for the given `Input` and `Alloc`.
-+   Note that even if `Input` is a value, `setSource` is $(B not) called on the returned lexer
-+/
-template chooseLexer(alias Input, Alloc = shared(GCAllocator), Options...)
+auto chooseLexer(Input, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Handler)
+                (Handler handler = () { assert(0, "Unexpected input end while lexing"); })
+    if (is(typeof(Alloc.instance)))
 {
-    import std.traits: hasMember;
-    
-    static if (is(SliceLexer!Input))
-        static if (Options.length)
-            alias Type = SliceLexer!(Input, Options);
-        else
-            alias Type = SliceLexer!Input;
-    else static if (is(SliceLexer!(typeof(Input))))
-        static if (Options.length)
-            alias Type = SliceLexer!(typeof(Input), Options);
-        else
-            alias Type = SliceLexer!(typeof(Input));
-    else static if (is(BufferedLexer!Input))
-        static if (Options.length)
-            alias Type = BufferedLexer!(Input, Options);
-        else
-            alias Type = BufferedLexer!Input;
-    else static if (is(BufferedLexer!(typeof(Input))))
-        static if (Options.length)
-            alias Type = BufferedLexer!(typeof(Input), Options);
-        else
-            alias Type = BufferedLexer!(typeof(Input));
-    else static if (is(RangeLexer!Input))
-        static if (Options.length)
-            alias Type = RangeLexer!(Input, Options);
-        else
-            alias Type = RangeLexer!Input;
-    else static if (is(RangeLexer!(typeof(Input))))
-    {
-        static if (Options.length)
-            alias Type = RangeLexer!(typeof(Input), Options);
-        else
-            alias Type = RangeLexer!(typeof(Input));
-    }
-    
-    else static if (hasMember(Alloc, "instance"))
-        auto chooseLexer(ref Alloc alloc = Alloc.instance)
-        {
-            return Type(alloc);
-        }
-    else
-        auto chooseLexer(ref Alloc alloc)
-        {
-            return Type(alloc);
-        }
+    return chooseLexer!(Input, reuseBuffer, Alloc, Handler)(Alloc.instance, handler);
+}
+auto chooseLexer(alias Input, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Handler)
+                (Handler handler = () { assert(0, "Unexpected input end while lexing"); })
+    if (is(typeof(Alloc.instance)))
+{
+    return chooseLexer!(typeof(Input), reuseBuffer, Alloc, Handler)(Alloc.instance, handler);
 }
 
 version(unittest) 
@@ -765,6 +784,7 @@ version(unittest)
  
 unittest
 {
+    auto handler = () { assert(0, "something went wrong..."); };
 
     void testLexer(T)(T.InputType delegate(string) conv)
     {
@@ -783,6 +803,7 @@ unittest
         
         T lexer;
         lexer.setSource(conv(xml));
+        lexer.errorHandler = handler;
         
         lexer.dropWhile(" \r\n\t");
         lexer.start();
@@ -809,15 +830,17 @@ unittest
         assert(!lexer.empty);
     }
     
-    testLexer!(SliceLexer!string)(x => x);
-    testLexer!(RangeLexer!string)(x => x);
-    testLexer!(ForwardLexer!string)(x => x);
-    testLexer!(BufferedLexer!DumbBufferedReader)(x => DumbBufferedReader(x, 10));
+    testLexer!(SliceLexer!(string, typeof(handler)))(x => x);
+    testLexer!(RangeLexer!(string, typeof(handler)))(x => x);
+    testLexer!(ForwardLexer!(string, typeof(handler)))(x => x);
+    testLexer!(BufferedLexer!(DumbBufferedReader, typeof(handler)))(x => DumbBufferedReader(x, 10));
 }
  
 @nogc unittest
 {
     import std.experimental.allocator.mallocator;
+    
+    auto handler = () { assert(0, "something went wrong..."); };
     
     void testLexer(T)(T.InputType delegate(string) @nogc conv)
     {
@@ -838,6 +861,7 @@ unittest
     
         T lexer = T(&alloc);
         lexer.setSource(conv(xml));
+        lexer.errorHandler = handler;
         
         lexer.dropWhile(" \r\n\t");
         lexer.start();
@@ -864,7 +888,7 @@ unittest
         assert(!lexer.empty);
     }
     
-    testLexer!(RangeLexer!(string, shared(Mallocator)))(x => x);
-    testLexer!(ForwardLexer!(string, shared(Mallocator)))(x => x);
-    testLexer!(BufferedLexer!(DumbBufferedReader, shared(Mallocator)))(x => DumbBufferedReader(x, 10));
+    testLexer!(RangeLexer!(string, typeof(handler), shared(Mallocator)))(x => x);
+    testLexer!(ForwardLexer!(string, typeof(handler), shared(Mallocator)))(x => x);
+    testLexer!(BufferedLexer!(DumbBufferedReader, typeof(handler), shared(Mallocator)))(x => DumbBufferedReader(x, 10));
 }

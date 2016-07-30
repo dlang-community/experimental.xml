@@ -501,7 +501,7 @@ unittest
     </aaa>
     };
     
-    auto cursor = Cursor!(Parser!(SliceLexer!wstring))();
+    auto cursor = chooseLexer!xml.parse.cursor;
     cursor.setSource(xml);
     
     assert(cursor.atBeginning);
@@ -620,10 +620,11 @@ auto children(T)(ref T cursor)
     };
     
     import std.experimental.allocator.mallocator;
-    auto alloc = Mallocator.instance;
     
-    alias ParserType = Parser!(RangeLexer!(string, typeof(alloc)));
-    auto cursor = ParserType(alloc).cursor!(Yes.conflateCDATA);
+    auto handler = () { assert(0, "Some problem here..."); };
+    auto lexer = RangeLexer!(string, typeof(handler), shared(Mallocator))(Mallocator.instance);
+    lexer.errorHandler = handler;
+    auto cursor = lexer.parse.cursor!(Yes.conflateCDATA);
     cursor.setSource(xml);
     
     // <?xml encoding = "utf-8" ?>
@@ -815,6 +816,13 @@ auto copyingCursor(Flag!"intern" intern = No.intern, CursorType, Alloc)(auto ref
     res.cursor = cursor;
     return res;
 }
+auto copyingCursor(Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern, CursorType)(auto ref CursorType cursor)
+    if (is(typeof(Alloc.instance)))
+{
+    auto res = CopyingCursor!(CursorType, Alloc, intern)(Alloc.instance);
+    res.cursor = cursor;
+    return res;
+}
 
 unittest
 {
@@ -834,7 +842,7 @@ unittest
     };
     
     auto cursor = 
-         SliceLexer!wstring()
+         chooseLexer!xml
         .parse
         .cursor!(Yes.conflateCDATA)
         .copyingCursor!(Yes.intern)(Mallocator.instance);
