@@ -21,11 +21,12 @@ in
     assert(t.length == s.length);
 }
 body
-{   
-    static if (is(S == T))
+{
+    import std.traits;
+    static if (is(Unqual!S == Unqual!T))
     {
         import core.stdc.string: memcmp;
-        return memcmp(t.ptr, s.ptr, t.length) == 0;
+        return memcmp(t.ptr, s.ptr, t.length * T.sizeof) == 0;
     }
     else
     {
@@ -37,10 +38,10 @@ body
 }
 unittest
 {
-    assert( fastEqual("ciao", "ciao"));
+    assert( fastEqual("ciao"w, "ciao"w));
     assert(!fastEqual("ciao", "ciAo"));
     assert( fastEqual([1, 2], [1, 2]));
-    assert(!fastEqual([1, 2], [2, 1]));
+    assert(!fastEqual([1, 2], [1, 3]));
 }
 
 /++ Returns the index of the first occurrence of a value in a slice. +/
