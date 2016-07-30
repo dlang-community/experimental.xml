@@ -94,7 +94,7 @@ $('#symbolSearchPane').show();
 					<section>
 						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">Parser</span><span class="pun">(</span><span class="pln">L</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">)</span>
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">Parser</span><span class="pun">(</span><span class="pln">L</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">)</span>
 								<br/>
  <span class="kwd">if</span> <span class="pun">(</span><span class="pln">isLexer</span><span class="pun">!</span><span class="pln">L</span><span class="pun">);</span>
 							</code>
@@ -193,6 +193,8 @@ $('#symbolSearchPane').show();
 <section><h3>Parameters</h3>
 <table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
 <tr><td id="L">L</td><td> the underlying lexer type</td></tr>
+<tr><td id="ErrorHandler">ErrorHandler</td><td> a delegate type, used to report the impossibility to parse
+                      the file due to syntax errors</td></tr>
 <tr><td id="preserveWhitespace">preserveWhitespace</td><td> if set to <code class="lang-d"><span class="typ">Yes</span></code> (default is <code class="lang-d"><span class="typ">No</span></code>), the parser will not remove
        element content whitespace (i.e. the whitespace that separates tags), but will
        report it as text</td></tr>

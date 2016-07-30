@@ -101,7 +101,7 @@ $('#symbolSearchPane').show();
 					<section>
 						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">SliceLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">)</span>;
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">SliceLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">)</span>;
 							</code>
 						</div>
 					</section>
@@ -227,8 +227,12 @@ $('#symbolSearchPane').show();
 					</section>
 <section><h3>Parameters</h3>
 <p>T = a sliceable type used as input for this lexer
+       ErrorHandler = a delegate type, used to report the impossibility to complete
+                      operations like <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/SliceLexer.advanceUntil.html"><span class="pln">advanceUntil</span></a></code> or <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/SliceLexer.advanceUntilAny.html"><span class="pln">advanceUntilAny</span></a></code>
        Alloc = a dummy allocator parameter, never used; kept for uniformity with
                the other lexers
+       reuseBuffer = a dummy flag, never used; kept for uniformity with the other
+                     lexers
 </p>
 </section>
 

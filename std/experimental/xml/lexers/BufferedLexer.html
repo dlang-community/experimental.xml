@@ -102,7 +102,7 @@ $('#symbolSearchPane').show();
 					<section>
 						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">BufferedLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">)</span>
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">BufferedLexer</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">)</span>
 								<br/>
  <span class="kwd">if</span> <span class="pun">(</span><span class="pln">isInputRange</span><span class="pun">!</span><span class="pln">T </span><span class="pun">&amp;&amp; </span><span class="pln">isArray</span><span class="pun">!(</span><span class="typ">ElementType</span><span class="pun">!</span><span class="pln">T</span><span class="pun">)</span><span class="pun">);</span>
 							</code>
@@ -231,6 +231,8 @@ $('#symbolSearchPane').show();
 <section><h3>Parameters</h3>
 <table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
 <tr><td id="T">T</td><td> the InputRange to be used as input for this lexer</td></tr>
+<tr><td id="ErrorHandler">ErrorHandler</td><td> a delegate type, used to report the impossibility to complete
+                      operations like <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/BufferedLexer.advanceUntil.html"><span class="pln">advanceUntil</span></a></code> or <code class="lang-d"><a href="../../../../std/experimental/xml/lexers/BufferedLexer.advanceUntilAny.html"><span class="pln">advanceUntilAny</span></a></code></td></tr>
 <tr><td id="Alloc">Alloc</td><td> the allocator used to manage internal buffers</td></tr>
 <tr><td id="reuseBuffer">reuseBuffer</td><td> if set to <code class="lang-d"><span class="typ">Yes</span></code> (the default) this parser will always reuse
                      the same buffers, invalidating all previously returned slices</td></tr>

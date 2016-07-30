@@ -92,9 +92,11 @@ $('#symbolSearchPane').show();
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<span class="kwd">auto</span> <span class="pln">parse</span><span class="pun">(</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">T</span><span class="pun">)</span><span class="pun">(</span>
+<span class="kwd">auto</span> <span class="pln">parse</span><span class="pun">(</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">T</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<span class="kwd">auto ref </span><span class="pln">T</span> <span class="pln">lexer</span>
+&nbsp;&nbsp;<span class="kwd">auto ref </span><span class="pln">T</span> <span class="pln">lexer</span><span class="pun">,</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
 								<br/>
 <span class="pun">)</span>
 								<br/>

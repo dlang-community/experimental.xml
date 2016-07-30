@@ -83,8 +83,6 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.setSource.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.start.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/BufferedLexer.testAndAdvance.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/chooseLexer.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/lexers/chooseLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.advanceUntil.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/ForwardLexer.advanceUntilAny.html</loc></url>
