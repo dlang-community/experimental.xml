@@ -31,11 +31,13 @@ import std.typecons;
 +/
 enum CursorError
 {
+    /// The document does not begin with an XML declaration
     MISSING_XML_DECLARATION,
+    /// The attributes could not be parsed due to invalid syntax
     INVALID_ATTRIBUTE_SYNTAX,
 }
     
-struct Attribute(StringType)
+package struct Attribute(StringType)
 {
     StringType value;
     private StringType _name;
@@ -74,6 +76,14 @@ struct Attribute(StringType)
     }
 }
 
+/++
++   An implementation of the $(LINK2 ../interfaces/isCursor, `isCursor`) trait.
++
++   This is the only provided cursor that builds on top of a parser (and not on top of
++   another cursor), so it is part of virtually every parsing chain.
++   All documented methods are implementations of the specifications dictated by
++   $(LINK2 ../interfaces/isCursor, `isCursor`).
++/
 struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHandler = void delegate(CursorError))
     if (isLowLevelParser!P)
 {
@@ -146,7 +156,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     }
     
     /++
-    +   Initializes this parser (and the underlying low level one) with the given input.
+    +   Initializes this cursor (and the underlying low level parser) with the given input.
     +/
     void setSource(InputType input)
     {
@@ -468,6 +478,10 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     }
 }
 
+/++
++   Instantiates a specialized `Cursor` with the given underlying `parser` and
++   the given error handler (defaults to an error handler that just asserts 0).
++/
 template cursor(Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA)
 {
     auto cursor(T, EH)(auto ref T parser, EH errorHandler = (CursorError err) { assert(0); })
@@ -581,6 +595,12 @@ unittest
     assert(!cursor.atBeginning);
 }
 
+/++
++   Returns an input range of the children of the node currently pointed by `cursor`.
++
++   Advancing the range returned by this function also advances `cursor`. It is thus
++   not recommended to interleave usage of this function with raw usage of `cursor`.
++/
 auto children(T)(ref T cursor)
     if (isCursor!T)
 {
@@ -725,6 +745,15 @@ auto children(T)(ref T cursor)
 import std.traits: isArray;
 import std.experimental.allocator.gc_allocator;
 
+/++
++   A cursor that wraps another cursor, copying all output strings.
++
++   The cursor specification ($(LINK2 ../interfaces/isCursor, `std.experimental.xml.interfaces.isCursor`))
++   clearly states that a cursor (as the underlying parser and lexer) is free to reuse
++   its internal buffers and thus invalidate every output. This wrapper returns freshly
++   allocated strings, thus allowing references to its outputs to outlive calls to advancing
++   methods.
++/
 struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern)
     if (isCursor!CursorType && isArray!(CursorType.StringType))
 {
@@ -810,12 +839,17 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
         return CopyRange(cursor.getAttributes, &this);
     }
 }
+
+/++
++   Instantiates a suitable `CopyingCursor` on top of the given `cursor` and allocator.
++/
 auto copyingCursor(Flag!"intern" intern = No.intern, CursorType, Alloc)(auto ref CursorType cursor, ref Alloc alloc)
 {
     auto res = CopyingCursor!(CursorType, Alloc, intern)(alloc);
     res.cursor = cursor;
     return res;
 }
+/// ditto
 auto copyingCursor(Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern, CursorType)(auto ref CursorType cursor)
     if (is(typeof(Alloc.instance)))
 {

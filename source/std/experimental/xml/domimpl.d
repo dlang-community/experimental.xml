@@ -6,6 +6,8 @@
 */
 
 /++
++   Provides an implementation of the DOM Level 3 specification.
++
 +   Authors:
 +   Lodovico Giaretta
 +
@@ -24,6 +26,14 @@ import std.typecons: rebindable;
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
+/++
++   An implementation of $(LINK2 ../dom/DOMImplementation, `std.experimental.xml.dom.DOMImplementation`).
++   
++   It allows to specify a custom allocator to be used when creating instances of the DOM classes.
++   As keeping track of the lifetime of every node would be very complex, this implementation
++   does not try to do so. Instead, no object is ever deallocated; it is the users responsibility
++   to directly free the allocator memory when all objects are no longer reachable.
++/
 class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplementation!DOMString
 {
     mixin UsesAllocator!(Alloc, true);

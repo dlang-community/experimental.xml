@@ -6,6 +6,8 @@
 */
 
 /++
++   This module implements a simple SAX parser.
++
 +   Authors:
 +   Lodovico Giaretta
 +
@@ -21,6 +23,12 @@ module std.experimental.xml.sax;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.cursor;
 
+/++
++   A SAX parser built on top of a cursor.
++
++   It delegates all handling to `H`, which must be either a type or a template
++   that can be instantiated to a type applying the underlying cursor type (`T`) as parameter.
++/
 struct SAXParser(T, alias H)
     if (isCursor!T)
 {
@@ -52,7 +60,7 @@ struct SAXParser(T, alias H)
     
     /++
     +   Processes the entire document; every time a node of
-    +   Kind XXX is found, the corresponding method onXXX(this)
+    +   `XMLKind` XXX is found, the corresponding method `onXXX(underlyingCursor)`
     +   of the handler is called, if it exists.
     +/
     void processDocument()
@@ -122,6 +130,9 @@ struct SAXParser(T, alias H)
     }
 }
 
+/++
++   Instantiates a suitable SAX parser from the given `cursor` and `handler`.
++/
 auto saxParser(alias HandlerType, CursorType)(auto ref CursorType cursor)
     if (isCursor!CursorType)
 {
@@ -129,6 +140,7 @@ auto saxParser(alias HandlerType, CursorType)(auto ref CursorType cursor)
     res.cursor = cursor;
     return res;
 }
+/// ditto
 auto saxParser(alias HandlerType, CursorType)(auto ref CursorType cursor,
                                         auto ref SAXParser!(CursorType, HandlerType).HandlerType handler)
     if (isCursor!CursorType)

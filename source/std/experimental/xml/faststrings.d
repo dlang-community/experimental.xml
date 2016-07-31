@@ -45,7 +45,7 @@ unittest
 }
 
 /++ Returns the index of the first occurrence of a value in a slice. +/
-ptrdiff_t fastIndexOf(T, S)(T[] t, S s) pure @nogc nothrow
+package ptrdiff_t fastIndexOf(T, S)(T[] t, S s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (t[i] == s)
@@ -62,7 +62,7 @@ unittest
 + Returns the index of the first occurrence of any of the values in the second
 + slice inside the first one.
 +/
-ptrdiff_t fastIndexOfAny(T, S)(T[] t, S[] s) pure @nogc nothrow
+package ptrdiff_t fastIndexOfAny(T, S)(T[] t, S[] s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) != -1)
@@ -79,7 +79,7 @@ unittest
 + Returns the index of the first occurrence of a value of the first slice that
 + does not appear in the second.
 +/
-ptrdiff_t fastIndexOfNeither(T, S)(T[] t, S[] s) pure @nogc nothrow
+package ptrdiff_t fastIndexOfNeither(T, S)(T[] t, S[] s) pure @nogc nothrow
 {
     foreach (i; 0 .. t.length)
         if (fastIndexOf(s, t[i]) == -1)
@@ -93,10 +93,18 @@ unittest
 }
 
 import std.experimental.allocator.gc_allocator;
+
+/++
++   Returns a copy of the input string, after escaping all XML reserved characters.
++
++   If the string does not contain any reserved character, it is returned unmodified;
++   otherwise, a copy is made using the specified allocator.
++/
 T[] xmlEscape(T, Alloc)(T[] str)
 {
     return xmlEscape(str, Alloc.instance);
 }
+/// ditto
 T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
 {
     if (str.fastIndexOfAny("&<>'\"") >= 0)
@@ -111,6 +119,10 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
     }
     return str;
 }
+
+/++
++   Writes the input string to the given output range, after escaping all XML reserved characters.
++/
 void xmlEscapedWrite(Out, T)(ref Out output, T[] str)
 {
     import std.conv: to;
@@ -171,10 +183,22 @@ struct xmlPredefinedEntities(T)
 }
 
 import std.typecons: Flag, Yes;
+
+/++
++   Returns a copy of the input string, after unescaping all known entity references.
++
++   If the string does not contain any entity reference, it is returned unmodified;
++   otherwise, a copy is made using the specified allocator.
++
++   The set of known entities can be specified with the last parameter, which must support
++   the `in` operator (it is treated as an associative array).
++/
 T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, U replacements = xmlPredefinedEntities!T())
+    if (is(typeof(Alloc.instance)))
 {
     return xmlUnescape!strict(str, Alloc.instance, replacements);
 }
+/// ditto
 T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
 {
     if (str.fastIndexOf('&') >= 0)
@@ -189,6 +213,13 @@ T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref All
     }
     return str;
 }
+
+/++
++   Outputs the input string to the given output range, after unescaping all known entity references.
++
++   The set of known entities can be specified with the last parameter, which must support
++   the `in` operator (it is treated as an associative array).
++/
 void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)(ref Out output, T[] str, U replacements = xmlPredefinedEntities!T())
 {
     ptrdiff_t i;

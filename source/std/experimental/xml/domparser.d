@@ -35,8 +35,8 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     import std.traits: ReturnType;
 
     /++
-    +   The underlying Cursor methods are exposed, so that one can, for example,
-    +   use the cursor API to skip some nodes.
+    +   The underlying Cursor methods are exposed, so that one can, query the properties
+    +   of the current node before deciding if building it or not.
     +/
     T cursor;
     alias cursor this;
@@ -51,13 +51,15 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     private DOMImplementation domImpl;
     private bool already_built;
     
-    /++ Generic constructor; forwards its arguments to the lexer constructor +/
     this(Args...)(DOMImplementation impl, auto ref Args args)
     {
         cursor = typeof(cursor)(args);
         domImpl = impl;
     }
     
+    /++
+    +   Initializes this builder and the underlying components.
+    +/
     void setSource(T.InputType input)
     {
         cursor.setSource(input);
@@ -65,6 +67,10 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         currentNode = document;
     }
     
+    /++
+    +   Same as `cursor.enter`. When entering a node, that node is automatically
+    +   built into the DOM, so that its children can then be safely built if needed.
+    +/
     bool enter()
     {
         if (cursor.atBeginning)
@@ -93,6 +99,9 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         return false;
     }
     
+    /++
+    +   Same as `cursor.exit`
+    +/
     void exit()
     {
         if (currentNode)
@@ -101,12 +110,19 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         cursor.exit;
     }
     
+    /++
+    +   Same as `cursor.next`.
+    +/
     bool next()
     {
         already_built = false;
         return cursor.next;
     }
     
+    /++
+    +   Adds the current node to the DOM. This operation does not advance the input.
+    +   Calling it more than once does not change the result.
+    +/
     void build()
     {
         if (already_built || cursor.atBeginning)
@@ -116,6 +132,11 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         already_built = true;
     }
     
+    /++
+    +   Recursively adds the current node and all its children to the DOM tree.
+    +   Behaves as `cursor.next`: it advances the input to the next sibling, returning
+    +   `true` if and only if there exists such next sibling.
+    +/
     bool buildRecursive()
     {
         if (enter)
@@ -155,13 +176,20 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         }
     }
     
+    /++
+    +   Returns the Document being built by this builder.
+    +/
     auto getDocument() { return document; }
 }
 
-auto domBuilder(CursorType, DOMImplementation)(auto ref CursorType, DOMImplementation impl)
+/++
++   Instantiates a suitable `DOMBuilder` on top of the given `cursor` and `DOMImplementation`.
++/
+auto domBuilder(CursorType, DOMImplementation)(auto ref CursorType cursor, DOMImplementation impl)
     if (isCursor!CursorType && is(DOMImplementation : dom.DOMImplementation!(CursorType.StringType)))
 {
     auto res = DOMBuilder!(CursorType, DOMImplementation)();
+    res.cursor = cursor;
     res.domImpl = impl;
     return res;
 }

@@ -1,3 +1,13 @@
+/*
+*             Copyright Lodovico Giaretta 2016 - .
+*  Distributed under the Boost Software License, Version 1.0.
+*      (See accompanying file LICENSE_1_0.txt or copy at
+*            http://www.boost.org/LICENSE_1_0.txt)
+*/
+
+/++
++   This module implements components to put XML data in `OutputRange`s
++/
 
 module std.experimental.xml.writer;
 
@@ -17,14 +27,25 @@ private string ifAnyCompiles(string code, string[] codes...)
         return "static if (__traits(compiles, " ~ code ~ ")) " ~ code ~ "; else " ~ ifAnyCompiles(codes[0], codes[1..$]);
 }
 
+/++
++   A collection of ready-to-use pretty-printers
++/
 struct PrettyPrinters
 {
+    /++
+    +   The minimal pretty-printer. It just guarantees that the input satisfies
+    +   the xml grammar.
+    +/
     struct Minimalizer(StringType)
     {
         // minimum requirements needed for correctness
         enum StringType beforeAttributeName = " ";
         enum StringType betweenPITargetData = " ";
     }
+    /++
+    +   A pretty-printer that indents the nodes with a tabulation character
+    +   `'\t'` per level of nesting.
+    +/
     struct Indenter(StringType)
     {
         // inherit minimum requirements 
@@ -47,6 +68,9 @@ struct PrettyPrinters
     }
 }
 
+/++
++   Component that outputs XML data to an `OutputRange`.
++/
 struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.Minimalizer)
 {
     static if (is(PrettyPrinter))
@@ -106,6 +130,15 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
         output.put(delimiter);
     }
     
+    /++
+    +   Outputs an XML declaration.
+    +   
+    +   Its arguments must be an `int` specifying the version
+    +   number (`10` or `11`), a string specifying the encoding (no check is performed on
+    +   this parameter) and a `bool` specifying the standalone property of the document.
+    +   Any argument can be skipped, but the specified arguments must respect the stated
+    +   ordering (which is also the ordering required by the XML specification).
+    +/
     void writeXMLDeclaration(Args...)(Args args)
     {
         static assert(Args.length <= 3, "Too many arguments for xml declaration");
@@ -166,6 +199,9 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
     
+    /++
+    +   Outputs a comment with the given content.
+    +/
     void writeComment(StringType comment)
     {
         if (startingTag) closeStartingTag;
@@ -183,6 +219,9 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
         output.put("-->");
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
+    /++
+    +   Outputs a text node with the given content.
+    +/
     void writeText(StringType text)
     {
         if (startingTag) closeStartingTag;
@@ -194,6 +233,9 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
         ));
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
+    /++
+    +   Outputs a CDATA section with the given content.
+    +/
     void writeCDATA(StringType cdata)
     {
         if (startingTag) closeStartingTag;
@@ -204,6 +246,9 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
         output.put("]]>");
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
+    /++
+    +   Outputs a processing instruction with the given target and data.
+    +/
     void writeProcessingInstruction(StringType target, StringType data)
     {
         if (startingTag) closeStartingTag;

@@ -712,6 +712,14 @@ struct BufferedLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBu
     }
 }
 
+/++
++   Instantiates a specialized lexer for the given input type, allocator and error handler.
++
++   The default error handler just asserts 0.
++   If the type of the allocator is specified as template parameter, but no instance of it
++   is passed as runtime parameter, then the static method `instance` of the allocator type is
++   used. If no allocator type is specified, defaults to `shared(GCAllocator)`.
++/
 auto chooseLexer(Input, Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Alloc, Handler)
                 (ref Alloc alloc, Handler handler = () { assert(0, "Unexpected input end while lexing"); })
 {
@@ -735,18 +743,20 @@ auto chooseLexer(Input, Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Alloc,
     }
     else static assert(0);
 }
+/// ditto
 auto chooseLexer(alias Input, Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Alloc, Handler)
                 (ref Alloc alloc, Handler handler = () { assert(0, "Unexpected input end while lexing"); })
 {
     return chooseLexer!(typeof(Input), reuseBuffer, Alloc, Handler)(alloc, handler);
 }
-
+/// ditto
 auto chooseLexer(Input, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Handler)
                 (Handler handler = () { assert(0, "Unexpected input end while lexing"); })
     if (is(typeof(Alloc.instance)))
 {
     return chooseLexer!(Input, reuseBuffer, Alloc, Handler)(Alloc.instance, handler);
 }
+/// ditto
 auto chooseLexer(alias Input, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, Handler)
                 (Handler handler = () { assert(0, "Unexpected input end while lexing"); })
     if (is(typeof(Alloc.instance)))

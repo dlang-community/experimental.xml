@@ -261,9 +261,26 @@ interface DOMImplementationSource(DOMString)
     DOMImplementationList!DOMString getDOMImplementationList(DOMString features);
 }
 
+/++
++   The DOMImplementation interface provides a number of methods for performing
++   operations that are independent of any particular instance of the document object model.
++/
 interface DOMImplementation(DOMString)
 {
+    /++
+    +   Creates an empty DocumentType node. Entity declarations and notations are not
+    +   made available. Entity reference expansions and default attribute additions do not occur.
+    +/
     DocumentType!DOMString createDocumentType(DOMString qualifiedName, DOMString publicId, DOMString systemId); //raises(DOMException)
+    
+    /++
+    +   Creates a DOM Document object of the specified type with its document element.
+    +
+    +   Note that based on the DocumentType given to create the document, the implementation
+    +   may instantiate specialized Document objects that support additional features than the "Core",
+    +   such as "HTML". On the other hand, setting the DocumentType after the document
+    +   was created makes this very unlikely to happen.
+    +/
     Document!DOMString createDocument(DOMString namespaceURI, DOMString qualifiedName, DocumentType!DOMString doctype); //raises(DOMException)
     
     bool hasFeature(DOMString feature, DOMString version_);
