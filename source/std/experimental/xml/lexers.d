@@ -188,7 +188,7 @@ struct SliceLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffe
 struct RangeLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T)
 {
-    import std.experimental.appender;
+    import std.experimental.xml.appender;
     
     /++
     +   See detailed documentation in 
@@ -341,7 +341,7 @@ struct RangeLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffe
 struct ForwardLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isForwardRange!T)
 {
-    import std.experimental.appender;
+    import std.experimental.xml.appender;
     
     /++
     +   See detailed documentation in 
@@ -512,7 +512,7 @@ struct ForwardLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuf
 struct BufferedLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
     if (isInputRange!T && isArray!(ElementType!T))
 {
-    import std.experimental.appender;
+    import std.experimental.xml.appender;
     
     alias BufferType = ElementType!T;
     

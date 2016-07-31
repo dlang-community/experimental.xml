@@ -101,7 +101,7 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
 {
     if (str.fastIndexOfAny("&<>'\"") >= 0)
     {
-        import std.experimental.appender;
+        import std.experimental.xml.appender;
         
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length + 3);
@@ -179,7 +179,7 @@ T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref All
 {
     if (str.fastIndexOf('&') >= 0)
     {
-        import std.experimental.appender;
+        import std.experimental.xml.appender;
         
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length);

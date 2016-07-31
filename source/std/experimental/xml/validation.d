@@ -314,3 +314,8 @@ unittest
     
     assert(count == 3);
 }
+
+struct DTDChecker(CursorType, Allocator)
+{
+    
+}

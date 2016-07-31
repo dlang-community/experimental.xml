@@ -6,11 +6,14 @@
 */
 
 /++
-+   Documentation stub
++   Appender implementation that uses a custom allocator. Meant for internal usage.
 +/
 
-module std.experimental.appender;
+module std.experimental.xml.appender;
 
+/++
++   Appender implementation that uses a custom allocator. Meant for internal usage.
++/
 struct Appender(T, Alloc)
 {
     import std.experimental.allocator;   
