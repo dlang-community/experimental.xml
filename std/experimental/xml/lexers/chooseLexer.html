@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Function chooseLexer</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class="selected module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Function chooseLexer</h1>
+			<section>
+				<p>Instantiates a specialized lexer for the given input type, allocator and error handler.
+</p>
+<section><p>The default error handler just asserts 0.
+   If the type of the allocator is specified as template parameter, but no instance of it
+   is passed as runtime parameter, then the static method <code class="lang-d"><span class="pln">instance</span></code> of the allocator type is
+   used. If no allocator type is specified, defaults to <code class="lang-d"><span class="kwd">shared</span><span class="pun">(</span><span class="typ">GCAllocator</span><span class="pun">)</span></code>.
+</p>
+</section>
+
+					<section>
+						<h3>Prototypes</h3>
+						<div class="prototype">
+							<code class="lang-d">
+<span class="kwd">auto</span> <span class="pln">chooseLexer</span><span class="pun">(</span><span class="typ">Input</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="typ">Handler</span><span class="pun">)</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">Alloc</span> <span class="pln">alloc</span><span class="pun">,</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">Handler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+								<br/>
+<span class="pun">)</span><span class="pun">;</span>
+								<br/>
+								<br/>
+<span class="kwd">auto</span> <span class="pln">chooseLexer</span><span class="pun">(</span><span class="kwd">alias </span><span class="typ">Input</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="typ">Handler</span><span class="pun">)</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">Alloc</span> <span class="pln">alloc</span><span class="pun">,</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">Handler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+								<br/>
+<span class="pun">)</span><span class="pun">;</span>
+								<br/>
+								<br/>
+<span class="kwd">auto</span> <span class="pln">chooseLexer</span><span class="pun">(</span><span class="typ">Input</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Handler</span><span class="pun">)</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">Handler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+								<br/>
+<span class="pun">)</span>
+								<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">Alloc<wbr/></span><span class="pun">.</span><span class="pln">instance</span><span class="pun">))</span><span class="pun">);</span>
+								<br/>
+								<br/>
+<span class="kwd">auto</span> <span class="pln">chooseLexer</span><span class="pun">(</span><span class="kwd">alias </span><span class="typ">Input</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Handler</span><span class="pun">)</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">Handler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+								<br/>
+<span class="pun">)</span>
+								<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">Alloc<wbr/></span><span class="pun">.</span><span class="pln">instance</span><span class="pun">))</span><span class="pun">);</span>
+							</code>
+						</div>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

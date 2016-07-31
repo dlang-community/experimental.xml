@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function DOMBuilder.this</title>
+		<title>Function Writer.writeComment</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -36,7 +36,7 @@
 								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/domparser.html" class="selected module">domparser</a>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
@@ -58,6 +58,9 @@
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class="selected module">writer</a>
 							</li>
 						</ul>
 							</li>
@@ -82,20 +85,18 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function DOMBuilder.this</h1>
+			<h1>Function Writer.writeComment</h1>
 			<section>
-				<p>Generic constructor; forwards its arguments to the lexer constructor
+				<p>Outputs a comment with the given content.
 </p>
 
 					<section>
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<span class="pln">this</span><span class="pun">(</span><span class="typ">Args</span><span class="pun">...)</span><span class="pun">(</span>
+<span class="typ">void</span> <span class="pln">writeComment</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<span class="typ">DOMImplementation</span> <span class="pln">impl</span><span class="pun">,</span>
-								<br/>
-&nbsp;&nbsp;<span class="kwd">auto ref </span><span class="typ">Args</span> <span class="pln">args</span>
+&nbsp;&nbsp;<span class="typ">StringType</span> <span class="pln">comment</span>
 								<br/>
 <span class="pun">)</span><span class="pun">;</span>
 							</code>
@@ -105,20 +106,14 @@ $('#symbolSearchPane').show();
 			</section>
 			<section>
 				<h2>Authors</h2>
-<p>Lodovico Giaretta
-</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
-<p>Copyright Lodovico Giaretta 2016 --
-</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
-<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
-</p>
 
 			</section>
 		</div>

@@ -59,6 +59,9 @@
 							<li>
 								<a href="../../../std/experimental/xml/validation.html" class=" module">validation</a>
 							</li>
+							<li>
+								<a href="../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
 						</ul>
 							</li>
 						</ul>
@@ -87,6 +90,62 @@ $('#symbolSearchPane').show();
 
 			<section></section>
 			<section>
+				<h2>Functions</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="children" class="public" href="../../../std/experimental/xml/cursor/children.html">
+								<code>children</code>
+							</a>
+						</td>
+						<td>Returns an input range of the children of the node currently pointed by <code class="lang-d"><a href="../../../std/experimental/xml/cursor/children.html#cursor"><span class="pln">cursor</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="copyingCursor" class="public" href="../../../std/experimental/xml/cursor/copyingCursor.html">
+								<code>copyingCursor</code>
+							</a>
+						</td>
+						<td>Instantiates a suitable <code class="lang-d"><a href="../../../std/experimental/xml/cursor/CopyingCursor.html"><span class="typ">CopyingCursor</span></a></code> on top of the given <code class="lang-d"><a href="../../../std/experimental/xml/cursor/copyingCursor.html#cursor"><span class="pln">cursor</span></a></code> and allocator.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Structs</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="CopyingCursor" class="public" href="../../../std/experimental/xml/cursor/CopyingCursor.html">
+								<code>CopyingCursor</code>
+							</a>
+						</td>
+						<td>A cursor that wraps another cursor, copying all output strings.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Cursor" class="public" href="../../../std/experimental/xml/cursor/Cursor.html">
+								<code>Cursor</code>
+							</a>
+						</td>
+						<td>An implementation of the <a href="../interfaces/isCursor"><code class="lang-d"><span class="pln">isCursor</span></code></a> trait.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
 				<h2>Enums</h2>
 				<table>
 					<col class="caption"/>
@@ -102,6 +161,26 @@ $('#symbolSearchPane').show();
 						</td>
 						<td>Enumeration of non-fatal errors that applications can intercept by setting
  an handler on a cursor instance.
+</td>
+					</tr>
+				</table>
+			</section>
+			<section>
+				<h2>Templates</h2>
+				<table>
+					<col class="caption"/>
+					<tr>
+						<th>Name</th>
+						<th>Description</th>
+					</tr>
+					<tr>
+						<td>
+							<a id="cursor" class="public" href="../../../std/experimental/xml/cursor/cursor.html">
+								<code>cursor</code>
+							</a>
+						</td>
+						<td>Instantiates a specialized <code class="lang-d"><a href="../../../std/experimental/xml/cursor/Cursor.html"><span class="typ">Cursor</span></a></code> with the given underlying <code class="lang-d"><span class="pln">parser</span></code> and
+   the given error handler (defaults to an error handler that just asserts 0).
 </td>
 					</tr>
 				</table>

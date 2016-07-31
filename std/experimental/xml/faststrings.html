@@ -59,6 +59,9 @@
 							<li>
 								<a href="../../../std/experimental/xml/validation.html" class=" module">validation</a>
 							</li>
+							<li>
+								<a href="../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
 						</ul>
 							</li>
 						</ul>
@@ -109,31 +112,38 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
-							<a id="fastIndexOf" class="public" href="../../../std/experimental/xml/faststrings/fastIndexOf.html">
-								<code>fastIndexOf</code>
+							<a id="xmlEscape" class="public" href="../../../std/experimental/xml/faststrings/xmlEscape.html">
+								<code>xmlEscape</code>
 							</a>
 						</td>
-						<td>Returns the index of the first occurrence of a value in a slice.
+						<td>Returns a copy of the input string, after escaping all XML reserved characters.
 </td>
 					</tr>
 					<tr>
 						<td>
-							<a id="fastIndexOfAny" class="public" href="../../../std/experimental/xml/faststrings/fastIndexOfAny.html">
-								<code>fastIndexOfAny</code>
+							<a id="xmlEscapedWrite" class="public" href="../../../std/experimental/xml/faststrings/xmlEscapedWrite.html">
+								<code>xmlEscapedWrite</code>
 							</a>
 						</td>
-						<td>Returns the index of the first occurrence of any of the values in the second
- slice inside the first one.
+						<td>Writes the input string to the given output range, after escaping all XML reserved characters.
 </td>
 					</tr>
 					<tr>
 						<td>
-							<a id="fastIndexOfNeither" class="public" href="../../../std/experimental/xml/faststrings/fastIndexOfNeither.html">
-								<code>fastIndexOfNeither</code>
+							<a id="xmlUnescape" class="public" href="../../../std/experimental/xml/faststrings/xmlUnescape.html">
+								<code>xmlUnescape</code>
 							</a>
 						</td>
-						<td>Returns the index of the first occurrence of a value of the first slice that
- does not appear in the second.
+						<td>Returns a copy of the input string, after unescaping all known entity references.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="xmlUnescapedWrite" class="public" href="../../../std/experimental/xml/faststrings/xmlUnescapedWrite.html">
+								<code>xmlUnescapedWrite</code>
+							</a>
+						</td>
+						<td>Outputs the input string to the given output range, after unescaping all known entity references.
 </td>
 					</tr>
 				</table>

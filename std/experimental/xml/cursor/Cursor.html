@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Struct Cursor</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Struct Cursor</h1>
+			<section>
+				<p>An implementation of the <a href="../interfaces/isCursor"><code class="lang-d"><span class="pln">isCursor</span></code></a> trait.
+</p>
+<section><p>This is the only provided cursor that builds on top of a parser (and not on top of
+   another cursor), so it is part of virtually every parsing chain.
+   All documented methods are implementations of the specifications dictated by
+   <a href="../interfaces/isCursor"><code class="lang-d"><span class="pln">isCursor</span></code></a>.
+</p>
+</section>
+
+					<section>
+						<h3>Template arguments</h3>
+						<div class="prototype">
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">Cursor</span><span class="pun">(</span><span class="pln">P</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"conflateCDATA"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">conflateCDATA</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span>
+								<br/>
+ <span class="kwd">if</span> <span class="pun">(</span><span class="pln">isLowLevelParser</span><span class="pun">!</span><span class="pln">P</span><span class="pun">);</span>
+							</code>
+						</div>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td>Generic constructor; forwards its arguments to the parser constructor
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.atBeginning.html" class="public">
+										<code>atBeginning</code>
+									</a>
+								</td>
+								<td>Returns whether the cursor is at the beginning of the document
+   (i.e. whether no enter/next/exit has been performed successfully and thus
+   the cursor points to the xml declaration)
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.documentEnd.html" class="public">
+										<code>documentEnd</code>
+									</a>
+								</td>
+								<td>Returns whether the cursor is at the end of the document.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.enter.html" class="public">
+										<code>enter</code>
+									</a>
+								</td>
+								<td>Advances to the first child of the current node and returns true.
+   If it returns false, the cursor is either on the same node (it wasn't
+   an element start) or it is at the close tag of the element it was called on
+   (it was a pair open/close tag without any content)
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.exit.html" class="public">
+										<code>exit</code>
+									</a>
+								</td>
+								<td>Advances to the end of the parent of the current node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getAll.html" class="public">
+										<code>getAll</code>
+									</a>
+								</td>
+								<td>Returns the entire text of the current node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getAttributes.html" class="public">
+										<code>getAttributes</code>
+									</a>
+								</td>
+								<td>If the current node is an element, return its attributes as a range of triplets
+   (prefix, name, value); if the current node is the document node, return the attributes
+   of the xml declaration (encoding, version, ...); otherwise, return an empty array.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getContent.html" class="public">
+										<code>getContent</code>
+									</a>
+								</td>
+								<td>Return the text content of a CDATA section, a comment or a text node;
+   in all other cases, returns the entire node without the name
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getKind.html" class="public">
+										<code>getKind</code>
+									</a>
+								</td>
+								<td>Returns the kind of the current node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getLocalName.html" class="public">
+										<code>getLocalName</code>
+									</a>
+								</td>
+								<td>If the current node is an element, return its local name (without namespace prefix);
+   otherwise, return the same result as getName().
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getName.html" class="public">
+										<code>getName</code>
+									</a>
+								</td>
+								<td>If the current node is an element or a doctype, return its complete name;
+   it it is a processing instruction, return its target;
+   otherwise, return an empty string;
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.getPrefix.html" class="public">
+										<code>getPrefix</code>
+									</a>
+								</td>
+								<td>If the current node is an element, return its namespace prefix;
+   otherwise, the result in unspecified;
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.next.html" class="public">
+										<code>next</code>
+									</a>
+								</td>
+								<td>Advances to the next sibling of the current node.
+   Returns whether it succeded. If it fails, either the
+   document has ended or the only meaningful operation is exit().
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.setErrorHandler.html" class="public">
+										<code>setErrorHandler</code>
+									</a>
+								</td>
+								<td>Overrides the current error handler with a new one.
+   It will be called whenever a non-fatal error occurs.
+   The default handler abort parsing by throwing an exception.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.setSource.html" class="public">
+										<code>setSource</code>
+									</a>
+								</td>
+								<td>Initializes this cursor (and the underlying low level parser) with the given input.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Aliases</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.CharacterType.html" class="public">
+										<code>CharacterType</code>
+									</a>
+								</td>
+								<td>The type of characters in the input, as returned by the underlying low level parser.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.InputType.html" class="public">
+										<code>InputType</code>
+									</a>
+								</td>
+								<td>The type of input accepted by this parser,
+   i.e., the one accepted by the underlying low level parser.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.StringType.html" class="public">
+										<code>StringType</code>
+									</a>
+								</td>
+								<td>The type of sequences of CharacterType, as returned by this parser
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

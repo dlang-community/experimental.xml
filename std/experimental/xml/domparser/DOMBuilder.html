@@ -59,6 +59,9 @@
 							<li>
 								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
 							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
 						</ul>
 							</li>
 						</ul>
@@ -100,25 +103,6 @@ $('#symbolSearchPane').show();
 						</div>
 					</section>
 					<section>
-						<h3>Constructors</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.this.html" class="public">
-										<code>this</code>
-									</a>
-								</td>
-								<td>Generic constructor; forwards its arguments to the lexer constructor
-</td>
-							</tr>
-						</table>
-					</section>
-					<section>
 						<h3>Fields</h3>
 						<table>
 							<col class="caption"/>
@@ -132,8 +116,85 @@ $('#symbolSearchPane').show();
 									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.cursor.html" class="public"><code>cursor</code></a>
 								</td>
 								<td class="typecol"><code class="prettyprint lang-d"><span class="pln">T</span></code></td>
-								<td>The underlying Cursor methods are exposed, so that one can, for example,
-   use the cursor API to skip some nodes.
+								<td>The underlying Cursor methods are exposed, so that one can, query the properties
+   of the current node before deciding if building it or not.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.build.html" class="public">
+										<code>build</code>
+									</a>
+								</td>
+								<td>Adds the current node to the DOM. This operation does not advance the input.
+   Calling it more than once does not change the result.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.buildRecursive.html" class="public">
+										<code>buildRecursive</code>
+									</a>
+								</td>
+								<td>Recursively adds the current node and all its children to the DOM tree.
+   Behaves as <code class="lang-d"><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span></code>: it advances the input to the next sibling, returning
+   <code class="lang-d"><span class="kwd">true</span></code> if and only if there exists such next sibling.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.enter.html" class="public">
+										<code>enter</code>
+									</a>
+								</td>
+								<td>Same as <code class="lang-d"><span class="pln"><a href="../../../../std/experimental/xml/domparser/DOMBuilder.cursor.html"><span class="pln">cursor</span></a><wbr/></span><span class="pun">.</span><span class="pln"><span class="pln">enter</span></span></code>. When entering a node, that node is automatically
+   built into the DOM, so that its children can then be safely built if needed.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.exit.html" class="public">
+										<code>exit</code>
+									</a>
+								</td>
+								<td>Same as <code class="lang-d"><span class="pln"><a href="../../../../std/experimental/xml/domparser/DOMBuilder.cursor.html"><span class="pln">cursor</span></a><wbr/></span><span class="pun">.</span><span class="pln"><span class="pln">exit</span></span></code>
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.getDocument.html" class="public">
+										<code>getDocument</code>
+									</a>
+								</td>
+								<td>Returns the Document being built by this builder.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.next.html" class="public">
+										<code>next</code>
+									</a>
+								</td>
+								<td>Same as <code class="lang-d"><span class="pln"><a href="../../../../std/experimental/xml/domparser/DOMBuilder.cursor.html"><span class="pln">cursor</span></a><wbr/></span><span class="pun">.</span><span class="pln"><span class="pln">next</span></span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/domparser/DOMBuilder.setSource.html" class="public">
+										<code>setSource</code>
+									</a>
+								</td>
+								<td>Initializes this builder and the underlying components.
 </td>
 							</tr>
 						</table>

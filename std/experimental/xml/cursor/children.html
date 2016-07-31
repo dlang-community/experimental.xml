@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function fastIndexOfAny</title>
+		<title>Function children</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -27,7 +27,7 @@
 								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
@@ -39,7 +39,7 @@
 								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/faststrings.html" class="selected module">faststrings</a>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
@@ -58,6 +58,9 @@
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
 							</li>
 						</ul>
 							</li>
@@ -82,23 +85,26 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function fastIndexOfAny</h1>
+			<h1>Function children</h1>
 			<section>
-				<p>Returns the index of the first occurrence of any of the values in the second
- slice inside the first one.
+				<p>Returns an input range of the children of the node currently pointed by <code class="lang-d"><a href="../../../std/experimental/xml/cursor/children.html#cursor"><span class="pln"><a href="../../../../std/experimental/xml/cursor/children.html#cursor"><span class="pln">cursor</span></a></span></a></code>.
 </p>
+<section><p>Advancing the range returned by this function also advances <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/children.html#cursor"><span class="pln">cursor</span></a></code>. It is thus
+   not recommended to interleave usage of this function with raw usage of <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/children.html#cursor"><span class="pln">cursor</span></a></code>.
+</p>
+</section>
 
 					<section>
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<span class="pln">ptrdiff_t</span> <span class="pln">fastIndexOfAny</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="pln">S</span><span class="pun">)</span><span class="pun">(</span>
+<span class="kwd">auto</span> <span class="pln">children</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<span class="pln">T</span><span class="pun">[]</span> <span class="pln">t</span><span class="pun">,</span>
+&nbsp;&nbsp;<span class="kwd">ref </span><span class="pln">T</span> <span class="pln">cursor</span>
 								<br/>
-&nbsp;&nbsp;<span class="pln">S</span><span class="pun">[]</span> <span class="pln">s</span>
+<span class="pun">)</span>
 								<br/>
-<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @nogc</span><span class="pun">;</span>
+<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isCursor</span><span class="pun">!</span><span class="pln">T</span><span class="pun">);</span>
 							</code>
 						</div>
 					</section>
@@ -106,14 +112,20 @@ $('#symbolSearchPane').show();
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>
