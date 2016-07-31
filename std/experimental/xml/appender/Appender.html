@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function fastEqual</title>
+		<title>Struct Appender</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -24,7 +24,7 @@
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+								<a href="../../../../std/experimental/xml/appender.html" class="selected module">appender</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
@@ -39,7 +39,7 @@
 								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/faststrings.html" class="selected module">faststrings</a>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
@@ -82,24 +82,88 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function fastEqual</h1>
+			<h1>Struct Appender</h1>
 			<section>
-				<p>Compares for equality; input slices must have equal length.
+				<p>Appender implementation that uses a custom allocator. Meant for internal usage.
 </p>
 
 					<section>
-						<h3>Prototype</h3>
+						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d">
-<span class="typ">bool</span> <span class="pln">fastEqual</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="pln">S</span><span class="pun">)</span><span class="pun">(</span>
-								<br/>
-&nbsp;&nbsp;<span class="pln">T</span><span class="pun">[]</span> <span class="pln">t</span><span class="pun">,</span>
-								<br/>
-&nbsp;&nbsp;<span class="pln">S</span><span class="pun">[]</span> <span class="pln">s</span>
-								<br/>
-<span class="pun">)</span><span class="pln"> </span><span class="kwd">pure nothrow @nogc</span><span class="pun">;</span>
+							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">Appender</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">)</span>;
 							</code>
 						</div>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/appender/Appender.capacity.html" class="public property"><code>capacity</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="pln">size_t</span></code></td>
+								<td>Returns the capacity of the array (the maximum number of elements the
+ managed array can accommodate before triggering a reallocation).  If any
+ appending will reallocate, <code class="lang-d"><span class="pln">capacity</span></code> returns <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/appender/Appender.data.html" class="public property"><code>data</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span><span class="pun">[]</span></code></td>
+								<td>Returns the managed array.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/appender/Appender.clear.html" class="public">
+										<code>clear</code>
+									</a>
+								</td>
+								<td>Clears the managed array.  This allows the elements of the array to be reused
+ for appending.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/appender/Appender.reserve.html" class="public">
+										<code>reserve</code>
+									</a>
+								</td>
+								<td>Reserve at least newCapacity elements for appending.  Note that more elements
+ may be reserved than requested.  If newCapacity &lt;= capacity, then nothing is
+ done.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/appender/Appender.shrinkTo.html" class="public">
+										<code>shrinkTo</code>
+									</a>
+								</td>
+								<td>Shrinks the managed array to the given length.
+</td>
+							</tr>
+						</table>
 					</section>
 
 			</section>

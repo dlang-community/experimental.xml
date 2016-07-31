@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Module std.experimental.xml.interfaces</title>
+		<title>Module std.experimental.xml.appender</title>
 		<link rel="stylesheet" type="text/css" href="../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../scripts/jquery.js">/**/</script>
@@ -24,7 +24,7 @@
 								<a href="../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../std/experimental/xml/appender.html" class=" module">appender</a>
+								<a href="../../../std/experimental/xml/appender.html" class="selected module">appender</a>
 							</li>
 							<li>
 								<a href="../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
@@ -42,7 +42,7 @@
 								<a href="../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
 							</li>
 							<li>
-								<a href="../../../std/experimental/xml/interfaces.html" class="selected module">interfaces</a>
+								<a href="../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
 							</li>
 							<li>
 								<a href="../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
@@ -82,16 +82,13 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Module std.experimental.xml.interfaces</h1>
-			<p>This module contains some templates to check whether a type exposes the correct
-   interface to be an xml lexer, parser or cursor; it also contains some simple
-   types used in various parts of the library;
+			<h1>Module std.experimental.xml.appender</h1>
+			<p>Appender implementation that uses a custom allocator. Meant for internal usage.
 </p>
-<section></section>
 
 			<section></section>
 			<section>
-				<h2>Enums</h2>
+				<h2>Structs</h2>
 				<table>
 					<col class="caption"/>
 					<tr>
@@ -100,108 +97,25 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
-							<a id="XMLKind" class="public" href="../../../std/experimental/xml/interfaces/XMLKind.html">
-								<code>XMLKind</code>
+							<a id="Appender" class="public" href="../../../std/experimental/xml/appender/Appender.html">
+								<code>Appender</code>
 							</a>
 						</td>
-						<td>Enumeration of XML events/nodes, used by various components.
-</td>
-					</tr>
-				</table>
-			</section>
-			<section>
-				<h2>Enum values</h2>
-				<table>
-					<col class="caption"/>
-					<tr>
-						<th>Name</th>
-						<th>Type</th>
-						<th>Description</th>
-					</tr>
-					<tr>
-						<td>
-							<a id="isCursor" class="public" href="../../../std/experimental/xml/interfaces/isCursor.html">
-								<code>isCursor</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument fulfills all requirements to be used as XML cursor.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isLexer" class="public" href="../../../std/experimental/xml/interfaces/isLexer.html">
-								<code>isLexer</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument fulfills all requirements to be used as an XML lexer.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isLowLevelParser" class="public" href="../../../std/experimental/xml/interfaces/isLowLevelParser.html">
-								<code>isLowLevelParser</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument fulfills all requirements to be used as XML parser.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isSaveableCursor" class="public" href="../../../std/experimental/xml/interfaces/isSaveableCursor.html">
-								<code>isSaveableCursor</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument is a saveable cursor.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isSaveableLexer" class="public" href="../../../std/experimental/xml/interfaces/isSaveableLexer.html">
-								<code>isSaveableLexer</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument is a saveable lexer.
-</td>
-					</tr>
-					<tr>
-						<td>
-							<a id="isSaveableLowLevelParser" class="public" href="../../../std/experimental/xml/interfaces/isSaveableLowLevelParser.html">
-								<code>isSaveableLowLevelParser</code>
-							</a>
-						</td>
-						<td>
-						</td>
-						<td>Checks whether its argument is a saveable parser.
+						<td>Appender implementation that uses a custom allocator. Meant for internal usage.
 </td>
 					</tr>
 				</table>
 			</section>
 			<section>
 				<h2>Authors</h2>
-<p>Lodovico Giaretta
-</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
-<p>Copyright Lodovico Giaretta 2016 --
-</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
-<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
-</p>
 
 			</section>
 		</div>

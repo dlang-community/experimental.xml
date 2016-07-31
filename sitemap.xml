@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 <url><loc>http://127.0.0.1/index.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.capacity.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.clear.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.data.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.reserve.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/appender/Appender.shrinkTo.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/cursor.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/cursor/CursorError.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom.html</loc></url>
@@ -127,6 +134,5 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/parser/Parser.XMLToken.kind.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/sax.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/appender.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml.html</loc></url>
 </urlset>
