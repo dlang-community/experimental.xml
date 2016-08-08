@@ -11,6 +11,8 @@
 
 module std.experimental.xml.writer;
 
+import std.experimental.xml.interfaces;
+
 private string ifCompiles(string code)
 {
     return "static if (__traits(compiles, " ~ code ~ ")) " ~ code ~ ";\n";
@@ -25,6 +27,54 @@ private string ifAnyCompiles(string code, string[] codes...)
         return "static if (__traits(compiles, " ~ code ~ ")) " ~ code ~ ";";
     else
         return "static if (__traits(compiles, " ~ code ~ ")) " ~ code ~ "; else " ~ ifAnyCompiles(codes[0], codes[1..$]);
+}
+
+import std.typecons: tuple;
+private auto xmlDeclarationAttributes(StringType, Args...)(Args args)
+{
+    static assert(Args.length <= 3, "Too many arguments for xml declaration");
+
+    // version specification
+    static if (is(Args[0] == int))
+    {
+        assert(args[0] == 10 || args[0] == 11, "Invalid xml version specified");
+        StringType versionString = args[0] == 10 ? "1.0" : "1.1";
+        auto args1 = args[1..$];
+    }
+    else
+    {
+        StringType versionString = [];
+        auto args1 = args;
+    }
+    
+    // encoding specification
+    static if (is(typeof(args1[0]) == StringType))
+    {
+        auto encodingString = args1[0];
+        auto args2 = args1[1..$];
+    }
+    else
+    {
+        StringType encodingString = [];
+        auto args2 = args1;
+    }
+    
+    // standalone specification
+    static if (is(typeof(args2[0]) == bool))
+    {
+        StringType standaloneString = args2[0] ? "yes" : "no";
+        auto args3 = args2[1..$];
+    }
+    else
+    {
+        StringType standaloneString = [];
+        auto args3 = args2;
+    }
+    
+    // catch other erroneous parameters
+    static assert(typeof(args3).length == 0, "Unrecognized attribute type for xml declaration: " ~ typeof(args3[0]).stringof);
+    
+    return tuple(versionString, encodingString, standaloneString);
 }
 
 /++
@@ -71,8 +121,10 @@ struct PrettyPrinters
 /++
 +   Component that outputs XML data to an `OutputRange`.
 +/
-struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.Minimalizer)
+struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.Minimalizer)
 {
+    alias StringType = _StringType;
+
     static if (is(PrettyPrinter))
         PrettyPrinter prettyPrinter;
     else static if (is(PrettyPrinter!StringType))
@@ -141,59 +193,72 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
     +/
     void writeXMLDeclaration(Args...)(Args args)
     {
-        static assert(Args.length <= 3, "Too many arguments for xml declaration");
+        auto attrs = xmlDeclarationAttributes!StringType(args);
         
         output.put("<?xml");
-        
-        // version specification
-        static if (is(Args[0] == int))
+    
+        if (attrs[0])
         {
-            auto versionNum = args[0];
-            auto args1 = args[1..$];
+            mixin(ifAnyCompiles(expand!"beforeAttributeName"));
+            output.put("version");
+            mixin(ifAnyCompiles(expand!"afterAttributeName"));
+            output.put("=");
+            mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
+            mixin(ifAnyCompiles(formatAttribute!"attrs[0]"));
         }
-        else
-        {
-            enum versionNum = 11;
-            auto args1 = args;
-        }
-        StringType versionString = versionNum == 10 ? "1.0" : (versionNum == 11 ? "1.1" : "");
-        assert(versionString != "", "Invalid xml version specified");
-        
-        mixin(ifAnyCompiles(expand!"beforeAttributeName"));
-        output.put("version");
-        mixin(ifAnyCompiles(expand!"afterAttributeName"));
-        output.put("=");
-        mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
-        mixin(ifAnyCompiles(formatAttribute!"versionString"));
-        
-        // encoding specification
-        static if (is(typeof(args1[0]) == StringType))
+        if (attrs[1])
         {
             mixin(ifAnyCompiles(expand!"beforeAttributeName"));
             output.put("encoding");
             mixin(ifAnyCompiles(expand!"afterAttributeName"));
             output.put("=");
             mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
-            mixin(ifAnyCompiles(formatAttribute!"args1[0]"));
-            auto args2 = args1[1..$];
+            mixin(ifAnyCompiles(formatAttribute!"attrs[1]"));
         }
-        else args2 = args1;
-        
-        // standalone specification
-        static if (is(typeof(args2[0]) == bool))
+        if (attrs[2])
         {
             mixin(ifAnyCompiles(expand!"beforeAttributeName"));
             output.put("standalone");
             mixin(ifAnyCompiles(expand!"afterAttributeName"));
             output.put("=");
             mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
-            mixin(ifAnyCompiles(formatAttribute!"(args2[0] ? \"yes\" : \"no\")"));
-            auto args3 = args2[1..$];
+            mixin(ifAnyCompiles(formatAttribute!"attrs[2]"));
         }
-        else args3 = args2;
         
-        // catch other erroneous parameters
-        static assert(typeof(args3).length == 0, "Unrecognized attribute type for xml declaration: " ~ typeof(args3[0]).stringof);
+        output.put("?>");
+        mixin(ifAnyCompiles(expand!"afterNode"));
+    }
+    void writeXMLDeclaration(StringType version_, StringType encoding, StringType standalone)
+    {   
+        output.put("<?xml");
+    
+        if (version_)
+        {
+            mixin(ifAnyCompiles(expand!"beforeAttributeName"));
+            output.put("version");
+            mixin(ifAnyCompiles(expand!"afterAttributeName"));
+            output.put("=");
+            mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
+            mixin(ifAnyCompiles(formatAttribute!"version_"));
+        }
+        if (encoding)
+        {
+            mixin(ifAnyCompiles(expand!"beforeAttributeName"));
+            output.put("encoding");
+            mixin(ifAnyCompiles(expand!"afterAttributeName"));
+            output.put("=");
+            mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
+            mixin(ifAnyCompiles(formatAttribute!"encoding"));
+        }
+        if (standalone)
+        {
+            mixin(ifAnyCompiles(expand!"beforeAttributeName"));
+            output.put("standalone");
+            mixin(ifAnyCompiles(expand!"afterAttributeName"));
+            output.put("=");
+            mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
+            mixin(ifAnyCompiles(formatAttribute!"standalone"));
+        }
         
         output.put("?>");
         mixin(ifAnyCompiles(expand!"afterNode"));
@@ -306,7 +371,7 @@ struct Writer(StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.M
     }
     void writeAttribute(StringType name, StringType value)
     {
-        debug assert(startingTag, "Cannot write attribute outside element start");
+        assert(startingTag, "Cannot write attribute outside element start");
         
         mixin(ifAnyCompiles(expand!"beforeAttributeName"));
         output.put(name);
@@ -326,6 +391,8 @@ unittest
     
     writer.writeXMLDeclaration(10, "utf-8", false);
     assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>");
+
+    static assert(isWriter!(typeof(writer)));
 }
 
 unittest
@@ -364,4 +431,276 @@ unittest
     assert(splitter.front == "</elem>");
     splitter.popFront;
     assert(splitter.empty);
+}
+
+auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)    
+{
+    alias StringType = WriterType.StringType;
+    void inspectOneLevel()
+    {
+        switch (cursor.getKind) with (XMLKind)
+        {
+            case DOCUMENT:
+                StringType version_, encoding, standalone;
+                foreach (attr; cursor.getAttributes)
+                    if (attr.name == "version")
+                        version_ = attr.value;
+                    else if (attr.name == "encoding")
+                        encoding = attr.value;
+                    else if (attr.name == "standalone")
+                        standalone = attr.value;
+                writer.writeXMLDeclaration(version_, encoding, standalone);
+                break;
+            case TEXT:
+                writer.writeText(cursor.getContent);
+                break;
+            case CDATA:
+                writer.writeCDATA(cursor.getContent);
+                break;
+            case COMMENT:
+                writer.writeComment(cursor.getContent);
+                break;
+            case PROCESSING_INSTRUCTION:
+                writer.writeProcessingInstruction(cursor.getName, cursor.getContent);
+                break;
+            case ELEMENT_START:
+            case ELEMENT_EMPTY:
+                writer.startElement(cursor.getName);
+                foreach (attr; cursor.getAttributes)
+                    writer.writeAttribute(attr.name, attr.value);
+                if (cursor.enter)
+                {
+                    inspectOneLevel();
+                    cursor.exit;
+                }
+                writer.closeElement(cursor.getName);
+                break;
+            default:
+                assert(0);
+        }
+    }
+    
+    import core.thread: Fiber;
+    
+    auto fiber = new Fiber(&inspectOneLevel);
+    fiber.call;
+    return fiber;
+}
+
+struct CheckedWriter(WriterType, CursorType = void)
+    if (isWriter!(WriterType) && (is(CursorType == void) || (isCursor!CursorType && is(WriterType.StringType == CursorType.StringType))))
+{
+    import core.thread: Fiber;
+    private Fiber fiber;
+    
+    WriterType writer;
+    alias writer this;
+    
+    alias StringType = WriterType.StringType;
+    
+    static if (is(CursorType == void))
+    {
+        struct Cursor
+        {
+            import std.experimental.xml.cursor: Attribute;
+            import std.container.array;
+            
+            alias StringType = WriterType.StringType;
+            
+            private StringType name, content;
+            private Array!(Attribute!StringType) attrs;
+            private XMLKind kind;
+            private size_t colon;
+            private bool initialized;
+            
+            void _setName(StringType name)
+            {
+                import std.experimental.xml.faststrings;
+                this.name = name;
+                auto i = name.fastIndexOf(':');
+                if (i > 0)
+                    colon = i;
+                else
+                    colon = 0;
+            }
+            void _addAttribute(StringType name, StringType value)
+            {
+                attrs.insertBack(Attribute!StringType(name, value));
+            }
+            void _setKind(XMLKind kind)
+            {
+                this.kind = kind;
+                initialized = true;
+            }
+            void _setContent(StringType content) { this.content = content; }
+            
+            auto getKind()
+            {
+                if (!initialized)
+                    Fiber.yield;
+                    
+                return kind;
+            }
+            auto getName() { return name; }
+            auto getPrefix() { return name[0..colon]; }
+            auto getContent() { return content; }
+            auto getAttributes() { return attrs[]; }
+            StringType getLocalName()
+            {
+                if (colon)
+                    return name[colon+1..$];
+                else
+                    return [];
+            }
+            
+            bool enter()
+            {
+                if (kind == XMLKind.DOCUMENT)
+                {
+                    Fiber.yield;
+                    return true;
+                }
+                if (kind != XMLKind.ELEMENT_START)
+                    return false;
+                    
+                Fiber.yield;
+                return kind != XMLKind.ELEMENT_END;
+            }
+            bool next()
+            {
+                Fiber.yield;
+                return kind != XMLKind.ELEMENT_END;
+            }
+            void exit() {}
+            bool atBeginning()
+            {
+                return !initialized || kind == XMLKind.DOCUMENT;
+            }
+            bool documentEnd() { return false; }
+            
+            alias InputType = void*;
+            StringType getAll()
+            {
+                assert(0, "Cannot call getAll on this type of cursor");
+            }
+            void setSource(InputType)
+            {
+                assert(0, "Cannot set the source of this type of cursor");
+            }
+        }
+        Cursor cursor;
+        static assert(isCursor!Cursor);
+    }
+    else
+    {
+        CursorType cursor;
+    }
+    
+    void writeXMLDeclaration(Args...)(Args args)
+    {
+        auto attrs = xmlDeclarationAttributes!StringType(args);
+        cursor._setKind(XMLKind.DOCUMENT);
+        if (attrs[0])
+            cursor._addAttribute("version", attrs[0]);
+        if (attrs[1])
+            cursor._addAttribute("encoding", attrs[1]);
+        if (attrs[2])
+            cursor._addAttribute("standalone", attrs[2]);
+        fiber.call;
+    }
+    void writeXMLDeclaration(StringType version_, StringType encoding, StringType standalone)
+    {
+        cursor._setKind(XMLKind.DOCUMENT);
+        if (version_)
+            cursor._addAttribute("version", version_);
+        if (encoding)
+            cursor._addAttribute("encoding", encoding);
+        if (standalone)
+            cursor._addAttribute("standalone", standalone);
+        fiber.call;
+    }
+    void writeComment(StringType text)
+    {
+        cursor._setKind(XMLKind.COMMENT);
+        cursor._setContent(text);
+        fiber.call;
+    }
+    void writeText(StringType text)
+    {
+        cursor._setKind(XMLKind.TEXT);
+        cursor._setContent(text);
+        fiber.call;
+    }
+    void writeCDATA(StringType text)
+    {
+        cursor._setKind(XMLKind.CDATA);
+        cursor._setContent(text);
+        fiber.call;
+    }
+    void writeProcessingInstruction(StringType target, StringType data)
+    {
+        cursor._setKind(XMLKind.COMMENT);
+        cursor._setName(target);
+        cursor._setContent(data);
+        fiber.call;
+    }
+    void startElement(StringType tag)
+    {
+        cursor._setKind(XMLKind.ELEMENT_EMPTY);
+        cursor._setName(tag);
+        fiber.call;
+    }
+    void closeElement(StringType tag)
+    {
+        cursor._setKind(XMLKind.ELEMENT_END);
+        cursor._setName(tag);
+        fiber.call;
+    }
+    void writeAttribute(StringType name, StringType value)
+    {
+        assert(cursor.getKind == XMLKind.ELEMENT_START || cursor.getKind == XMLKind.ELEMENT_EMPTY);
+        cursor._addAttribute(name, value);
+        fiber.call;
+    }
+}
+
+template withValidation(alias validationFun, Params...)
+{
+    import std.traits;
+    
+    auto withValidation(Writer, Args...)(auto ref Writer writer, auto ref Args args)
+        if (isWriter!Writer)
+    {
+        static if (__traits(isSame, TemplateOf!Writer, CheckedWriter))
+        {
+            auto cursor = validationFun!Params(typeof(Writer.cursor)(), args);
+        }
+        else
+        {
+            auto cursor = validationFun!Params(CheckedWriter!Writer.Cursor(), args);
+        }
+        
+        auto res = CheckedWriter!(Writer, typeof(cursor))();
+        res.cursor = cursor;
+        res.writer = writer;
+        res.fiber = writeCursor(res.writer, res.cursor);
+        return res;
+    }
+}
+
+unittest
+{
+    import std.array: Appender;
+    import std.experimental.xml.validation;
+    
+    auto app = Appender!string();
+    auto writer =
+         Writer!(string, typeof(app))()
+        .withValidation!checkXMLNames;
+    writer.setSink(&app);
+    
+    writer.writeXMLDeclaration(10, "utf-8", false);
+    assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>");
+
+    static assert(isWriter!(typeof(writer)));
 }

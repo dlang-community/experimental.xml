@@ -488,6 +488,29 @@ template isSaveableCursor(CursorType)
     }));
 }
 
+// WRITERS
+
+template isWriter(WriterType)
+{
+    enum bool isWriter = is(typeof(
+    (inout int = 0)
+    {
+        alias StringType = WriterType.StringType;
+        
+        WriterType writer;
+        StringType s;
+        
+        writer.writeXMLDeclaration(10, s, true);
+        writer.writeComment(s);
+        writer.writeText(s);
+        writer.writeCDATA(s);
+        writer.writeProcessingInstruction(s, s);
+        writer.startElement(s);
+        writer.closeElement(s);
+        writer.writeAttribute(s, s);
+    }));
+}
+
 // PRIVATE STUFF
 
 package mixin template UsesAllocator(Alloc, bool genDefaultCtor = false)

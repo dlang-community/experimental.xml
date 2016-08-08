@@ -58,6 +58,19 @@ unittest
     assert(fastIndexOf([1, 2], 3.14) == -1);
 }
 
+package ptrdiff_t fastLastIndexOf(T, S)(T[] t, S s)
+{
+    foreach_reverse (i; 0.. t.length)
+        if (t[i] == s)
+            return i;
+    return -1;
+}
+unittest
+{
+    assert(fastLastIndexOf("FoOo"w, 'o') == 3);
+    assert(fastLastIndexOf([1, 2], 3.14) == -1);
+}
+
 /++ 
 + Returns the index of the first occurrence of any of the values in the second
 + slice inside the first one.
