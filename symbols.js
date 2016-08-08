@@ -85,6 +85,7 @@ var symbols = [
 {name: 'std.experimental.xml.domparser.DOMBuilder.next', kind: "functiondeclaration", path: './std/experimental/xml/domparser/DOMBuilder.next.html', attributes: []},
 {name: 'std.experimental.xml.domparser.DOMBuilder.setSource', kind: "functiondeclaration", path: './std/experimental/xml/domparser/DOMBuilder.setSource.html', attributes: []},
 {name: 'std.experimental.xml.domparser.domBuilder', kind: "functiondeclaration", path: './std/experimental/xml/domparser/domBuilder.html', attributes: ["auto"]},
+{name: 'std.experimental.xml.dtd', kind: "module", path: './std/experimental/xml/dtd.html', attributes: []},
 {name: 'std.experimental.xml.faststrings', kind: "module", path: './std/experimental/xml/faststrings.html', attributes: []},
 {name: 'std.experimental.xml.faststrings.fastEqual', kind: "functiondeclaration", path: './std/experimental/xml/faststrings/fastEqual.html', attributes: ["pure", "nothrow", "nogc"]},
 {name: 'std.experimental.xml.faststrings.xmlEscape', kind: "functiondeclaration", path: './std/experimental/xml/faststrings/xmlEscape.html', attributes: []},
