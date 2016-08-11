@@ -230,8 +230,9 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
         import std.algorithm: all;
         
         auto name = cursor.getName;
-        if (!name[0].isValidXMLNameStart || !name.all!isValidXMLNameChar)
-            onInvalidTagName(name);
+        if (cursor.getKind != XMLKind.ELEMENT_END)
+            if (!name[0].isValidXMLNameStart || !name.all!isValidXMLNameChar)
+                onInvalidTagName(name);
         return name;
     }
     
@@ -246,7 +247,6 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
             auto front()
             {
                 import std.algorithm: all;
-        
                 auto attr = attrs.front;
                 if (!attr.name[0].isValidXMLNameStart || !attr.name.all!isValidXMLNameChar)
                     callback(attr.name);

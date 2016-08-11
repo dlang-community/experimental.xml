@@ -6,9 +6,12 @@ matrix:
   include:
     - d: dmd
       env: PRIMARY="true"
+    - d: dmd-2.071.2-b2
+      env: PRIMARY="false"
     - d: ldc-1.1.0-beta2
       env: PRIMARY="false"
   allow_failures:
+    - d: dmd-2.071.2-b2
     - d: ldc-1.1.0-beta2
 
 script:

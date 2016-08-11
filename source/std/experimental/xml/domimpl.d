@@ -1123,6 +1123,7 @@ unittest
 {
     import std.experimental.allocator.gc_allocator;
     auto impl = new DOMImplementation!(string, shared(GCAllocator))();
+    
     auto doc = impl.createDocument("myNamespaceURI", "myPrefix:myRootElement", null);
     auto root = doc.documentElement;
     assert(root.prefix == "myPrefix");

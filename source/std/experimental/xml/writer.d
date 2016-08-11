@@ -107,8 +107,8 @@ struct PrettyPrinters
         
         uint indentation;
         enum StringType tab = "\t";
-        void increaseLevel() { indentation++; }
         void decreaseLevel() { indentation--; }
+        void increaseLevel() { indentation++; }
         
         void beforeNode(Out)(ref Out output)
         {
@@ -356,9 +356,12 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         {
             mixin(ifAnyCompiles(expand!"beforeElementEnd"));
             output.put("/>");
+            startingTag = false;
         }
         else
         {
+            if (startingTag) closeStartingTag;
+            
             mixin(ifCompiles("prettyPrinter.decreaseLevel"));
             mixin(ifAnyCompiles(expand!"beforeNode"));
             output.put("</");
@@ -367,7 +370,6 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
             output.put(">");
         }
         mixin(ifAnyCompiles(expand!"afterNode"));
-        startingTag = false;
     }
     void writeAttribute(StringType name, StringType value)
     {
@@ -433,51 +435,63 @@ unittest
     assert(splitter.empty);
 }
 
-auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)    
+auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)
 {
     alias StringType = WriterType.StringType;
     void inspectOneLevel()
     {
-        switch (cursor.getKind) with (XMLKind)
+        do
         {
-            case DOCUMENT:
-                StringType version_, encoding, standalone;
-                foreach (attr; cursor.getAttributes)
-                    if (attr.name == "version")
-                        version_ = attr.value;
-                    else if (attr.name == "encoding")
-                        encoding = attr.value;
-                    else if (attr.name == "standalone")
-                        standalone = attr.value;
-                writer.writeXMLDeclaration(version_, encoding, standalone);
-                break;
-            case TEXT:
-                writer.writeText(cursor.getContent);
-                break;
-            case CDATA:
-                writer.writeCDATA(cursor.getContent);
-                break;
-            case COMMENT:
-                writer.writeComment(cursor.getContent);
-                break;
-            case PROCESSING_INSTRUCTION:
-                writer.writeProcessingInstruction(cursor.getName, cursor.getContent);
-                break;
-            case ELEMENT_START:
-            case ELEMENT_EMPTY:
-                writer.startElement(cursor.getName);
-                foreach (attr; cursor.getAttributes)
-                    writer.writeAttribute(attr.name, attr.value);
-                if (cursor.enter)
-                {
-                    inspectOneLevel();
-                    cursor.exit;
-                }
-                writer.closeElement(cursor.getName);
-                break;
-            default:
-                assert(0);
+            switch (cursor.getKind) with (XMLKind)
+            {
+                case DOCUMENT:
+                    StringType version_, encoding, standalone;
+                    foreach (attr; cursor.getAttributes)
+                        if (attr.name == "version")
+                            version_ = attr.value;
+                        else if (attr.name == "encoding")
+                            encoding = attr.value;
+                        else if (attr.name == "standalone")
+                            standalone = attr.value;
+                    writer.writeXMLDeclaration(version_, encoding, standalone);
+                    if (cursor.enter)
+                    {
+                        inspectOneLevel();
+                        cursor.exit;
+                    }
+                    break;
+                case TEXT:
+                    writer.writeText(cursor.getContent);
+                    break;
+                case CDATA:
+                    writer.writeCDATA(cursor.getContent);
+                    break;
+                case COMMENT:
+                    writer.writeComment(cursor.getContent);
+                    break;
+                case PROCESSING_INSTRUCTION:
+                    writer.writeProcessingInstruction(cursor.getName, cursor.getContent);
+                    break;
+                case ELEMENT_START:
+                case ELEMENT_EMPTY:
+                    writer.startElement(cursor.getName);
+                    for (auto attrs = cursor.getAttributes; !attrs.empty; attrs.popFront)
+                    {
+                        auto attr = attrs.front;
+                        writer.writeAttribute(attr.name, attr.value);
+                    }
+                    if (cursor.enter)
+                    {
+                        inspectOneLevel();
+                        cursor.exit;
+                    }
+                    writer.closeElement(cursor.getName);
+                    break;
+                default:
+                    assert(0);
+            }
         }
+        while (cursor.next);
     }
     
     import core.thread: Fiber;
@@ -492,6 +506,7 @@ struct CheckedWriter(WriterType, CursorType = void)
 {
     import core.thread: Fiber;
     private Fiber fiber;
+    private bool startingTag = false;
     
     WriterType writer;
     alias writer this;
@@ -531,6 +546,7 @@ struct CheckedWriter(WriterType, CursorType = void)
             {
                 this.kind = kind;
                 initialized = true;
+                attrs.clear;
             }
             void _setContent(StringType content) { this.content = content; }
             
@@ -589,7 +605,6 @@ struct CheckedWriter(WriterType, CursorType = void)
             }
         }
         Cursor cursor;
-        static assert(isCursor!Cursor);
     }
     else
     {
@@ -621,24 +636,44 @@ struct CheckedWriter(WriterType, CursorType = void)
     }
     void writeComment(StringType text)
     {
+        if (startingTag)
+        {
+            fiber.call;
+            startingTag = false;
+        }
         cursor._setKind(XMLKind.COMMENT);
         cursor._setContent(text);
         fiber.call;
     }
     void writeText(StringType text)
     {
+        if (startingTag)
+        {
+            fiber.call;
+            startingTag = false;
+        }
         cursor._setKind(XMLKind.TEXT);
         cursor._setContent(text);
         fiber.call;
     }
     void writeCDATA(StringType text)
     {
+        if (startingTag)
+        {
+            fiber.call;
+            startingTag = false;
+        }
         cursor._setKind(XMLKind.CDATA);
         cursor._setContent(text);
         fiber.call;
     }
     void writeProcessingInstruction(StringType target, StringType data)
     {
+        if (startingTag)
+        {
+            fiber.call;
+            startingTag = false;
+        }
         cursor._setKind(XMLKind.COMMENT);
         cursor._setName(target);
         cursor._setContent(data);
@@ -646,21 +681,28 @@ struct CheckedWriter(WriterType, CursorType = void)
     }
     void startElement(StringType tag)
     {
-        cursor._setKind(XMLKind.ELEMENT_EMPTY);
+        if (startingTag)
+            fiber.call;
+            
+        startingTag = true;
+        cursor._setKind(XMLKind.ELEMENT_START);
         cursor._setName(tag);
-        fiber.call;
     }
     void closeElement(StringType tag)
     {
+        if (startingTag)
+        {
+            fiber.call;
+            startingTag = false;
+        }
         cursor._setKind(XMLKind.ELEMENT_END);
         cursor._setName(tag);
         fiber.call;
     }
     void writeAttribute(StringType name, StringType value)
     {
-        assert(cursor.getKind == XMLKind.ELEMENT_START || cursor.getKind == XMLKind.ELEMENT_EMPTY);
+        assert(startingTag);
         cursor._addAttribute(name, value);
-        fiber.call;
     }
 }
 
@@ -693,14 +735,22 @@ unittest
     import std.array: Appender;
     import std.experimental.xml.validation;
     
+    int count = 0;
+    
     auto app = Appender!string();
     auto writer =
-         Writer!(string, typeof(app))()
-        .withValidation!checkXMLNames;
+         Writer!(string, typeof(app), PrettyPrinters.Indenter)()
+        .withValidation!checkXMLNames((string s) { count++; }, (string s) { count++; });
     writer.setSink(&app);
     
     writer.writeXMLDeclaration(10, "utf-8", false);
-    assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>");
-
-    static assert(isWriter!(typeof(writer)));
+    assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>\n");
+    
+    writer.writeComment("a nice comment");
+    writer.startElement("aa;bb");
+    writer.writeAttribute(";eh", "foo");
+    writer.writeText("a nice text");
+    writer.writeCDATA("a nice CDATA");
+    writer.closeElement("aabb");
+    assert(count == 2);
 }

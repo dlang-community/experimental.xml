@@ -49,7 +49,7 @@ package struct Attribute(StringType)
         name = qualifiedName;
     }
     
-    @property StringType name()
+    @property auto name() inout
     {
         return _name;
     }
@@ -63,7 +63,7 @@ package struct Attribute(StringType)
         else
             colon = 0;
     }
-    @property StringType prefix()
+    @property auto prefix() inout
     {
         return name[0..colon];
     }
