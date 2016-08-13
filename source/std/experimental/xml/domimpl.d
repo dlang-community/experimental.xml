@@ -122,6 +122,15 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             dom.UserDataHandler!DOMString[string] userDataHandlers;
             Node _previousSibling, _nextSibling, _parentNode;
             Document _ownerDocument;
+            
+            // internal method
+            Element parentElement()
+            {
+                auto parent = parentNode;
+                while (parent && parent.nodeType != dom.NodeType.ELEMENT)
+                    parent = parent.parentNode;
+                return cast(Element)parent;
+            }
         }
         // just because otherwise it doesn't work...
         abstract override DOMString nodeName();
@@ -193,9 +202,103 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             bool isSupported(DOMString feature, DOMString version_) { return false; }
             Object getFeature(DOMString feature, DOMString version_) { return null; }
             dom.DocumentPosition compareDocumentPosition(dom.Node!DOMString other) { return dom.DocumentPosition.IMPLEMENTATION_SPECIFIC; }
-            DOMString lookupPrefix(DOMString namespaceURI) { return null; }
-            DOMString lookupNamespaceURI(DOMString prefix) { return null; }
-            bool isDefaultNamespace(DOMString namespaceURI) { return false; }
+            
+            DOMString lookupPrefix(DOMString namespaceURI)
+            {
+                if (!namespaceURI)
+                    return null;
+                    
+                switch (nodeType) with (dom.NodeType)
+                {
+                    case ELEMENT:
+                        auto thisElem = (cast(Element)this);
+                        return thisElem.lookupNamespacePrefix(namespaceURI, thisElem);
+                    case DOCUMENT:
+                        auto thisDoc = (cast(Document)this);
+                        return thisDoc.documentElement.lookupNamespacePrefix(namespaceURI, thisDoc.documentElement);
+                    case ENTITY:
+                    case NOTATION:
+                    case DOCUMENT_FRAGMENT:
+                    case DOCUMENT_TYPE:
+                        return null;
+                    case ATTRIBUTE:
+                        Attr attr = cast(Attr)this;
+                        if (attr.ownerElement)
+                            return attr.ownerElement.lookupNamespacePrefix(namespaceURI, attr.ownerElement);
+                        return null;
+                    default:
+                        auto parentElement = parentElement();
+                        if (parentElement)
+                            return parentElement.lookupNamespacePrefix(namespaceURI, parentElement);
+                        return null;
+                }
+            }
+            DOMString lookupNamespaceURI(DOMString prefix)
+            {
+                switch (nodeType) with (dom.NodeType)
+                {
+                    case ELEMENT:
+                        auto thisElem = cast(Element)this;
+                        if (thisElem.namespaceURI && thisElem.prefix == prefix)
+                            return thisElem.namespaceURI;
+                        
+                        if (thisElem.hasAttributes)
+                        {
+                            foreach (attr; thisElem.attributes)
+                                if (attr.prefix == "xmlns" && attr.localName == prefix)
+                                    return attr.value;
+                                else if (attr.nodeName == "xmlns" && !prefix)
+                                    return attr.value;
+                        }
+                                
+                        auto parentElement = parentElement();
+                        if (parentElement)
+                            return parentElement.lookupNamespaceURI(prefix);
+                        return null;
+                    case DOCUMENT:
+                        return (cast(Document)this).documentElement.lookupNamespaceURI(prefix);
+                    case ENTITY:
+                    case NOTATION:
+                    case DOCUMENT_TYPE:
+                    case DOCUMENT_FRAGMENT:
+                        return null;
+                    case ATTRIBUTE:
+                        auto attr = cast(Attr)this;
+                        if (attr.ownerElement)
+                            return attr.ownerElement.lookupNamespaceURI(prefix);
+                        return null;
+                    default:
+                        auto parentElement = parentElement();
+                        if (parentElement)
+                            return parentElement.lookupNamespaceURI(prefix);
+                            
+                        return null;
+                }
+            }
+            bool isDefaultNamespace(DOMString namespaceURI)
+            {
+                switch (nodeType) with (dom.NodeType)
+                {
+                    case ELEMENT:
+                    case DOCUMENT:
+                        return (cast(Document)this).documentElement.isDefaultNamespace(namespaceURI);
+                    case ENTITY:
+                    case NOTATION:
+                    case DOCUMENT_TYPE:
+                    case DOCUMENT_FRAGMENT:
+                        return false;
+                    case ATTRIBUTE:
+                        auto attr = cast(Attr)this;
+                        if (attr.ownerElement)
+                            return attr.ownerElement.isDefaultNamespace(namespaceURI);
+                        return false;
+                    default:
+                        auto parentElement = parentElement();
+                        if (parentElement)
+                            return parentElement.isDefaultNamespace(namespaceURI);
+                        return false;
+                }
+            }
         }
         // method not required by the spec, specialized in NodeWithChildren
         bool isAncestor(Node other) { return false; }
@@ -204,38 +307,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
     {
         override
         {
-            @property dom.NodeList!DOMString childNodes()
+            @property ChildList childNodes()
             {
-                class ChildList: dom.NodeList!DOMString
-                {
-                    private NodeWithChildren parent;
-                    // methods specific to NodeList
-                    override
-                    {
-                        Node item(size_t index)
-                        {
-                            auto result = rebindable(parent.firstChild);
-                            for (size_t i = 0; i < index && result !is null; i++)
-                            {
-                                result = result.nextSibling;
-                            }
-                            return result;
-                        }
-                        @property size_t length()
-                        {
-                            auto child = rebindable(parent.firstChild);
-                            size_t result = 0;
-                            while (child)
-                            {
-                                result++;
-                                child = child.nextSibling;
-                            }
-                            return result;
-                        }
-                    }
-                }
                 auto res = allocator.make!ChildList();
-                res.parent = this;
+                res.outer = this;
+                res.currentChild = firstChild;
                 return res;
             }
             @property Node firstChild()
@@ -376,6 +452,38 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         private
         {
             Node _firstChild, _lastChild;
+        }
+        class ChildList: dom.NodeList!DOMString
+        {
+            private Node currentChild;
+            // methods specific to NodeList
+            override
+            {
+                Node item(size_t index)
+                {
+                    auto result = rebindable(this.outer.firstChild);
+                    for (size_t i = 0; i < index && result !is null; i++)
+                    {
+                        result = result.nextSibling;
+                    }
+                    return result;
+                }
+                @property size_t length()
+                {
+                    auto child = rebindable(this.outer.firstChild);
+                    size_t result = 0;
+                    while (child)
+                    {
+                        result++;
+                        child = child.nextSibling;
+                    }
+                    return result;
+                }
+            }
+            // range interface
+            auto front() { return currentChild; }
+            void popFront() { currentChild = currentChild.nextSibling; }
+            bool empty() { return currentChild is null; }
         }
     }
     class DocumentFragment: NodeWithChildren, dom.DocumentFragment!DOMString
@@ -850,6 +958,8 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         private
         {
             Element _ownerElement;
+            @property Attr _nextAttr() { return cast(Attr)_nextSibling; }
+            @property Attr _previousAttr() { return cast(Attr)_previousSibling; }
         }
         // inherited from Node
         override
@@ -858,6 +968,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             
             @property DOMString nodeValue() { return value; }
             @property void nodeValue(DOMString newVal) { value = newVal; }
+            
+            // overridden because we reuse _nextSibling and _previousSibling with another meaning
+            @property Attr nextSibling() { return null; }
+            @property Attr previousSibling() { return null; }
         }
     }
     class Element: NodeWithNamespace, dom.Element!DOMString
@@ -936,84 +1050,183 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         private
         {
             Map _attrs;
+            
+            // internal methods
+            DOMString lookupNamespacePrefix(DOMString namespaceURI, Element originalElement)
+            {
+                if (this.namespaceURI && this.namespaceURI == namespaceURI
+                    && this.prefix && originalElement.lookupNamespaceURI(this.prefix) == namespaceURI)
+                {
+                    return this.prefix;
+                }
+                if (hasAttributes)
+                    foreach (attr; attributes)
+                        if (attr.prefix == "xmlns" && attr.value == namespaceURI && originalElement.lookupNamespaceURI(attr.localName) == namespaceURI)
+                            return attr.localName;
+                        
+                auto parentElement = parentElement();
+                if (parentElement)
+                    return parentElement.lookupNamespacePrefix(namespaceURI, originalElement);
+                return null;
+            }
         }
         // inherited from Node
         override
         {
             @property dom.NodeType nodeType() { return dom.NodeType.ELEMENT; }
             
-            @property dom.NamedNodeMap!DOMString attributes() { return _attrs.length > 0 ? _attrs : null; }
+            @property Map attributes() { return _attrs.length > 0 ? _attrs : null; }
             bool hasAttributes() { return _attrs.length > 0; }
         }
         
         class Map: dom.NamedNodeMap!DOMString
         {
-            import std.typecons: Tuple;
-            
             // specific to NamedNodeMap
             public override
             {
-                ulong length() const
+                ulong length()
                 {
-                    return attrs.length;
+                    ulong res = 0;
+                    auto attr = firstAttr;
+                    while (attr)
+                    {
+                        res++;
+                        attr = attr._nextAttr;
+                    }
+                    return res;
                 }
                 Attr item(ulong index)
                 {
-                    if (index < attrs.keys.length)
-                        return *(attrs.keys[index] in attrs);
-                    else
-                        return null;
+                    ulong count = 0;
+                    auto res = firstAttr;
+                    while (res && count < index)
+                    {
+                        count++;
+                        res = res._nextAttr;
+                    }
+                    return res;
                 }
 
                 Attr getNamedItem(DOMString name)
                 {
-                    return getNamedItemNS(null, name);
+                    auto res = firstAttr;
+                    while (res && res.nodeName != name)
+                        res = res._nextAttr;
+                    return res;
                 }
                 Attr setNamedItem(dom.Node!DOMString arg)
                 {
-                    return setNamedItemNS(arg);
+                    if (arg.ownerDocument !is this.outer.ownerDocument)
+                        throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                        
+                    Attr attr = cast(Attr)arg;
+                    if (!attr)
+                        throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
+                    
+                    if (attr._previousAttr)
+                        attr._previousAttr._nextSibling = attr._nextAttr;
+                    if (attr._nextAttr)
+                        attr._nextAttr._previousSibling = attr._previousAttr;
+                    
+                    auto res = firstAttr;
+                    while (res && res.nodeName != attr.nodeName)
+                        res = res._nextAttr;
+                    
+                    if (res)
+                    {
+                        attr._previousSibling = res._previousAttr;
+                        attr._nextSibling = res._nextAttr;
+                    }
+                    else
+                    {
+                        attr._nextSibling = firstAttr;
+                        firstAttr = attr;
+                    }
+                    
+                    return res;
                 }
                 Attr removeNamedItem(DOMString name)
                 {
-                    return removeNamedItemNS(null, name);
+                    auto res = firstAttr;
+                    while (res && res.nodeName != name)
+                        res = res._nextAttr;
+                    
+                    if (res)
+                    {
+                        if (res._previousAttr)
+                            res._previousAttr._nextSibling = res._nextAttr;
+                        if (res._nextAttr)
+                            res._nextAttr._previousSibling = res._previousAttr;
+                        return res;
+                    }
+                    else
+                        throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
                 }
 
                 Attr getNamedItemNS(DOMString namespaceURI, DOMString localName)
                 {
-                    auto key = Key(namespaceURI, localName);
-                    if (key in attrs)
-                        return *(key in attrs);
-                    else
-                        return null;
+                    auto res = firstAttr;
+                    while (res && (res.localName != localName || res.namespaceURI != namespaceURI))
+                        res = res._nextAttr;
+                    return res;
                 }
                 Attr setNamedItemNS(dom.Node!DOMString arg)
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
                         throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                        
                     Attr attr = cast(Attr)arg;
                     if (!attr)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
-                    auto key = Key(attr.namespaceURI, attr.localName ? attr.localName : attr.nodeName);
-                    auto oldAttr = (key in attrs) ? *(key in attrs) : null;
-                    attrs[key] = attr;
-                    return oldAttr;
+                    
+                    if (attr._previousAttr)
+                        attr._previousAttr._nextSibling = attr._nextAttr;
+                    if (attr._nextAttr)
+                        attr._nextAttr._previousSibling = attr._previousAttr;
+                    
+                    auto res = firstAttr;
+                    while (res && (res.localName != attr.localName || res.namespaceURI != attr.namespaceURI))
+                        res = res._nextAttr;
+                    
+                    if (res)
+                    {
+                        attr._previousSibling = res._previousAttr;
+                        attr._nextSibling = res._nextAttr;
+                    }
+                    else
+                    {
+                        attr._nextSibling = firstAttr;
+                        firstAttr = attr;
+                    }
+                    
+                    return res;
                 }
                 Attr removeNamedItemNS(DOMString namespaceURI, DOMString localName)
                 {
-                    auto key = Key(namespaceURI, localName);
-                    if (key in attrs)
+                    auto res = firstAttr;
+                    while (res && (res.localName != localName || res.namespaceURI != namespaceURI))
+                        res = res._nextAttr;
+                    
+                    if (res)
                     {
-                        auto result = attrs.get(key, null);
-                        attrs.remove(key);
-                        return result;
+                        if (res._previousAttr)
+                            res._previousAttr._nextSibling = res._nextAttr;
+                        if (res._nextAttr)
+                            res._nextAttr._previousSibling = res._previousAttr;
+                        return res;
                     }
                     else
                         throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
                 }
             }
-            private alias Key = Tuple!(DOMString, "namespaceURI", DOMString, "localName");
-            private Attr[Key] attrs;
+            private
+            {
+                Attr firstAttr;
+                Attr currentAttr;
+            }
+            auto front() { return currentAttr; }
+            void popFront() { currentAttr = currentAttr._nextAttr; }
+            bool empty() { return currentAttr is null; }
         }
     }
     class Text: CharacterData, dom.Text!DOMString
@@ -1173,4 +1386,7 @@ unittest
     assert(doc.getUserData("userDataKey1") == 3.14);
     assert(doc.getUserData("userDataKey2").type == typeid(Object));
     assert(doc.getUserData("userDataKey3").peek!long is null);
+    
+    assert(elem.lookupNamespaceURI("myOtherPrefix") == "myOtherNamespace");
+    assert(doc.lookupPrefix("myNamespaceURI") == "myPrefix");
 };
