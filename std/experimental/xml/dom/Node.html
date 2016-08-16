@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Alias UserDataHandler</title>
+		<title>Interface Node</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -88,20 +88,28 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Alias UserDataHandler</h1>
+			<h1>Interface Node</h1>
 			<section>
-				<p>When associating an object to a key on a node using Node.setUserData() the
-   application can provide a handler that gets called when the node the object
-   is associated to is being cloned, imported, or renamed. This can be used by
-   the application to implement various behaviors regarding the data it associates
-   to the DOM nodes.
+				<p>The <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface is the primary datatype for the entire Document Object Model.
+   It represents a single node in the document tree. While all objects implementing
+   the <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface expose methods for dealing with children, not all objects
+   implementing the <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface may have children. For example, <code class="lang-d"><span class="typ">Text</span></code> nodes
+   may not have children, and adding children to such nodes results in a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMException.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></span></a></code>
+   being raised.
 </p>
+<section><p>The attributes <code class="lang-d"><span class="pln">nodeName</span></code>, <code class="lang-d"><span class="pln">nodeValue</span></code> and <code class="lang-d"><span class="pln">attributes</span></code> are included as a mechanism
+   to get at node information without casting down to the specific derived interface.
+   In cases where there is no obvious mapping of these attributes for a specific <code class="lang-d"><span class="pln">nodeType</span></code>
+   (e.g., <code class="lang-d"><span class="pln">nodeValue</span></code> for an <code class="lang-d"><span class="typ">Element</span></code> or attributes for a <code class="lang-d"><span class="typ">Comment</span></code>), this returns <code class="lang-d"><span class="kwd">null</span></code>.
+   Note that the specialized interfaces may contain additional and more convenient
+   mechanisms to get and set the relevant information.
+</p>
+</section>
 
 					<section>
-						<h3>Declaration</h3>
+						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d">
-<span class="kwd">alias</span> <span class="pln">UserDataHandler</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span> <span class="pun">=</span> <span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../../../std/experimental/xml/dom/UserDataOperation.html"><span class="typ">UserDataOperation</span></a><span class="pun">, </span><span class="typ">DOMString</span><span class="pun">, </span><a href="../../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a><span class="pun">, </span><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">, </span><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">)</span><span class="pun">;</span>
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">Node</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
 							</code>
 						</div>
 					</section>

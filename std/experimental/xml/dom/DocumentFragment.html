@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Interface DocumentFragment</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class="selected module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dtd.html" class=" module">dtd</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Interface DocumentFragment</h1>
+			<section>
+				<p><code class="lang-d"><span class="typ"><span class="typ">DocumentFragment</span></span></code> is a "lightweight" or "minimal" <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> object. It is very
+   common to want to be able to extract a portion of a document's tree or to create
+   a new fragment of a document. Imagine implementing a user command like cut or
+   rearranging a document by moving fragments around. It is desirable to have an
+   object which can hold such fragments and it is quite natural to use a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></span></a></code>
+   for this purpose. While it is true that a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> object could fulfill this
+   role, a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> object can potentially be a heavyweight object, depending
+   on the underlying implementation. What is really needed for this is a very lightweight
+   object. <code class="lang-d"><span class="typ"><span class="typ">DocumentFragment</span></span></code> is such an object.
+</p>
+<section><p>Furthermore, various operations -- such as inserting nodes as children of another
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> -- may take <code class="lang-d"><span class="typ">DocumentFragment</span></code> objects as arguments; this results in
+   all the child nodes of the <code class="lang-d"><span class="typ">DocumentFragment</span></code> being moved to the child list of this node.
+</p>
+
+<p>   The children of a <code class="lang-d"><span class="typ">DocumentFragment</span></code> node are zero or more nodes representing
+   the tops of any sub-trees defining the structure of the document. <code class="lang-d"><span class="typ">DocumentFragment</span></code>
+   nodes do not need to be well-formed XML documents (although they do need to follow
+   the rules imposed upon well-formed XML parsed entities, which can have multiple
+   top nodes). For example, a <code class="lang-d"><span class="typ">DocumentFragment</span></code> might have only one child and that
+   child node could be a <code class="lang-d"><span class="typ">Text</span></code> node. Such a structure model represents neither
+   an HTML document nor a well-formed XML document.
+</p>
+
+<p>   When a <code class="lang-d"><span class="typ">DocumentFragment</span></code> is inserted into a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> (or indeed any other
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> that may take children) the children of the <code class="lang-d"><span class="typ">DocumentFragment</span></code> and not
+   the <code class="lang-d"><span class="typ">DocumentFragment</span></code> itself are inserted into the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code>. This makes the <code class="lang-d"><span class="typ">DocumentFragment</span></code>
+   very useful when the user wishes to create nodes that are siblings; the <code class="lang-d"><span class="typ">DocumentFragment</span></code>
+   acts as the parent of these nodes so that the user can use the standard methods
+   from the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> interface, such as <code class="lang-d"><span class="typ">Node<wbr/></span><span class="pun">.</span><span class="pln">insertBefore</span></code> and <code class="lang-d"><span class="typ">Node<wbr/></span><span class="pun">.</span><span class="pln">appendChild</span></code>.
+</p>
+</section>
+
+					<section>
+						<h3>Template arguments</h3>
+						<div class="prototype">
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">DocumentFragment</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							</code>
+						</div>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

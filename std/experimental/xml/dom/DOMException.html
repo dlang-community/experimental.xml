@@ -94,11 +94,11 @@ $('#symbolSearchPane').show();
    when an operation is impossible to perform (either for logical reasons, because
    data is lost, or because the implementation has become unstable). In general,
    DOM methods return specific error values in ordinary processing situations,
-   such as out-of-bound errors when using NodeList.
+   such as out-of-bound errors when using <code class="lang-d"><a href="../../../std/experimental/xml/dom/NodeList.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></span></a></code>.
 </p>
 <section><p>Implementations should raise other exceptions under other circumstances. For
    example, implementations should raise an implementation-dependent exception
-   if a null argument is passed when null was not expected.
+   if a <code class="lang-d"><span class="kwd">null</span></code> argument is passed when <code class="lang-d"><span class="kwd">null</span></code> was not expected.
 </p>
 </section>
 
@@ -110,6 +110,43 @@ $('#symbolSearchPane').show();
  (base class)
 							</li>
 						</ul>
+					</section>
+					<section>
+						<h3>Constructors</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DOMException.this.html" class="public">
+										<code>this</code>
+									</a>
+								</td>
+								<td></td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DOMException.code.html" class="public property"><code>code</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/ExceptionCode.html"><span class="typ">ExceptionCode</span></a></code></td>
+								<td></td>
+							</tr>
+						</table>
 					</section>
 
 			</section>

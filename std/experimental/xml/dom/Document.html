@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Alias UserDataHandler</title>
+		<title>Interface Document</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -88,20 +88,23 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Alias UserDataHandler</h1>
+			<h1>Interface Document</h1>
 			<section>
-				<p>When associating an object to a key on a node using Node.setUserData() the
-   application can provide a handler that gets called when the node the object
-   is associated to is being cloned, imported, or renamed. This can be used by
-   the application to implement various behaviors regarding the data it associates
-   to the DOM nodes.
+				<p>The <code class="lang-d"><span class="typ"><span class="typ">Document</span></span></code> interface represents the entire HTML or XML document. Conceptually,
+   it is the root of the document tree, and provides the primary access to the document's data.
 </p>
+<section><p>Since elements, text nodes, comments, processing instructions, etc. cannot exist
+   outside the context of a <code class="lang-d"><span class="typ">Document</span></code>, the <code class="lang-d"><span class="typ">Document</span></code> interface also contains the
+   factory methods needed to create these objects. The <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> objects created have
+   a <code class="lang-d"><span class="pln">ownerDocument</span></code> attribute which associates them with the <code class="lang-d"><span class="typ">Document</span></code> within
+   whose context they were created.
+</p>
+</section>
 
 					<section>
-						<h3>Declaration</h3>
+						<h3>Template arguments</h3>
 						<div class="prototype">
-							<code class="lang-d">
-<span class="kwd">alias</span> <span class="pln">UserDataHandler</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span> <span class="pun">=</span> <span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../../../std/experimental/xml/dom/UserDataOperation.html"><span class="typ">UserDataOperation</span></a><span class="pun">, </span><span class="typ">DOMString</span><span class="pun">, </span><a href="../../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a><span class="pun">, </span><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">, </span><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">)</span><span class="pun">;</span>
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">Document</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
 							</code>
 						</div>
 					</section>

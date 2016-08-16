@@ -107,27 +107,27 @@ $('#symbolSearchPane').show();
 							</tr>
 							<tr>
 								<td>
-									<code>SEVERITY_ERROR</code>
+									<code>ERROR</code>
 								</td>
-								<td>The severity of the error described by the DOMError is error. A SEVERITY_ERROR
+								<td>The severity of the error described by the DOMError is error. A <code class="lang-d"><span class="pln">ERROR</span></code>
    may not cause the processing to stop if the error can be recovered, unless
    DOMErrorHandler.handleError() returns false.
 </td>
 							</tr>
 							<tr>
 								<td>
-									<code>SEVERITY_FATAL_ERROR</code>
+									<code>FATAL_ERROR</code>
 								</td>
-								<td>The severity of the error described by the DOMError is fatal error. A SEVERITY_FATAL_ERROR
+								<td>The severity of the error described by the <code class="lang-d"><span class="typ">DOMError</span></code> is fatal error. A <code class="lang-d"><span class="pln">FATAL_ERROR</span></code>
    will cause the normal processing to stop. The return value of DOMErrorHandler.handleError()
    is ignored unless the implementation chooses to continue, in which case the behavior becomes undefined.
 </td>
 							</tr>
 							<tr>
 								<td>
-									<code>SEVERITY_WARNING</code>
+									<code>WARNING</code>
 								</td>
-								<td>The severity of the error described by the DOMError is warning. A SEVERITY_WARNING
+								<td>The severity of the error described by the DOMError is warning. A <code class="lang-d"><span class="pln">WARNING</span></code>
    will not cause the processing to stop, unless DOMErrorHandler.handleError() returns false.
 </td>
 							</tr>

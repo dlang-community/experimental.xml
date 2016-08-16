@@ -109,12 +109,128 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
+							<a id="CharacterData" class="public" href="../../../std/experimental/xml/dom/CharacterData.html">
+								<code>CharacterData</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">CharacterData</span></code> interface extends <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> with a set of attributes and methods
+   for accessing character data in the DOM. For clarity this set is defined here
+   rather than on each object that uses these attributes and methods. No DOM objects
+   correspond directly to <code class="lang-d"><span class="typ">CharacterData</span></code>, though <code class="lang-d"><span class="typ">Text</span></code> and others do inherit
+   the interface from it. All offsets in this interface start from <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Document" class="public" href="../../../std/experimental/xml/dom/Document.html">
+								<code>Document</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">Document</span></code> interface represents the entire HTML or XML document. Conceptually,
+   it is the root of the document tree, and provides the primary access to the document's data.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DocumentFragment" class="public" href="../../../std/experimental/xml/dom/DocumentFragment.html">
+								<code>DocumentFragment</code>
+							</a>
+						</td>
+						<td><code class="lang-d"><span class="typ">DocumentFragment</span></code> is a "lightweight" or "minimal" <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> object. It is very
+   common to want to be able to extract a portion of a document's tree or to create
+   a new fragment of a document. Imagine implementing a user command like cut or
+   rearranging a document by moving fragments around. It is desirable to have an
+   object which can hold such fragments and it is quite natural to use a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code>
+   for this purpose. While it is true that a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> object could fulfill this
+   role, a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> object can potentially be a heavyweight object, depending
+   on the underlying implementation. What is really needed for this is a very lightweight
+   object. <code class="lang-d"><span class="typ">DocumentFragment</span></code> is such an object.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a id="DOMImplementation" class="public" href="../../../std/experimental/xml/dom/DOMImplementation.html">
 								<code>DOMImplementation</code>
 							</a>
 						</td>
 						<td>The DOMImplementation interface provides a number of methods for performing
    operations that are independent of any particular instance of the document object model.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMImplementationList" class="public" href="../../../std/experimental/xml/dom/DOMImplementationList.html">
+								<code>DOMImplementationList</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">DOMImplementationList</span></code> interface provides the abstraction of an ordered
+   collection of DOM implementations, without defining or constraining how this
+   collection is implemented. The items in the <code class="lang-d"><span class="typ">DOMImplementationList</span></code> are accessible
+   via an integral index, starting from <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMImplementationSource" class="public" href="../../../std/experimental/xml/dom/DOMImplementationSource.html">
+								<code>DOMImplementationSource</code>
+							</a>
+						</td>
+						<td>This interface permits a DOM implementer to supply one or more implementations,
+   based upon requested features and versions, as specified in DOM Features.
+   Each implemented DOMImplementationSource object is listed in the binding-specific
+   list of available sources so that its <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMImplementation.html"><span class="typ">DOMImplementation</span></a></code> objects are made available.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMStringList" class="public" href="../../../std/experimental/xml/dom/DOMStringList.html">
+								<code>DOMStringList</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">DOMStringList</span></code> interface provides the abstraction of an ordered collection
+   of <code class="lang-d"><span class="typ">DOMString</span></code> values, without defining or constraining how this collection is
+   implemented. The items in the DOMStringList are accessible via an integral index,
+   starting from <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="NamedNodeMap" class="public" href="../../../std/experimental/xml/dom/NamedNodeMap.html">
+								<code>NamedNodeMap</code>
+							</a>
+						</td>
+						<td>Objects implementing the <code class="lang-d"><span class="typ">NamedNodeMap</span></code> interface are used to represent collections
+   of nodes that can be accessed by name. Note that <code class="lang-d"><span class="typ">NamedNodeMap</span></code> does not inherit
+   from <code class="lang-d"><a href="../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code>; <code class="lang-d"><span class="typ">NamedNodeMaps</span></code> are not maintained in any particular order.
+   Objects contained in an object implementing <code class="lang-d"><span class="typ">NamedNodeMap</span></code> may also be accessed
+   by an ordinal index, but this is simply to allow convenient enumeration of the
+   contents of a <code class="lang-d"><span class="typ">NamedNodeMap</span></code>, and does not imply that the DOM specifies an order
+   to these <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code>s.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Node" class="public" href="../../../std/experimental/xml/dom/Node.html">
+								<code>Node</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">Node</span></code> interface is the primary datatype for the entire Document Object Model.
+   It represents a single node in the document tree. While all objects implementing
+   the <code class="lang-d"><span class="typ">Node</span></code> interface expose methods for dealing with children, not all objects
+   implementing the <code class="lang-d"><span class="typ">Node</span></code> interface may have children. For example, <code class="lang-d"><span class="typ">Text</span></code> nodes
+   may not have children, and adding children to such nodes results in a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></code>
+   being raised.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="NodeList" class="public" href="../../../std/experimental/xml/dom/NodeList.html">
+								<code>NodeList</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">NodeList</span></code> interface provides the abstraction of an ordered collection of
+   nodes, without defining or constraining how this collection is implemented.
+   <code class="lang-d"><span class="typ">NodeList</span></code> objects in the DOM are live.
 </td>
 					</tr>
 				</table>
@@ -137,7 +253,7 @@ $('#symbolSearchPane').show();
    when an operation is impossible to perform (either for logical reasons, because
    data is lost, or because the implementation has become unstable). In general,
    DOM methods return specific error values in ordinary processing situations,
-   such as out-of-bound errors when using NodeList.
+   such as out-of-bound errors when using <code class="lang-d"><a href="../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code>.
 </td>
 					</tr>
 				</table>
@@ -225,7 +341,7 @@ $('#symbolSearchPane').show();
 							</a>
 						</td>
 						<td>
-<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../../std/experimental/xml/dom/UserDataOperation.html"><span class="typ">UserDataOperation</span></a><span class="pun">, </span><span class="typ">DOMString</span><span class="pun">, </span><a href="../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a><span class="pun">, </span><span class="typ">Node</span>!DOMString<span class="pun">, </span><span class="typ">Node</span>!DOMString<span class="pun">)</span></code>
+<code class="prettyprint lang-d"><span class="typ">void</span> <span class="kwd">delegate</span><span class="pun">(</span><a href="../../../std/experimental/xml/dom/UserDataOperation.html"><span class="typ">UserDataOperation</span></a><span class="pun">, </span><span class="typ">DOMString</span><span class="pun">, </span><a href="../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a><span class="pun">, </span><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">, </span><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString<span class="pun">)</span></code>
 						</td>
 						<td>When associating an object to a key on a node using Node.setUserData() the
    application can provide a handler that gets called when the node the object
