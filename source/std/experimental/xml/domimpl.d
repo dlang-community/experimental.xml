@@ -22,7 +22,7 @@ module std.experimental.xml.domimpl;
 
 import std.experimental.xml.interfaces;
 import dom = std.experimental.xml.dom;
-import std.typecons: rebindable;
+import std.typecons: rebindable, Flag;
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
@@ -34,7 +34,8 @@ import std.experimental.allocator.gc_allocator;
 +   does not try to do so. Instead, no object is ever deallocated; it is the users responsibility
 +   to directly free the allocator memory when all objects are no longer reachable.
 +/
-class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplementation!DOMString
+class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = bool delegate(dom.DOMError!DOMString))
+                        : dom.DOMImplementation!DOMString
 {
     mixin UsesAllocator!(Alloc, true);
     
@@ -59,6 +60,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             doc.outer = this;
             doc._ownerDocument = doc;
             doc._doctype = doctype;
+            doc._config = allocator.make!DOMConfiguration();
             
             if (namespaceURI)
             {
@@ -101,6 +103,37 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             {
                 return this is other;
             }
+            bool isEqualNode(dom.Node!DOMString other)
+            {
+                import std.traits: AliasSeq;
+            
+                if (!other || nodeType != other.nodeType)
+                    return false;
+                    
+                foreach (field; AliasSeq!("nodeName", "localName", "namespaceURI", "prefix", "nodeValue"))
+                {
+                    mixin("auto a = " ~ field ~ ";\n");
+                    mixin("auto b = other." ~ field ~ ";\n");
+                    if ((a is null && b !is null) || (b is null && a !is null) || (a !is null && b !is null && a != b))
+                        return false;
+                }
+                
+                auto thisWithChildren = cast(NodeWithChildren)this;
+                if (thisWithChildren)
+                {
+                    auto otherChild = other.firstChild;
+                    foreach (child; thisWithChildren.childNodes)
+                    {
+                        if (!child.isEqualNode(otherChild))
+                            return false;
+                        otherChild = otherChild.nextSibling;
+                    }
+                    if (otherChild !is null)
+                        return false;
+                }
+                    
+                return true;
+            }
     
             dom.UserData setUserData(string key, dom.UserData data, dom.UserDataHandler!DOMString handler)
             {
@@ -123,7 +156,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             Node _previousSibling, _nextSibling, _parentNode;
             Document _ownerDocument;
             
-            // internal method
+            // internal methods
             Element parentElement()
             {
                 auto parent = parentNode;
@@ -131,8 +164,18 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                     parent = parent.parentNode;
                 return cast(Element)parent;
             }
+            void performClone(Node dest, bool deep)
+            {
+                foreach (data; userDataHandlers.byKeyValue)
+                {
+                    auto value = data.value;
+                    // putting data.value directly in the following line causes an error; should investigate further
+                    value(dom.UserDataOperation.NODE_CLONED, data.key, userData[data.key], this, dest);
+                }
+            }
         }
-        // just because otherwise it doesn't work...
+        // method that must be overridden
+        // just because otherwise it doesn't work [bugzilla 16318]
         abstract override DOMString nodeName();
         // methods specialized in NodeWithChildren
         override
@@ -183,7 +226,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             @property void nodeValue(DOMString) {}
             @property DOMString textContent() { return null; }
             @property void textContent(DOMString) {}
-            @property DOMString baseURI() { return parentNode.baseURI; }
+            @property DOMString baseURI()
+            {
+                if (parentNode)
+                    return parentNode.baseURI;
+                return null;
+            }
+            
+            Node cloneNode(bool deep) { return null; }
         }
         // methods specialized in Element and Attribute
         override
@@ -193,16 +243,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             @property void prefix(DOMString) { }
             @property DOMString namespaceURI() { return null; }
         }
-        // TODO methods
+        // methods specialized in Document, Element and Attribute
         override
         {
-            Node cloneNode(bool deep) { return null; }
-            bool isEqualNode(dom.Node!DOMString arg) { return false; }
-            void normalize() {}
-            bool isSupported(DOMString feature, DOMString version_) { return false; }
-            Object getFeature(DOMString feature, DOMString version_) { return null; }
-            dom.DocumentPosition compareDocumentPosition(dom.Node!DOMString other) { return dom.DocumentPosition.IMPLEMENTATION_SPECIFIC; }
-            
             DOMString lookupPrefix(DOMString namespaceURI)
             {
                 if (!namespaceURI)
@@ -210,12 +253,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                     
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ELEMENT:
-                        auto thisElem = (cast(Element)this);
-                        return thisElem.lookupNamespacePrefix(namespaceURI, thisElem);
-                    case DOCUMENT:
-                        auto thisDoc = (cast(Document)this);
-                        return thisDoc.documentElement.lookupNamespacePrefix(namespaceURI, thisDoc.documentElement);
                     case ENTITY:
                     case NOTATION:
                     case DOCUMENT_FRAGMENT:
@@ -237,26 +274,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             {
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ELEMENT:
-                        auto thisElem = cast(Element)this;
-                        if (thisElem.namespaceURI && thisElem.prefix == prefix)
-                            return thisElem.namespaceURI;
-                        
-                        if (thisElem.hasAttributes)
-                        {
-                            foreach (attr; thisElem.attributes)
-                                if (attr.prefix == "xmlns" && attr.localName == prefix)
-                                    return attr.value;
-                                else if (attr.nodeName == "xmlns" && !prefix)
-                                    return attr.value;
-                        }
-                                
-                        auto parentElement = parentElement();
-                        if (parentElement)
-                            return parentElement.lookupNamespaceURI(prefix);
-                        return null;
-                    case DOCUMENT:
-                        return (cast(Document)this).documentElement.lookupNamespaceURI(prefix);
                     case ENTITY:
                     case NOTATION:
                     case DOCUMENT_TYPE:
@@ -279,9 +296,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             {
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ELEMENT:
-                    case DOCUMENT:
-                        return (cast(Document)this).documentElement.isDefaultNamespace(namespaceURI);
                     case ENTITY:
                     case NOTATION:
                     case DOCUMENT_TYPE:
@@ -299,6 +313,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                         return false;
                 }
             }
+        }
+        // TODO methods
+        override
+        {
+            void normalize() {}
+            bool isSupported(DOMString feature, DOMString version_) { return false; }
+            Object getFeature(DOMString feature, DOMString version_) { return null; }
+            dom.DocumentPosition compareDocumentPosition(dom.Node!DOMString other) { return dom.DocumentPosition.IMPLEMENTATION_SPECIFIC; }
         }
         // method not required by the spec, specialized in NodeWithChildren
         bool isAncestor(Node other) { return false; }
@@ -452,6 +474,17 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         private
         {
             Node _firstChild, _lastChild;
+            
+            void performClone(NodeWithChildren dest, bool deep)
+            {
+                super.performClone(dest, deep);
+                if (deep)
+                    foreach (child; childNodes)
+                    {
+                        auto childClone = child.cloneNode(true);
+                        dest.appendChild(childClone);
+                    }
+            }
         }
         class ChildList: dom.NodeList!DOMString
         {
@@ -572,7 +605,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 res._name = name;
                 res._ownerDocument = this;
                 return res;
-            } 
+            }
             Attr createAttributeNS(DOMString namespaceURI, DOMString qualifiedName)
             {
                 auto res = allocator.make!Attr();
@@ -707,17 +740,23 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             @property DOMString inputEncoding() { return null; }
             @property DOMString xmlEncoding() { return null; }
             
-            @property bool xmlStandalone() { return true; }
-            @property void xmlStandalone(bool) { }
+            @property bool xmlStandalone() { return _standalone; }
+            @property void xmlStandalone(bool b) { _standalone = b; }
 
-            @property DOMString xmlVersion() { return null; }
-            @property void xmlVersion(DOMString) { }
+            @property DOMString xmlVersion() { return _xmlVersion; }
+            @property void xmlVersion(DOMString ver)
+            {
+                if (ver == "1.0" || ver == "1.1")
+                    _xmlVersion = ver;
+                else
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_SUPPORTED);
+            }
 
-            @property bool strictErrorChecking() { return false; }
-            @property void strictErrorChecking(bool) { }
+            @property bool strictErrorChecking() { return _strictErrorChecking; }
+            @property void strictErrorChecking(bool b) { _strictErrorChecking = b; }
             
-            @property DOMString documentURI() { return null; }
-            @property void documentURI(DOMString) { }
+            @property DOMString documentURI() { return _documentURI; }
+            @property void documentURI(DOMString uri) { _documentURI = uri; }
             
             @property DOMConfiguration domConfig() { return _config; }
             void normalizeDocument() { }
@@ -725,16 +764,30 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         }
         private
         {
-            DOMString _namespaceURI;
+            DOMString _documentURI, _xmlVersion = "1.0";
             DocumentType _doctype;
             Element _root;
             DOMConfiguration _config;
+            bool _strictErrorChecking = true, _standalone = false;
         }
         // inherited from Node
         override
         {
             @property dom.NodeType nodeType() { return dom.NodeType.DOCUMENT; }
             @property DOMString nodeName() { return "#document"; }
+            
+            DOMString lookupPrefix(DOMString namespaceURI)
+            {
+                return documentElement.lookupPrefix(namespaceURI);
+            }
+            DOMString lookupNamespaceURI(DOMString prefix)
+            {
+                return documentElement.lookupNamespaceURI(prefix);
+            }
+            bool isDefaultNamespace(DOMString namespaceURI)
+            {
+                return documentElement.isDefaultNamespace(namespaceURI);
+            }
         }
         // inherited from NodeWithChildren
         override
@@ -884,7 +937,17 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             @property DOMString textContent() { return data; }
             @property void textContent(DOMString newVal) { data = newVal; }
         }
-        private DOMString _data;
+        private
+        {
+            DOMString _data;
+            
+            // internal method
+            private void performClone(CharacterData dest, bool deep)
+            {
+                super.performClone(dest, deep);
+                dest._data = _data;
+            }
+        }
     }
     private abstract class NodeWithNamespace: NodeWithChildren
     {
@@ -901,6 +964,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
                 ptrdiff_t i = name.fastIndexOf(':');
                 if (i > 0)
                     _colon = i;
+            }
+            void performClone(NodeWithNamespace dest, bool deep)
+            {
+                super.performClone(dest, deep);
+                dest._name = _name;
+                dest._namespaceURI = namespaceURI;
+                dest._colon = _colon;
             }
         }
         // inherited from Node
@@ -932,7 +1002,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         override
         {
             @property DOMString name() { return _name; }
-            @property bool specified() { return false; }
+            @property bool specified() { return _specified; }
             @property DOMString value()
             {
                 DOMString result = [];
@@ -958,6 +1028,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         private
         {
             Element _ownerElement;
+            bool _specified = true;
             @property Attr _nextAttr() { return cast(Attr)_nextSibling; }
             @property Attr _previousAttr() { return cast(Attr)_previousSibling; }
         }
@@ -972,6 +1043,35 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             // overridden because we reuse _nextSibling and _previousSibling with another meaning
             @property Attr nextSibling() { return null; }
             @property Attr previousSibling() { return null; }
+            
+            Attr cloneNode(bool deep)
+            {
+                Attr cloned = allocator.make!Attr();
+                cloned.outer = this.outer;
+                cloned._ownerDocument = _ownerDocument;
+                super.performClone(cloned, true);
+                cloned._specified = true;
+                return cloned;
+            }
+            
+            DOMString lookupPrefix(DOMString namespaceURI)
+            {
+                if (ownerElement)
+                    return ownerElement.lookupPrefix(namespaceURI);
+                return null;
+            }
+            DOMString lookupNamespaceURI(DOMString prefix)
+            {
+                if (ownerElement)
+                    return ownerElement.lookupNamespaceURI(prefix);
+                return null;
+            }
+            bool isDefaultNamespace(DOMString namespaceURI)
+            {
+                if (ownerElement)
+                    return ownerElement.isDefaultNamespace(namespaceURI);
+                return false;
+            }
         }
     }
     class Element: NodeWithNamespace, dom.Element!DOMString
@@ -1077,6 +1177,53 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             
             @property Map attributes() { return _attrs.length > 0 ? _attrs : null; }
             bool hasAttributes() { return _attrs.length > 0; }
+            
+            Element cloneNode(bool deep)
+            {
+                auto cloned = allocator.make!Element();
+                cloned._ownerDocument = ownerDocument;
+                cloned.outer = this.outer;
+                super.performClone(cloned, deep);
+                return cloned;
+            }
+            
+            DOMString lookupPrefix(DOMString namespaceURI)
+            {
+                return lookupNamespacePrefix(namespaceURI, this);
+            }
+            DOMString lookupNamespaceURI(DOMString prefix)
+            {
+                if (namespaceURI && prefix == prefix)
+                    return namespaceURI;
+                
+                if (hasAttributes)
+                {
+                    foreach (attr; attributes)
+                        if (attr.prefix == "xmlns" && attr.localName == prefix)
+                            return attr.value;
+                        else if (attr.nodeName == "xmlns" && !prefix)
+                            return attr.value;
+                }
+                auto parentElement = parentElement();
+                if (parentElement)
+                    return parentElement.lookupNamespaceURI(prefix);
+                return null;
+            }
+            bool isDefaultNamespace(DOMString namespaceURI)
+            {
+                if (!prefix)
+                    return this.namespaceURI == namespaceURI;
+                if (hasAttributes)
+                {
+                    foreach (attr; attributes)
+                        if (attr.nodeName == "xmlns")
+                            return attr.value == namespaceURI;
+                }
+                auto parentElement = parentElement();
+                if (parentElement)
+                    return parentElement.isDefaultNamespace(namespaceURI);
+                return false;
+            }
         }
         
         class Map: dom.NamedNodeMap!DOMString
@@ -1258,6 +1405,15 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         {
             @property dom.NodeType nodeType() { return dom.NodeType.TEXT; }
             @property DOMString nodeName() { return "#text"; }
+            
+            Text cloneNode(bool deep)
+            {
+                auto cloned = allocator.make!Text();
+                cloned.outer = this.outer;
+                cloned._ownerDocument = _ownerDocument;
+                super.performClone(cloned, deep);
+                return cloned;
+            }
         }
     }
     class Comment: CharacterData, dom.Comment!DOMString
@@ -1267,6 +1423,15 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         {
             @property dom.NodeType nodeType() { return dom.NodeType.COMMENT; }
             @property DOMString nodeName() { return "#comment"; }
+            
+            Comment cloneNode(bool deep)
+            {
+                auto cloned = allocator.make!Comment();
+                cloned.outer = this.outer;
+                cloned._ownerDocument = _ownerDocument;
+                super.performClone(cloned, deep);
+                return cloned;
+            }
         }
     }
     class DocumentType: Node, dom.DocumentType!DOMString
@@ -1296,6 +1461,15 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         {
             @property dom.NodeType nodeType() { return dom.NodeType.CDATA_SECTION; }
             @property DOMString nodeName() { return "#cdata-section"; }
+            
+            CDATASection cloneNode(bool deep)
+            {
+                auto cloned = allocator.make!CDATASection();
+                cloned.outer = this.outer;
+                cloned._ownerDocument = _ownerDocument;
+                super.performClone(cloned, deep);
+                return cloned;
+            }
         }
     }
     class ProcessingInstruction: Node, dom.ProcessingInstruction!DOMString
@@ -1315,6 +1489,17 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
             @property DOMString nodeName() { return target; }
             @property DOMString nodeValue() { return _data; }
             @property void nodeValue(DOMString newVal) { _data = newVal; }
+            
+            ProcessingInstruction cloneNode(bool deep)
+            {
+                auto cloned = allocator.make!ProcessingInstruction();
+                cloned.outer = this.outer;
+                cloned._ownerDocument = _ownerDocument;
+                super.performClone(cloned, deep);
+                cloned._target = _target;
+                cloned._data = _data;
+                return cloned;
+            }
         }
     }
     class EntityReference: NodeWithChildren, dom.EntityReference!DOMString
@@ -1327,8 +1512,98 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator)): dom.DOMImplemen
         }
         private DOMString _ent_name;
     }
-    abstract class DOMConfiguration: dom.DOMConfiguration!DOMString
+    class DOMConfiguration: dom.DOMConfiguration!DOMString
     {
+        import std.meta;
+        import std.traits;
+    
+        private
+        {
+            enum string always = "((x) => true)";
+            
+            static struct Config
+            {
+                string name;
+                string type;
+                string settable;
+            }
+
+            struct Params
+            {
+                @Config("cdata-sections", "bool", always) bool cdata_sections;
+                @Config("comments", "bool", always) bool comments;
+                @Config("entities", "bool", always) bool entities;
+                @Config("error-handler", "ErrorHandler", always) ErrorHandler error_handler;
+                @Config("namespace-declarations", "bool", always) bool namespace_declarations;
+                @Config("split-cdata-sections", "bool", always) bool split_cdata_sections;
+            }
+            Params params;
+            
+            void assign(string field, string type)(dom.UserData val)
+            {
+                mixin("if (val.convertsTo!(" ~ type ~ ")) params." ~ field ~ " = val.get!(" ~ type ~ "); \n");
+            }
+            bool canSet(string type, string settable)(dom.UserData val)
+            {
+                mixin("if (val.convertsTo!(" ~ type ~ ")) return " ~ settable ~ "(val.get!(" ~ type ~ ")); \n");
+                return false;
+            }
+        }
+        // specific to DOMConfiguration
+        override
+        {
+            void setParameter(string name, dom.UserData value)
+            {
+                switch (name)
+                {
+                    foreach (field; AliasSeq!(__traits(allMembers, Params)))
+                    {
+                        mixin("enum type = getUDAs!(Params." ~ field ~ ", Config)[0].type; \n");
+                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: assign!(field, type)(value); \n");
+                    }
+                    default:
+                        throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+                }
+            }
+            dom.UserData getParameter(string name)
+            {
+                switch (name)
+                {
+                    foreach (field; AliasSeq!(__traits(allMembers, Params)))
+                    {
+                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: return dom.UserData(params." ~ field ~ "); \n");
+                    }
+                    default:
+                        throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+                }
+            }
+            bool canSetParameter(string name, dom.UserData value)
+            {
+                switch (name)
+                {
+                    foreach (field; AliasSeq!(__traits(allMembers, Params)))
+                    {
+                        mixin("enum type = getUDAs!(Params." ~ field ~ ", Config)[0].type; \n");
+                        mixin("enum settable = getUDAs!(Params." ~ field ~ ", Config)[0].settable; \n");
+                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: return canSet!(type, settable)(value); \n");
+                    }
+                    default:
+                        return false;
+                }
+            }
+            @property dom.DOMStringList!string parameterNames()
+            {
+                template MapToConfigName(Members...)
+                {
+                    static if (Members.length > 0)
+                        mixin("alias MapToConfigName = AliasSeq!(getUDAs!(Params." ~ Members[0] ~ ", Config)[0].name, MapToConfigName!(Members[1..$])); \n");
+                    else
+                        alias MapToConfigName = AliasSeq!();
+                }
+                static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
+                return null;
+            }
+        }
     }
 }
 
@@ -1389,4 +1664,9 @@ unittest
     
     assert(elem.lookupNamespaceURI("myOtherPrefix") == "myOtherNamespace");
     assert(doc.lookupPrefix("myNamespaceURI") == "myPrefix");
+    
+    assert(elem.isEqualNode(elem.cloneNode(false)));
+    assert(root.isEqualNode(root.cloneNode(true)));
+    assert(comm.isEqualNode(comm.cloneNode(false)));
+    assert(pi.isEqualNode(pi.cloneNode(false)));
 };

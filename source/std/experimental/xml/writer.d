@@ -435,6 +435,17 @@ unittest
     assert(splitter.empty);
 }
 
+/++
++   Writes the contents of a cursor to a writer.
++
++   This method advances the cursor till the end of the document, outputting all
++   nodes using the given writer. The actual work is done inside a fiber, which is
++   then returned. This means that if the methods of the cursor call `Fiber.yield`,
++   this method will not complete its work, but will return a fiber in `HOLD` status,
++   which the user can `call` to advance the work. This is useful if the cursor
++   has to wait for other nodes to be ready (e.g. if the cursor input is generated
++   programmatically).
++/
 auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)
 {
     alias StringType = WriterType.StringType;
@@ -501,6 +512,10 @@ auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref Cu
     return fiber;
 }
 
+/++
++   A writer that validates the input given by the user using a chain of validating
++   cursors.
++/
 struct CheckedWriter(WriterType, CursorType = void)
     if (isWriter!(WriterType) && (is(CursorType == void) || (isCursor!CursorType && is(WriterType.StringType == CursorType.StringType))))
 {
@@ -706,6 +721,7 @@ struct CheckedWriter(WriterType, CursorType = void)
     }
 }
 
+///
 template withValidation(alias validationFun, Params...)
 {
     import std.traits;

@@ -195,22 +195,22 @@ enum ExceptionCode: ushort
 enum ErrorSeverity: ushort
 {
     /++
-    +   The severity of the error described by the DOMError is warning. A SEVERITY_WARNING
+    +   The severity of the error described by the DOMError is warning. A `WARNING`
     +   will not cause the processing to stop, unless DOMErrorHandler.handleError() returns false.
     +/
-    SEVERITY_WARNING,
+    WARNING,
     /++
-    +   The severity of the error described by the DOMError is error. A SEVERITY_ERROR
+    +   The severity of the error described by the DOMError is error. A `ERROR`
     +   may not cause the processing to stop if the error can be recovered, unless
     +   DOMErrorHandler.handleError() returns false.
     +/
-    SEVERITY_ERROR,
+    ERROR,
     /++
-    +   The severity of the error described by the DOMError is fatal error. A SEVERITY_FATAL_ERROR
+    +   The severity of the error described by the `DOMError` is fatal error. A `FATAL_ERROR`
     +   will cause the normal processing to stop. The return value of DOMErrorHandler.handleError()
     +   is ignored unless the implementation chooses to continue, in which case the behavior becomes undefined.
     +/
-    SEVERITY_FATAL_ERROR,
+    FATAL_ERROR,
 }
 
 enum DerivationMethod: ulong
@@ -226,22 +226,30 @@ enum DerivationMethod: ulong
 +   when an operation is impossible to perform (either for logical reasons, because
 +   data is lost, or because the implementation has become unstable). In general,
 +   DOM methods return specific error values in ordinary processing situations,
-+   such as out-of-bound errors when using NodeList.
++   such as out-of-bound errors when using `NodeList`.
 +
 +   Implementations should raise other exceptions under other circumstances. For
 +   example, implementations should raise an implementation-dependent exception
-+   if a null argument is passed when null was not expected.
++   if a `null` argument is passed when `null` was not expected.
 +/
 abstract class DOMException: Exception
 {
+    ///
     @property ExceptionCode code();
     
+    /// 
     pure nothrow @nogc @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
     {
         super(msg, file, line);
     }
 }
 
+/++
++   The `DOMStringList` interface provides the abstraction of an ordered collection
++   of `DOMString` values, without defining or constraining how this collection is
++   implemented. The items in the DOMStringList are accessible via an integral index,
++   starting from `0`.
++/
 interface DOMStringList(DOMString)
 {
     DOMString item(size_t index);
@@ -249,15 +257,29 @@ interface DOMStringList(DOMString)
     bool contains(DOMString str);
 };
 
+/++
++   The `DOMImplementationList` interface provides the abstraction of an ordered
++   collection of DOM implementations, without defining or constraining how this
++   collection is implemented. The items in the `DOMImplementationList` are accessible
++   via an integral index, starting from `0`.
++/
 interface DOMImplementationList(DOMString)
 {
     DOMImplementation!DOMString item(size_t index);
     @property size_t length();
 }
 
+/++
++   This interface permits a DOM implementer to supply one or more implementations,
++   based upon requested features and versions, as specified in DOM Features.
++   Each implemented DOMImplementationSource object is listed in the binding-specific
++   list of available sources so that its `DOMImplementation` objects are made available.
++/
 interface DOMImplementationSource(DOMString)
 {
+    /// A method to request the first DOM implementation that supports the specified features.
     DOMImplementation!DOMString getDOMImplementation(DOMString features);
+    /// A method to request a list of DOM implementations that support the specified features and versions, as specified in DOM Features.
     DOMImplementationList!DOMString getDOMImplementationList(DOMString features);
 }
 
@@ -287,10 +309,50 @@ interface DOMImplementation(DOMString)
     Object getFeature(DOMString feature, DOMString version_);
 }
 
+/++
++   `DocumentFragment` is a "lightweight" or "minimal" `Document` object. It is very
++   common to want to be able to extract a portion of a document's tree or to create
++   a new fragment of a document. Imagine implementing a user command like cut or
++   rearranging a document by moving fragments around. It is desirable to have an
++   object which can hold such fragments and it is quite natural to use a `Node`
++   for this purpose. While it is true that a `Document` object could fulfill this
++   role, a `Document` object can potentially be a heavyweight object, depending
++   on the underlying implementation. What is really needed for this is a very lightweight
++   object. `DocumentFragment` is such an object.
++
++   Furthermore, various operations -- such as inserting nodes as children of another
++   `Node` -- may take `DocumentFragment` objects as arguments; this results in
++   all the child nodes of the `DocumentFragment` being moved to the child list of this node.
++
++   The children of a `DocumentFragment` node are zero or more nodes representing
++   the tops of any sub-trees defining the structure of the document. `DocumentFragment`
++   nodes do not need to be well-formed XML documents (although they do need to follow
++   the rules imposed upon well-formed XML parsed entities, which can have multiple
++   top nodes). For example, a `DocumentFragment` might have only one child and that
++   child node could be a `Text` node. Such a structure model represents neither
++   an HTML document nor a well-formed XML document.
++
++   When a `DocumentFragment` is inserted into a `Document` (or indeed any other
++   `Node` that may take children) the children of the `DocumentFragment` and not
++   the `DocumentFragment` itself are inserted into the `Node`. This makes the `DocumentFragment`
++   very useful when the user wishes to create nodes that are siblings; the `DocumentFragment`
++   acts as the parent of these nodes so that the user can use the standard methods
++   from the `Node` interface, such as `Node.insertBefore` and `Node.appendChild`.
++/
 interface DocumentFragment(DOMString): Node!DOMString
 {
 }
 
+/++
++   The `Document` interface represents the entire HTML or XML document. Conceptually,
++   it is the root of the document tree, and provides the primary access to the document's data.
++
++   Since elements, text nodes, comments, processing instructions, etc. cannot exist
++   outside the context of a `Document`, the `Document` interface also contains the
++   factory methods needed to create these objects. The `Node` objects created have
++   a `ownerDocument` attribute which associates them with the `Document` within
++   whose context they were created.
++/
 interface Document(DOMString): Node!DOMString
 {
     @property DocumentType!DOMString doctype();
@@ -335,6 +397,21 @@ interface Document(DOMString): Node!DOMString
     Node!DOMString renameNode(Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName); //raises(DOMException)
 }
 
+/++
++   The `Node` interface is the primary datatype for the entire Document Object Model.
++   It represents a single node in the document tree. While all objects implementing
++   the `Node` interface expose methods for dealing with children, not all objects
++   implementing the `Node` interface may have children. For example, `Text` nodes
++   may not have children, and adding children to such nodes results in a `DOMException`
++   being raised.
++
++   The attributes `nodeName`, `nodeValue` and `attributes` are included as a mechanism
++   to get at node information without casting down to the specific derived interface.
++   In cases where there is no obvious mapping of these attributes for a specific `nodeType`
++   (e.g., `nodeValue` for an `Element` or attributes for a `Comment`), this returns `null`.
++   Note that the specialized interfaces may contain additional and more convenient
++   mechanisms to get and set the relevant information.
++/
 interface Node(DOMString)
 {
     @property NodeType nodeType();
@@ -386,12 +463,30 @@ interface Node(DOMString)
     bool isDefaultNamespace(DOMString namespaceURI);
 }
 
+/++
++   The `NodeList` interface provides the abstraction of an ordered collection of
++   nodes, without defining or constraining how this collection is implemented.
++   `NodeList` objects in the DOM are live.
++
++   The items in the `NodeList` are accessible via an integral index, starting from `0`.
++/
 interface NodeList(DOMString)
 {
     Node!DOMString item(size_t index);
     @property size_t length();
 }
 
+/++
++   Objects implementing the `NamedNodeMap` interface are used to represent collections
++   of nodes that can be accessed by name. Note that `NamedNodeMap` does not inherit
++   from `NodeList`; `NamedNodeMaps` are not maintained in any particular order.
++   Objects contained in an object implementing `NamedNodeMap` may also be accessed
++   by an ordinal index, but this is simply to allow convenient enumeration of the
++   contents of a `NamedNodeMap`, and does not imply that the DOM specifies an order
++   to these `Node`s.
++
++   `NamedNodeMap` objects in the DOM are live.
++/
 interface NamedNodeMap(DOMString)
 {
     Node!DOMString item(size_t index);
@@ -406,6 +501,13 @@ interface NamedNodeMap(DOMString)
     Node!DOMString removeNamedItemNS(DOMString namespaceURI, DOMString localName); //raises(DOMException)
 }
 
+/++
++   The `CharacterData` interface extends `Node` with a set of attributes and methods
++   for accessing character data in the DOM. For clarity this set is defined here
++   rather than on each object that uses these attributes and methods. No DOM objects
++   correspond directly to `CharacterData`, though `Text` and others do inherit
++   the interface from it. All offsets in this interface start from `0`.
++/
 interface CharacterData(DOMString): Node!DOMString
 {
     @property DOMString data(); // raises(DOMException) on setting
@@ -493,7 +595,7 @@ interface DOMError(DOMString)
     @property DOMString type();
     @property Object relatedException();
     @property Object relatedData();
-    @property DOMLocator location();
+    @property DOMLocator!DOMString location();
 }
 
 interface DOMLocator(DOMString)
@@ -508,10 +610,10 @@ interface DOMLocator(DOMString)
 
 interface DOMConfiguration(DOMString)
 {
-    void setParameter(DOMString name, UserData value); //raises(DOMException)
-    UserData getParameter(DOMString name); //raises(DOMException)
-    bool canSetParameter(DOMString name, UserData value);
-    @property DOMStringList!DOMString parameterNames();
+    void setParameter(string name, UserData value); //raises(DOMException)
+    UserData getParameter(string name); //raises(DOMException)
+    bool canSetParameter(string name, UserData value);
+    @property DOMStringList!string parameterNames();
 }
 
 interface CDATASection(DOMString): Text!DOMString

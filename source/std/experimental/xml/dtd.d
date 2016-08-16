@@ -44,6 +44,7 @@ struct DTDCheckerOptions
         allowOverrides: false,
     };
 }
+
 struct DTDChecker(CursorType, ErrorHandler, Alloc = shared(GCAllocator), DTDCheckerOptions options = DTDCheckerOptions.strict)
     if (isCursor!CursorType)
 {
