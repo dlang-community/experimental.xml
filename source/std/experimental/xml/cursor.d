@@ -169,7 +169,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         parser.setSource(input);
         if (!parser.empty)
         {
-            if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && fastEqual(parser.front.content[0..3], "xml"))
+            if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && parser.front.content.length >= 3 && fastEqual(parser.front.content[0..3], "xml"))
                 currentNode = parser.front;
             else
             {
@@ -211,6 +211,8 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             starting = false;
             if (currentNode.content is parser.front.content)
                 return advanceInput();
+            else
+                nameEnd = 0;
             
             currentNode = parser.front;
             return true;
@@ -218,6 +220,10 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         else if (currentNode.kind == XMLKind.ELEMENT_START)
         {
             return advanceInput() && currentNode.kind != XMLKind.ELEMENT_END;
+        }
+        else if (currentNode.kind == XMLKind.DTD_START)
+        {
+            return advanceInput() && currentNode.kind != XMLKind.DTD_END;
         }
         else
             return false;
@@ -241,12 +247,16 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     {
         if (parser.empty || starting || nextFailed)
             return false;
+        else if (currentNode.kind == XMLKind.DTD_START)
+        {
+            while (advanceInput && currentNode.kind != XMLKind.DTD_END) {}
+        }
         else if (currentNode.kind == XMLKind.ELEMENT_START)
         {
             int count = 1;
             while (count > 0 && !parser.empty)
             {
-                if (!advanceInput())
+                if (!advanceInput)
                     return false;
                 if (currentNode.kind == XMLKind.ELEMENT_START)
                     count++;
@@ -254,7 +264,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                     count--;
             }
         }
-        if (!advanceInput || currentNode.kind == XMLKind.ELEMENT_END)
+        if (!advanceInput || currentNode.kind == XMLKind.ELEMENT_END || currentNode.kind == XMLKind.DTD_END)
         {
             nextFailed = true;
             return false;
@@ -290,6 +300,9 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             case XMLKind.COMMENT:
             case XMLKind.DECLARATION:
             case XMLKind.CONDITIONAL:
+            case XMLKind.DTD_START:
+            case XMLKind.DTD_EMPTY:
+            case XMLKind.DTD_END:
                 return [];
             default:
                 if (!nameEnd)
@@ -453,7 +466,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         }
     
         auto kind = currentNode.kind;
-        if (kind == XMLKind.ELEMENT_START || kind == XMLKind.PROCESSING_INSTRUCTION)
+        if (kind == XMLKind.ELEMENT_START || kind == XMLKind.ELEMENT_EMPTY || kind == XMLKind.PROCESSING_INSTRUCTION)
         {
             getName;
             return AttributesRange(currentNode.content[nameEnd..$], this);
@@ -504,6 +517,13 @@ unittest
     
     wstring xml = q{
     <?xml encoding = "utf-8" ?>
+    <!DOCTYPE mydoc https://myUri.org/bla [
+        <!ELEMENT myelem ANY>
+        <!ENTITY   myent    "replacement text">
+        <!ATTLIST myelem foo CDATA #REQUIRED >
+        <!NOTATION PUBLIC 'h'>
+        <!FOODECL asdffdsa >
+    ]>
     <aaa xmlns:myns="something">
         <myns:bbb myns:att='>'>
             <!-- lol -->
@@ -530,6 +550,43 @@ unittest
     
     assert(cursor.enter());
         assert(!cursor.atBeginning);
+    
+        // <!DOCTYPE mydoc https://myUri.org/bla [
+        assert(cursor.getKind == XMLKind.DTD_START);
+        assert(cursor.getAll == " mydoc https://myUri.org/bla ");
+        
+        assert(cursor.enter);
+            // <!ELEMENT myelem ANY>
+            assert(cursor.getKind == XMLKind.ELEMENT_DECL);
+            assert(cursor.getAll == " myelem ANY");
+            
+            assert(cursor.next);
+            // <!ENTITY   myent    "replacement text">
+            assert(cursor.getKind == XMLKind.ENTITY_DECL);
+            assert(cursor.getAll == "   myent    \"replacement text\"");
+            
+            assert(cursor.next);
+            // <!ATTLIST myelem foo CDATA #REQUIRED >
+            assert(cursor.getKind == XMLKind.ATTLIST_DECL);
+            assert(cursor.getAll == " myelem foo CDATA #REQUIRED ");
+            
+            assert(cursor.next);
+            // <!NOTATION PUBLIC 'h'>
+            assert(cursor.getKind == XMLKind.NOTATION_DECL);
+            assert(cursor.getAll == " PUBLIC 'h'");
+            
+            assert(cursor.next);
+            // <!FOODECL asdffdsa >
+            assert(cursor.getKind == XMLKind.DECLARATION);
+            assert(cursor.getAll == "FOODECL asdffdsa ");
+            
+            assert(!cursor.next);
+        cursor.exit;
+        
+        // ]>
+        assert(cursor.getKind == XMLKind.DTD_END);
+        assert(!cursor.getAll);
+        assert(cursor.next);
     
         // <aaa xmlns:myns="something">
         assert(cursor.getKind() == XMLKind.ELEMENT_START);

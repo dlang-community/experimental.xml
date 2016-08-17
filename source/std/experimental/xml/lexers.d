@@ -59,9 +59,9 @@ import std.typecons: Flag, Yes;
 +/
 struct SliceLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)
 {
-    private T input;
-    private size_t pos;
-    private size_t begin;
+    package T input;
+    package size_t pos;
+    package size_t begin;
     
     /++
     +   See detailed documentation in 
@@ -147,7 +147,11 @@ struct SliceLexer(T, ErrorHandler, Alloc = shared(GCAllocator), Flag!"reuseBuffe
         }
         
         if (included)
+        {
+            if (empty)
+                handler();
             pos++;
+        }
     }
     
     /// ditto

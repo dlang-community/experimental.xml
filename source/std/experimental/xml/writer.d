@@ -139,7 +139,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     else
         static assert(0, "Invalid output range type for string type " ~ StringType.stringof);
     
-    bool startingTag = false;
+    bool startingTag = false, insideDTD = false;
     
     this(typeof(prettyPrinter) pretty)
     {
@@ -269,7 +269,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     +/
     void writeComment(StringType comment)
     {
-        if (startingTag) closeStartingTag;
+        closeOpenThings;
     
         mixin(ifAnyCompiles(expand!"beforeNode"));
         output.put("<!--");
@@ -289,7 +289,8 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     +/
     void writeText(StringType text)
     {
-        if (startingTag) closeStartingTag;
+        //assert(!insideDTD);
+        closeOpenThings;
     
         mixin(ifAnyCompiles(expand!"beforeNode"));
         mixin(ifCompilesElse(
@@ -303,7 +304,8 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     +/
     void writeCDATA(StringType cdata)
     {
-        if (startingTag) closeStartingTag;
+        assert(!insideDTD);
+        closeOpenThings;
     
         mixin(ifAnyCompiles(expand!"beforeNode"));
         output.put("<![CDATA[[");
@@ -316,7 +318,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     +/
     void writeProcessingInstruction(StringType target, StringType data)
     {
-        if (startingTag) closeStartingTag;
+        closeOpenThings;
     
         mixin(ifAnyCompiles(expand!"beforeNode"));
         output.put("<?");
@@ -329,16 +331,22 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
     
-    private void closeStartingTag()
+    private void closeOpenThings()
     {
-        mixin(ifAnyCompiles(expand!"beforeElementEnd"));
-        output.put(">");
-        mixin(ifAnyCompiles(expand!"afterNode"));
-        startingTag = false;
-        mixin(ifCompiles("prettyPrinter.increaseLevel"));
+        if (startingTag)
+        {
+            mixin(ifAnyCompiles(expand!"beforeElementEnd"));
+            output.put(">");
+            mixin(ifAnyCompiles(expand!"afterNode"));
+            startingTag = false;
+            mixin(ifCompiles("prettyPrinter.increaseLevel"));
+        }
     }
+    
     void startElement(StringType tagName)
     {
+        closeOpenThings();
+        
         mixin(ifAnyCompiles(expand!"beforeNode"));
         output.put("<");
         output.put(tagName);
@@ -360,7 +368,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         }
         else
         {
-            if (startingTag) closeStartingTag;
+            closeOpenThings;
             
             mixin(ifCompiles("prettyPrinter.decreaseLevel"));
             mixin(ifAnyCompiles(expand!"beforeNode"));
@@ -381,6 +389,41 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         output.put("=");
         mixin(ifAnyCompiles(expand!"beforeAttributeValue"));
         mixin(ifAnyCompiles(formatAttribute!"value"));
+    }
+    
+    void startDoctype(StringType content)
+    {
+        assert(!insideDTD && !startingTag);
+        
+        mixin(ifAnyCompiles(expand!"beforeNode"));
+        output.put("<!DOCTYPE");
+        output.put(content);
+        mixin(ifAnyCompiles(expand!"afterDoctypeId"));
+        output.put("[");
+        insideDTD = true;
+        mixin(ifAnyCompiles(expand!"afterNode"));
+        mixin(ifCompiles("prettyPrinter.increaseLevel"));
+    }
+    void closeDoctype()
+    {
+        assert(insideDTD);
+        
+        mixin(ifCompiles("prettyPrinter.decreaseLevel"));
+        insideDTD = false;
+        mixin(ifAnyCompiles(expand!"beforeDTDEnd"));
+        output.put("]>");
+        mixin(ifAnyCompiles(expand!"afterNode"));
+    }
+    void writeDeclaration(StringType decl, StringType content)
+    {
+        //assert(insideDTD);
+        
+        mixin(ifAnyCompiles(expand!"beforeNode"));
+        output.put("<!");
+        output.put(decl);
+        output.put(content);
+        output.put(">");
+        mixin(ifAnyCompiles(expand!"afterNode"));
     }
 }
 
@@ -471,6 +514,31 @@ auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref Cu
                         cursor.exit;
                     }
                     break;
+                case DTD_EMPTY:
+                case DTD_START:
+                    writer.startDoctype(cursor.getAll);
+                    if (cursor.enter)
+                    {
+                        inspectOneLevel();
+                        cursor.exit;
+                    }
+                    writer.closeDoctype();
+                    break;
+                case ATTLIST_DECL:
+                    writer.writeDeclaration("ATTLIST", cursor.getAll);
+                    break;
+                case ELEMENT_DECL:
+                    writer.writeDeclaration("ELEMENT", cursor.getAll);
+                    break;
+                case ENTITY_DECL:
+                    writer.writeDeclaration("ENTITY", cursor.getAll);
+                    break;
+                case NOTATION_DECL:
+                    writer.writeDeclaration("NOTATION", cursor.getAll);
+                    break;
+                case DECLARATION:
+                    writer.writeDeclaration(cursor.getName, cursor.getContent);
+                    break;
                 case TEXT:
                     writer.writeText(cursor.getContent);
                     break;
@@ -499,7 +567,8 @@ auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref Cu
                     writer.closeElement(cursor.getName);
                     break;
                 default:
-                    assert(0);
+                    break;
+                    //assert(0);
             }
         }
         while (cursor.next);
@@ -508,8 +577,38 @@ auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref Cu
     import core.thread: Fiber;
     
     auto fiber = new Fiber(&inspectOneLevel);
+    //inspectOneLevel();
     fiber.call;
     return fiber;
+}
+
+unittest
+{
+    import std.array: Appender;
+    import std.experimental.xml.parser;
+    import std.experimental.xml.cursor;
+    
+    string xml = 
+    "<?xml?>\n" ~
+    "<!DOCTYPE ciaone [\n" ~
+    "\t<!ELEMENT anything here>\n" ~
+    "\t<!ATTLIST no check at all...>\n" ~
+    "\t<!NOTATION dunno what to write>\n" ~
+    "\t<!ENTITY .....>\n" ~
+    "\t<!I_SAID_NO_CHECKS_AT_ALL_BY_DEFAULT>\n" ~
+    "]>\n";
+    
+    auto cursor = chooseParser!xml.cursor;
+    cursor.setSource(xml);
+    
+    auto app = Appender!string();
+    auto writer = Writer!(string, typeof(app), PrettyPrinters.Indenter)();
+    writer.setSink(app);
+        
+    auto fiber = writer.writeCursor(cursor);
+    assert(fiber.state == fiber.state.TERM);
+    
+    assert(app.data == xml);
 }
 
 /++

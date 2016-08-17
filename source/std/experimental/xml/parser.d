@@ -62,7 +62,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     }
 
     private L lexer;
-    private bool ready;
+    private bool ready, insideDTD;
     private XMLToken next;
 
     mixin UsesErrorHandler!ErrorHandler;
@@ -84,6 +84,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     {
         lexer.setSource(input);
         ready = false;
+        insideDTD = false;
     }
     
     static if (isSaveableLexer!L)
@@ -130,15 +131,28 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     
     private void fetchNext()
     {
-        static if (preserveWhitespace == No.preserveWhitespace)
+        if (!preserveWhitespace || insideDTD)
             lexer.dropWhile(" \r\n\t");
         
         assert(!lexer.empty);
         
         lexer.start();
         
+        // dtd end
+        if (insideDTD && lexer.testAndAdvance(']'))
+        {
+            lexer.dropWhile(" \r\n\t");
+            if (!lexer.testAndAdvance('>'))
+            {
+                handler();
+            }
+            next.kind = XMLKind.DTD_END;
+            next.content = null;
+            insideDTD = false;
+        }
+        
         // text element
-        if (!lexer.testAndAdvance('<'))
+        else if (!lexer.testAndAdvance('<'))
         {
             lexer.advanceUntil('<', false);
             next.kind = XMLKind.TEXT;
@@ -189,7 +203,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
         {
             lexer.advanceUntil('[', true);
             // cdata
-            if (fastEqual(lexer.get()[3..$], "CDATA["))
+            if (lexer.get.length == 9 && fastEqual(lexer.get()[3..$], "CDATA["))
             {
                 do
                     lexer.advanceUntil('>', true);
@@ -237,45 +251,13 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
             // doctype
             if (lexer.get.length>= 9 && fastEqual(lexer.get()[2..9], "DOCTYPE"))
             {
-                // inline dtd
+                next.content = fetchContent(9, 1);
                 if (c == 2)
                 {
-                    while (lexer.advanceUntilAny("<]", true) == 0)
-                        // processing instruction
-                        if (lexer.testAndAdvance('?'))
-                        {
-                            do
-                                lexer.advanceUntil('?', true);
-                            while (!lexer.testAndAdvance('>'));
-                        }
-                        // declaration or comment
-                        else if (lexer.testAndAdvance('!'))
-                        {
-                            // comment
-                            if (lexer.testAndAdvance('-'))
-                            {
-                                do
-                                    lexer.advanceUntil('>', true);
-                                while (!fastEqual(lexer.get()[($-3)..$], "-->"));
-                            }
-                            // declaration
-                            else
-                            {
-                                size_t cc;
-                                while ((cc = lexer.advanceUntilAny("\"'>", true)) < 2)
-                                    if (cc == 0)
-                                        lexer.advanceUntil('"', true);
-                                    else
-                                        lexer.advanceUntil('\'', true);
-                            }
-                        }
-                        // if you're here, something is wrong...
-                        else
-                            handler();
-                    lexer.advanceUntil('>', true);
+                    next.kind = XMLKind.DTD_START;
+                    insideDTD = true;
                 }
-                next.content = fetchContent(9, 1);
-                next.kind = XMLKind.DOCTYPE;
+                else next.kind = XMLKind.DTD_EMPTY;
             }
             // declaration
             else
@@ -459,8 +441,10 @@ unittest
     string xml = q{
     <!DOCTYPE mydoc https://myUri.org/bla [
         <!ELEMENT myelem ANY>
-        <!ENTITY myent "replacement text">
-        <!ATTLIST myelem foo CDATA #REQUIRED>
+        <!ENTITY   myent    "replacement text">
+        <!ATTLIST myelem foo CDATA #REQUIRED >
+        <!NOTATION PUBLIC 'h'>
+        <!FOODECL asdffdsa >
     ]>
     };
     
@@ -469,30 +453,9 @@ unittest
     
     alias XMLKind = typeof(parser.front.kind);
     
-    assert(parser.front.kind == XMLKind.DOCTYPE);
-    assert(parser.front.content == xml.find("<!DOCTYPE").stripRight[9..($-1)]);
+    assert(parser.front.kind == XMLKind.DTD_START);
+    assert(parser.front.content == " mydoc https://myUri.org/bla ");
     parser.popFront;
-    assert(parser.empty);
-}
-
-unittest
-{
-    import std.experimental.xml.lexers;
-    import std.algorithm: find;
-    import std.string: stripRight;
-    
-    string xml = q{
-        <!ELEMENT myelem ANY>
-        <!ENTITY   myent    "replacement text">
-        <!ATTLIST myelem foo CDATA #REQUIRED >
-        <!NOTATION PUBLIC 'h'>
-        <!FOODECL asdffdsa >
-    };
-    
-    auto parser = chooseLexer!xml.parse;
-    parser.setSource(xml);
-    
-    alias XMLKind = typeof(parser.front.kind);
     
     assert(parser.front.kind == XMLKind.ELEMENT_DECL);
     assert(parser.front.content == " myelem ANY");
@@ -512,6 +475,10 @@ unittest
     
     assert(parser.front.kind == XMLKind.DECLARATION);
     assert(parser.front.content == "FOODECL asdffdsa ");
+    parser.popFront;
+    
+    assert(parser.front.kind == XMLKind.DTD_END);
+    assert(!parser.front.content);
     parser.popFront;
     
     assert(parser.empty);

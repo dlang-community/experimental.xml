@@ -48,8 +48,8 @@ struct Results
     static Results opCall()
     {
         Results result;
-        result.totals = ["valid": 0, "invalid": 0, "not-wf": 0, "error": 0, "skipped": 0];
-        result.wrong = ["valid": 0, "invalid": 0, "not-wf": 0, "error": 0];
+        result.totals = ["valid": 0, "linted": 0, "invalid": 0, "not-wf": 0, "error": 0, "skipped": 0];
+        result.wrong = ["valid": 0, "linted":0, "invalid": 0, "not-wf": 0, "error": 0];
         return result;
     }
     
@@ -81,6 +81,8 @@ void printResults(Results results, int depth)
     writeln("== RESULTS ==");
     writeIndent(depth);
     writeln(results.wrong["valid"], " valid inputs rejected out of ", results.totals["valid"], " total.");
+    writeIndent(depth);
+    writeln(results.wrong["linted"], " wrong outputs out of ", results.totals["linted"], " total written files.");
     writeIndent(depth);
     writeln(results.wrong["invalid"], " invalid inputs accepted out of ", results.totals["invalid"], " total.");
     writeIndent(depth);
@@ -140,16 +142,14 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
     
     result.totals[kind]++;
     
-    bool passed = true;
-    Throwable error;
+    bool passed = true, linted = false, linted_ok = false;
     try
     {
-        parseFile(directory ~ dirSeparator ~ file);
+        linted_ok = parseFile(directory ~ dirSeparator ~ file, linted);
     }
-    catch (Throwable err)
+    catch (MyException err)
     {
         passed = false;
-        error = err;
     }
     if (passed && kind != "valid")
     {
@@ -182,16 +182,34 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
     {
         writeIndent(depth);
         writeln("OK: ", file);
+        if (passed && linted)
+        {
+            result.totals["linted"]++;
+            if (!linted_ok)
+            {
+                result.wrong["linted"]++;
+                writeIndent(depth + 1);
+                writeln("[WRONG DIFF]");
+            }
+        }
     }
     
     return result;
+}
+
+class MyException: Exception
+{
+    this(string msg)
+    {
+        super(msg);
+    }
 }
 
 // callback used to ignore missing xml declaration, while throwing on invalid attributes
 void uselessCallback(CursorError err)
 {
     if (err != CursorError.MISSING_XML_DECLARATION)
-        assert(0);
+        throw new MyException("AAAAHHHHH");
 }
 
 /++
@@ -220,7 +238,7 @@ void main()
     writeln();
 }
 
-void parseFile(string filename)
+bool parseFile(string filename, ref bool lint)
 {
     void inspectOneLevel(T)(ref T cursor)
     {
@@ -242,14 +260,68 @@ void parseFile(string filename)
     }
     catch (UTFException)
     {
-        auto raw = read(filename);
-        transcode(cast(Latin1String)raw, text);
+        try
+        {
+            auto raw = read(filename);
+            auto bytes = cast(ubyte[])raw;
+        
+            if(bytes.length > 1 && bytes[0] == 0xFF && bytes[1] == 0xFE)
+            {
+                auto shorts = cast(ushort[])raw;
+                transcode(cast(wstring)(shorts[1..$]), text);
+            }
+            else
+                transcode(cast(Latin1String)raw, text);
+        }
+        catch(Throwable)
+        {
+            throw new MyException("AAAAHHHHH");
+        }
     }
     
     auto cursor = 
-         chooseParser!text(() { throw new Exception("AAAAHHHHH"); })
+         chooseParser!text(() { throw new MyException("AAAAHHHHH"); })
         .cursor(&uselessCallback); // lots of tests do not have an xml declaration
     
     cursor.setSource(text);
+    
+    lint = false;
+    foreach (attr; cursor.getAttributes)
+        if (attr.name == "version" && attr.value == "1.0")
+            lint = true;
+    
     inspectOneLevel(cursor);
+    
+    if (lint)
+    {
+        import std.process, std.stdio, std.array;
+        import std.experimental.xml.writer;
+    
+        lint = false;
+        bool result = false;
+        auto xmllint = executeShell("xmllint --pretty 2 --c14n11 " ~ filename ~ " > linted_input.xml");
+        if (xmllint.status == 0)
+        {
+            {
+                cursor.setSource(text);
+                auto file = File("output.xml", "w");
+                auto ltw = file.lockingTextWriter;
+                auto writer = Writer!(string, typeof(ltw))();
+                
+                writer.setSink(ltw);
+                writer.writeCursor(cursor);
+            }
+            
+            xmllint = executeShell("xmllint --pretty 2 --c14n11 output.xml > linted_output.xml");
+            if (xmllint.status == 0)
+            {
+                lint = true;
+                auto diff = executeShell("diff linted_input.xml linted_output.xml");
+                result = diff.status == 0;
+            }
+        }
+        executeShell("rm -f linted_output.xml linted_input.xml output.xml");
+        return result;
+    }
+    return false;
 }

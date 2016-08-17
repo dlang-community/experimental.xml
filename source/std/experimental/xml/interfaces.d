@@ -197,8 +197,9 @@ enum XMLKind
     /++ An entire document, starting with an `<?xml` `?>` declaration +/
     DOCUMENT,
     
-    /++ A doctype declaration, delimited by `<!DOCTYPE` and `>` +/
-    DOCTYPE,
+    DTD_START,
+    DTD_END,
+    DTD_EMPTY,
     
     /++ A start tag, delimited by `<` and `>` +/
     ELEMENT_START,
