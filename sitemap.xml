@@ -122,7 +122,6 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.COMMENT.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.CONDITIONAL.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.DECLARATION.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.DOCTYPE.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.DOCUMENT.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.ELEMENT_DECL.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/interfaces/XMLKind.ELEMENT_EMPTY.html</loc></url>

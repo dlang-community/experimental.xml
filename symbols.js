@@ -118,7 +118,6 @@ var symbols = [
 {name: 'std.experimental.xml.interfaces.XMLKind.COMMENT', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.COMMENT.html', attributes: []},
 {name: 'std.experimental.xml.interfaces.XMLKind.CONDITIONAL', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.CONDITIONAL.html', attributes: []},
 {name: 'std.experimental.xml.interfaces.XMLKind.DECLARATION', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.DECLARATION.html', attributes: []},
-{name: 'std.experimental.xml.interfaces.XMLKind.DOCTYPE', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.DOCTYPE.html', attributes: []},
 {name: 'std.experimental.xml.interfaces.XMLKind.DOCUMENT', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.DOCUMENT.html', attributes: []},
 {name: 'std.experimental.xml.interfaces.XMLKind.ELEMENT_DECL', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.ELEMENT_DECL.html', attributes: []},
 {name: 'std.experimental.xml.interfaces.XMLKind.ELEMENT_EMPTY', kind: "enummemberdeclaration", path: './std/experimental/xml/interfaces/XMLKind.ELEMENT_EMPTY.html', attributes: []},
