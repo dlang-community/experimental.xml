@@ -73,8 +73,18 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             
             return doc;
         }
-        bool hasFeature(DOMString feature, DOMString version_) { return false; }
-        Object getFeature(DOMString feature, DOMString version_) { return null; }
+        bool hasFeature(string feature, string version_)
+        {
+            return (feature == "Core" || feature == "XML")
+                && (version_ == "1.0" || version_ == "2.0" || version_ == "3.0");
+        }
+        DOMImplementation getFeature(string feature, string version_)
+        {
+            if (hasFeature(feature, version_))
+                return this;
+            else
+                return null;
+        }
     }
     
     class DOMException: dom.DOMException
@@ -147,6 +157,19 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (key in userData)
                     return userData[key];
                 return dom.UserData(null);
+            }
+            
+            bool isSupported(string feature, string version_)
+            {
+                return (feature == "Core" || feature == "XML")
+                    && (version_ == "1.0" || version_ == "2.0" || version_ == "3.0");
+            }
+            Node getFeature(string feature, string version_)
+            {
+                if (isSupported(feature, version_))
+                    return this;
+                else
+                    return null;
             }
         }
         private
@@ -318,8 +341,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             void normalize() {}
-            bool isSupported(DOMString feature, DOMString version_) { return false; }
-            Object getFeature(DOMString feature, DOMString version_) { return null; }
             dom.DocumentPosition compareDocumentPosition(dom.Node!DOMString other) { return dom.DocumentPosition.IMPLEMENTATION_SPECIFIC; }
         }
         // method not required by the spec, specialized in NodeWithChildren
@@ -1396,7 +1417,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 }
                 return second;
             }
-            @property bool isElementContentWhitespace() { return false; } // <-- TODO
+            @property bool isElementContentWhitespace()
+            {
+                import std.experimental.xml.faststrings: fastIndexOfNeither;
+                
+                return _data.fastIndexOfNeither(" \r\n\t") == -1;
+            }
             @property DOMString wholeText() { return data; } // <-- TODO
             @property Text replaceWholeText(DOMString newText) { return null; } // <-- TODO
         }
@@ -1593,16 +1619,34 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             @property dom.DOMStringList!string parameterNames()
             {
-                template MapToConfigName(Members...)
-                {
-                    static if (Members.length > 0)
-                        mixin("alias MapToConfigName = AliasSeq!(getUDAs!(Params." ~ Members[0] ~ ", Config)[0].name, MapToConfigName!(Members[1..$])); \n");
-                    else
-                        alias MapToConfigName = AliasSeq!();
-                }
-                static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
-                return null;
+                return allocator.make!StringList();
             }
+        }
+        
+        class StringList: dom.DOMStringList!string
+        {
+            private template MapToConfigName(Members...)
+            {
+                static if (Members.length > 0)
+                    mixin("alias MapToConfigName = AliasSeq!(getUDAs!(Params." ~ Members[0] ~ ", Config)[0].name, MapToConfigName!(Members[1..$])); \n");
+                else
+                    alias MapToConfigName = AliasSeq!();
+            }
+            private static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
+            
+            // specific to DOMStringList
+            override
+            {
+                string item(size_t i) { return arr[i]; }
+                size_t length() { return arr.length; }
+                
+                bool contains(string str)
+                {
+                    import std.algorithm: canFind;
+                    return arr.canFind(str);
+                }
+            }
+            alias arr this;
         }
     }
 }

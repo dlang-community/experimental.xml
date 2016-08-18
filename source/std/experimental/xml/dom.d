@@ -305,8 +305,8 @@ interface DOMImplementation(DOMString)
     +/
     Document!DOMString createDocument(DOMString namespaceURI, DOMString qualifiedName, DocumentType!DOMString doctype); //raises(DOMException)
     
-    bool hasFeature(DOMString feature, DOMString version_);
-    Object getFeature(DOMString feature, DOMString version_);
+    bool hasFeature(string feature, string version_);
+    Object getFeature(string feature, string version_);
 }
 
 /++
@@ -450,8 +450,8 @@ interface Node(DOMString)
     
     void normalize();
     
-    bool isSupported(DOMString feature, DOMString version_);
-    Object getFeature(DOMString feature, DOMString version_);
+    bool isSupported(string feature, string version_);
+    Object getFeature(string feature, string version_);
     
     UserData getUserData(string key);
     UserData setUserData(string key, UserData data, UserDataHandler!DOMString handler);

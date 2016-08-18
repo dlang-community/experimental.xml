@@ -440,12 +440,18 @@ unittest
     static assert(isWriter!(typeof(writer)));
 }
 
+auto writerFor(StringType, alias PrettyPrinter = PrettyPrinters.Indenter, OutRange)(ref OutRange outRange)
+{
+    auto res = Writer!(StringType, OutRange, PrettyPrinter)();
+    res.setSink(outRange);
+    return res;
+}
+
 unittest
 {
     import std.array: Appender;
     auto app = Appender!string();
-    auto writer = Writer!(string, typeof(app), PrettyPrinters.Indenter)();
-    writer.setSink(app);
+    auto writer = app.writerFor!string;
     
     writer.startElement("elem");
     writer.writeAttribute("attr1", "val1");
@@ -478,6 +484,49 @@ unittest
     assert(splitter.empty);
 }
 
+import dom = std.experimental.xml.dom;
+
+void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
+    if (is(NodeType: dom.Node!(WriterType.StringType)))
+{
+    import std.traits: ReturnType;
+    alias Document = typeof(node.ownerDocument);
+    alias Element = ReturnType!(Document.documentElement);
+
+    switch (node.nodeType) with (dom.NodeType)
+    {
+        case DOCUMENT:
+            auto doc = cast(Document)node;
+            writer.writeXMLDeclaration(doc.xmlVersion, doc.xmlEncoding, dom.xmlStandalone);
+            foreach (child; doc.childNodes)
+                writer.writeDOM(child);
+            break;
+        case ELEMENT:
+            auto elem = cast(Element)node;
+            writer.startElement(elem.tagName);
+            if (elem.hasAttributes)
+                foreach (attr; elem.attributes)
+                    writer.writeAttribute(attr.nodeName, attr.value);
+            foreach (child; elem.childNodes)
+                writer.writeDOM(elem);
+            writer.closeElement(elem.tagName);
+            break;
+        case TEXT:
+            writer.writeText(node.value);
+            break;
+        case CDATA:
+            writer.writeCDATA(node.value);
+            break;
+        case COMMENT:
+            writer.writeComment(node.value);
+            break;
+        default:
+            break;
+    }
+}
+
+import std.typecons: Flag, No, Yes;
+
 /++
 +   Writes the contents of a cursor to a writer.
 +
@@ -489,7 +538,7 @@ unittest
 +   has to wait for other nodes to be ready (e.g. if the cursor input is generated
 +   programmatically).
 +/
-auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)
+auto writeCursor(Flag!"useFiber" useFiber = No.useFiber, WriterType, CursorType)(auto ref WriterType writer, auto ref CursorType cursor)
 {
     alias StringType = WriterType.StringType;
     void inspectOneLevel()
@@ -574,12 +623,15 @@ auto writeCursor(WriterType, CursorType)(auto ref WriterType writer, auto ref Cu
         while (cursor.next);
     }
     
-    import core.thread: Fiber;
-    
-    auto fiber = new Fiber(&inspectOneLevel);
-    //inspectOneLevel();
-    fiber.call;
-    return fiber;
+    static if (useFiber)
+    {
+        import core.thread: Fiber;
+        auto fiber = new Fiber(&inspectOneLevel);
+        fiber.call;
+        return fiber;
+    }
+    else
+        inspectOneLevel();
 }
 
 unittest
@@ -603,10 +655,9 @@ unittest
     
     auto app = Appender!string();
     auto writer = Writer!(string, typeof(app), PrettyPrinters.Indenter)();
+    
     writer.setSink(app);
-        
-    auto fiber = writer.writeCursor(cursor);
-    assert(fiber.state == fiber.state.TERM);
+    writer.writeCursor(cursor);
     
     assert(app.data == xml);
 }
@@ -840,7 +891,7 @@ template withValidation(alias validationFun, Params...)
         auto res = CheckedWriter!(Writer, typeof(cursor))();
         res.cursor = cursor;
         res.writer = writer;
-        res.fiber = writeCursor(res.writer, res.cursor);
+        res.fiber = writeCursor!(Yes.useFiber)(res.writer, res.cursor);
         return res;
     }
 }

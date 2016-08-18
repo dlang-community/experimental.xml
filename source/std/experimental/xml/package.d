@@ -9,9 +9,27 @@
 +   An xml processing library.
 +
 +   $(H Quick start)
-+   The library offers a simple fluid interface to build an XML parsing chain:
++   The library offers a simple fluid interface to build an XML parsing chain.
++   Let's see a first example: we want to change the name of an author in our book
++   catalogue, using DOM.
 +   ---
-+   auto input = "your xml input here...";
++   string input = q"{
++   <?xml version = "1.0"?>
++   <books>
++       <book ISBN = "078-5342635362">
++           <title>The D Programming Language</title>
++           <author>A. Alexandrescu</author>
++       </book>
++       <book ISBN = "978-1515074601">
++           <title>Programming in D</title>
++           <author>Ali Çehreli</author>
++       </book>
++       <book ISBN = "978-0201704310">
++           <title>Modern C++ Design</title>
++           <author>A. Alexandrescu</author>
++       </book>
++   </books>
++   }";
 +
 +   // the following steps are all configurable
 +   auto domBuilder =
@@ -25,29 +43,43 @@
 +
 +   // recursively build the entire DOM tree
 +   domBuilder.buildRecursive;
-+
-+   // enjoy the resulting Document object
 +   auto dom = domBuilder.getDocument;
++
++   // find and substitute all matching authors
++   foreach (author; dom.getElementsByTagName("author"))
++       if (author.textContent == "A. Alexandrescu")
++           author.textContent = "Andrei Alexandrescu";
++   
++   // write it out to "catalogue.xml"
++   auto file = File("catalogue.xml", "w");
++   file.lockingTextWriter
++       .writerFor!string   // instatiates an xml writer on top of an output range
++       .writeDOM(dom);     // write the document with all of its children
 +   ---
-+   Also available is a SAX parser:
++   Also available is a SAX parser, which we will use to find all text nodes containing
++   a specific word:
 +   ---
 +   // don't bother about the type of a node: the library will do the right instantiations
 +   static struct MyHandler(NodeType)
 +   {
-+       void onElementStart(ref NodeType node)
++       void onText(ref NodeType node)
 +       {
-+           writeln(node.getName);
++           if (node.getContent.splitter.find.canFind("D"))
++               writeln("Match found: ", node.getContent);
 +       }
 +   }
 +
 +   auto saxParser =
-+        chooseLexer!input
-+       .parser
++        chooseParser!input     // this is a shorthand for chooseLexer!Input.parse
 +       .cursor
 +       .saxParser!MyHandler;   // only this call changed from the previous example chain
 +
 +   saxParser.setSource(input);
 +   saxParser.processDocument;  // this call triggers the actual work
++
++   // With the same input of the first example, the output would be:
++   // Match found: The D Programming Language
++   // Match found: Programming in D
 +   ---
 +   You may want to perform extra checks on the input, to guarantee correctness:
 +   ---

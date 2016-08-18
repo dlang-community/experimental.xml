@@ -194,11 +194,14 @@ template isSaveableLexer(L)
 +/
 enum XMLKind
 {
-    /++ An entire document, starting with an `<?xml` `?>` declaration +/
+    /++ The `<?xml` `?>` declaration at the beginning of the entire document +/
     DOCUMENT,
     
+    /++ The beginning of a document type declaration `<!DOCTYPE ... [` +/
     DTD_START,
+    /++ The end of a document type declaration `] >` +/
     DTD_END,
+    /++ A document type declaration without an internal subset +/
     DTD_EMPTY,
     
     /++ A start tag, delimited by `<` and `>` +/
