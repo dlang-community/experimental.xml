@@ -92,9 +92,27 @@ $('#symbolSearchPane').show();
 			<p>An xml processing library.
 </p>
 <section><p><h2>Quick start</h2>
-   The library offers a simple fluid interface to build an XML parsing chain:
+   The library offers a simple fluid interface to build an XML parsing chain.
+   Let's see a first example: we want to change the name of an author in our book
+   catalogue, using DOM.
 </p>
-<pre class="code"><code class="lang-d"><span class="kwd">auto </span><span class="pln">input </span><span class="pun">= </span><span class="str">"your xml input here..."</span><span class="pun">;
+<pre class="code"><code class="lang-d"><span class="typ">string </span><span class="pln">input </span><span class="pun">= </span><span class="str">q"{
+&lt;?xml version = "1.0"?&gt;
+&lt;books&gt;
+    &lt;book ISBN = "078-5342635362"&gt;
+        &lt;title&gt;The D Programming Language&lt;/title&gt;
+        &lt;author&gt;A. Alexandrescu&lt;/author&gt;
+    &lt;/book&gt;
+    &lt;book ISBN = "978-1515074601"&gt;
+        &lt;title&gt;Programming in D&lt;/title&gt;
+        &lt;author&gt;Ali Çehreli&lt;/author&gt;
+    &lt;/book&gt;
+    &lt;book ISBN = "978-0201704310"&gt;
+        &lt;title&gt;Modern C++ Design&lt;/title&gt;
+        &lt;author&gt;A. Alexandrescu&lt;/author&gt;
+    &lt;/book&gt;
+&lt;/books&gt;
+}"</span><span class="pun">;
 
 </span><span class="com">// the following steps are all configurable
 </span><span class="kwd">auto </span><span class="pln">domBuilder </span><span class="pun">=
@@ -108,28 +126,42 @@ $('#symbolSearchPane').show();
 
 </span><span class="com">// recursively build the entire DOM tree
 </span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">buildRecursive</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">dom </span><span class="pun">= </span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">getDocument</span><span class="pun">;
 
-</span><span class="com">// enjoy the resulting Document object
-</span><span class="kwd">auto </span><span class="pln">dom </span><span class="pun">= </span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">getDocument</span><span class="pun">;</span></code></pre>
-<p>   Also available is a SAX parser:
+</span><span class="com">// find and substitute all matching authors
+</span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">author</span><span class="pun">; </span><span class="pln">dom<wbr/></span><span class="pun">.</span><span class="pln">getElementsByTagName</span><span class="pun">(</span><span class="str">"author"</span><span class="pun">))
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">== </span><span class="str">"A. Alexandrescu"</span><span class="pun">)
+        </span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">= </span><span class="str">"Andrei Alexandrescu"</span><span class="pun">;
+
+</span><span class="com">// write it out to "catalogue.xml"
+</span><span class="kwd">auto </span><span class="pln">file </span><span class="pun">= </span><span class="typ">File</span><span class="pun">(</span><span class="str">"catalogue.xml"</span><span class="pun">, </span><span class="str">"w"</span><span class="pun">);
+</span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">lockingTextWriter
+    <wbr/></span><span class="pun">.</span><span class="pln">writerFor</span><span class="pun">!</span><span class="typ">string   </span><span class="com">// instatiates an xml writer on top of an output range
+    <wbr/></span><span class="pun">.</span><span class="pln">writeDOM</span><span class="pun">(</span><span class="pln">dom</span><span class="pun">);     </span><span class="com">// write the document with all of its children</span></code></pre>
+<p>   Also available is a SAX parser, which we will use to find all text nodes containing
+   a specific word:
 </p>
 <pre class="code"><code class="lang-d"><span class="com">// don't bother about the type of a node: the library will do the right instantiations
 </span><span class="kwd">static struct </span><span class="typ">MyHandler</span><span class="pun">(</span><span class="typ">NodeType</span><span class="pun">)
 {
-    </span><span class="typ">void </span><span class="pln">onElementStart</span><span class="pun">(</span><span class="kwd">ref </span><span class="typ">NodeType </span><span class="pln">node</span><span class="pun">)
+    </span><span class="typ">void </span><span class="pln">onText</span><span class="pun">(</span><span class="kwd">ref </span><span class="typ">NodeType </span><span class="pln">node</span><span class="pun">)
     {
-        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getName</span><span class="pun">);
+        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getContent<wbr/></span><span class="pun">.</span><span class="pln">splitter<wbr/></span><span class="pun">.</span><span class="pln">find<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"D"</span><span class="pun">))
+            </span><span class="pln">writeln</span><span class="pun">(</span><span class="str">"Match found: "</span><span class="pun">, </span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getContent</span><span class="pun">);
     }
 }
 
 </span><span class="kwd">auto </span><span class="pln">saxParser </span><span class="pun">=
-     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input
-    <wbr/></span><span class="pun">.</span><span class="pln">parser
+     </span><span class="pln">chooseParser</span><span class="pun">!</span><span class="pln">input     </span><span class="com">// this is a shorthand for chooseLexer!Input.parse
     <wbr/></span><span class="pun">.</span><span class="pln">cursor
     <wbr/></span><span class="pun">.</span><span class="pln">saxParser</span><span class="pun">!</span><span class="typ">MyHandler</span><span class="pun">;   </span><span class="com">// only this call changed from the previous example chain
 
 </span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
-</span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">processDocument</span><span class="pun">;  </span><span class="com">// this call triggers the actual work</span></code></pre>
+</span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">processDocument</span><span class="pun">;  </span><span class="com">// this call triggers the actual work
+
+// With the same input of the first example, the output would be:
+// Match found: The D Programming Language
+// Match found: Programming in D</span></code></pre>
 <p>   You may want to perform extra checks on the input, to guarantee correctness:
 </p>
 <pre class="code"><code class="lang-d"><span class="com">// some very useful error handlers:
