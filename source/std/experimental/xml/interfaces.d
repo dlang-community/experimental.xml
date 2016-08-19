@@ -555,7 +555,7 @@ package mixin template UsesAllocator(Alloc, bool genDefaultCtor = false)
 package mixin template UsesErrorHandler(ErrorHandler)
 {
     private ErrorHandler handler;
-    @property auto errorHandler() { return handler; }
+    @property auto errorHandler() { return &handler; }
     @property void errorHandler(ErrorHandler eh)
     {
         assert(eh, "Null errorHandler on setting");

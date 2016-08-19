@@ -128,7 +128,10 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         if (already_built || cursor.atBeginning)
             return;
             
-        currentNode.appendChild(createCurrent);
+        auto cur = createCurrent;
+        if (cur)
+            currentNode.appendChild(createCurrent);
+            
         already_built = true;
     }
     
@@ -172,7 +175,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
             case COMMENT:
                 return document.createComment(cursor.getContent);
             default:
-                assert(0);
+                return null;
         }
     }
     

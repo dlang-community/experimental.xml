@@ -23,7 +23,7 @@ module std.experimental.xml.validation;
 
 import std.experimental.xml.interfaces;
 
-struct ElementNestingValidator(CursorType)
+struct ElementNestingValidator(CursorType, alias ErrorHandler)
     if (isCursor!CursorType)
 {
     import std.experimental.xml.interfaces;
@@ -33,15 +33,24 @@ struct ElementNestingValidator(CursorType)
     import std.container.array;   
     private Array!StringType stack;
     
-    alias ErrorHandlerType = bool delegate(ref CursorType, ref typeof(stack));
-    ErrorHandlerType errorHandler;
-    
     private CursorType cursor;
     alias cursor this;
     
     this(Args...)(Args args)
     {
         cursor = CursorType(args);
+    }
+    
+    private void callHandler()
+    {
+        static if (__traits(compiles, ErrorHandler(cursor, stack)))
+            ErrorHandler(cursor, stack);
+        else static if (__traits(compiles, ErrorHandler(cursor)))
+            ErrorHandler(cursor);
+        else static if (__traits(compiles, ErrorHandler(stack)))
+            ErrorHandler(stack);
+        else
+            ErrorHandler();
     }
     
     bool enter()
@@ -66,12 +75,7 @@ struct ElementNestingValidator(CursorType)
             if (stack.empty)
             {
                 if (!cursor.documentEnd)
-                {
-                    if (errorHandler != null)
-                        errorHandler(cursor, stack);
-                    else
-                        assert(0);
-                }
+                    callHandler();
             }
             else
             {
@@ -79,10 +83,7 @@ struct ElementNestingValidator(CursorType)
         
                 if (!fastEqual(stack.back, cursor.getName))
                 {
-                    if (errorHandler != null)
-                        errorHandler(cursor, stack);
-                    else
-                        assert(0);
+                    callHandler();
                 }
                 else
                     stack.removeBack();
@@ -91,9 +92,10 @@ struct ElementNestingValidator(CursorType)
     }
 }
 
-auto elementNestingValidator(CursorType)(auto ref CursorType cursor)
+import std.container.array: Array;
+auto elementNestingValidator(alias ErrorHandler = (){ assert(0); }, CursorType) (auto ref CursorType cursor)
 {
-    auto res = ElementNestingValidator!CursorType();
+    auto res = ElementNestingValidator!(CursorType, ErrorHandler)();
     res.cursor = cursor;
     return res;
 }
@@ -119,29 +121,27 @@ unittest
         </aaa>
     };
     
+    int count = 0;
+    
     auto validator = 
          chooseLexer!xml
         .parse
         .cursor
-        .elementNestingValidator;
+        .elementNestingValidator!(
+            (ref cursor, ref stack)
+            {
+                import std.algorithm: canFind;
+                count++;
+                if (canFind(stack[], cursor.getName()))
+                    do
+                    {
+                        stack.removeBack();
+                    }
+                    while (stack.back != cursor.getName());
+                stack.removeBack();
+            });
         
     validator.setSource(xml);
-    
-    int count = 0;
-    validator.errorHandler = (ref cursor, ref stack)
-    {
-        import std.algorithm: canFind;
-        count++;
-        if (canFind(stack[], cursor.getName()))
-            do
-            {
-                stack.removeBack();
-            }
-            while (stack.back != cursor.getName());
-        stack.removeBack();
-        return true;
-    };
-    assert(validator.errorHandler != null);
     
     void inspectOneLevel(T)(ref T cursor)
     {

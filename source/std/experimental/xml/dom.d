@@ -25,6 +25,7 @@
 
 module std.experimental.xml.dom;
 
+import std.typecons: BitFlags;
 import std.variant: Variant;
 
 /++
@@ -117,12 +118,13 @@ enum NodeType: ushort
 +/
 enum DocumentPosition: ushort
 {
-    DISCONNECTED,
-    PRECEDING,
-    FOLLOWING,
-    CONTAINS,
-    CONTAINED_BY,
-    IMPLEMENTATION_SPECIFIC,
+    NONE         = 0,
+    DISCONNECTED = 1,
+    PRECEDING    = 2,
+    FOLLOWING    = 4,
+    CONTAINS     = 8,
+    CONTAINED_BY = 16,
+    IMPLEMENTATION_SPECIFIC = 32,
 }
 
 /++
@@ -130,9 +132,9 @@ enum DocumentPosition: ushort
 +/
 enum UserDataOperation: ushort
 {
-    /// The node is cloned, using Node.cloneNode().
+    /// The node is cloned, using `Node.cloneNode()`.
     NODE_CLONED = 1,
-    /// The node is imported, using Document.importNode().
+    /// The node is imported, using `Document.importNode()`.
     NODE_IMPORTED,
     /++
     +   The node is deleted.
@@ -141,9 +143,9 @@ enum UserDataOperation: ushort
     +   where the implementation has no real control over when objects are actually deleted.
     +/
     NODE_DELETED,
-    /// The node is renamed, using Document.renameNode().
+    /// The node is renamed, using `Document.renameNode()`.
     NODE_RENAMED,
-    /// The node is adopted, using Document.adoptNode().
+    /// The node is adopted, using `Document.adoptNode()`.
     NODE_ADOPTED,
 }
 
@@ -456,7 +458,7 @@ interface Node(DOMString)
     UserData getUserData(string key);
     UserData setUserData(string key, UserData data, UserDataHandler!DOMString handler);
 
-    DocumentPosition compareDocumentPosition(Node!DOMString other); //raises(DOMException)
+    BitFlags!DocumentPosition compareDocumentPosition(Node!DOMString other); //raises(DOMException)
 
     DOMString lookupPrefix(DOMString namespaceURI);
     DOMString lookupNamespaceURI(DOMString prefix);

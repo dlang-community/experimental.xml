@@ -22,7 +22,7 @@ module std.experimental.xml.domimpl;
 
 import std.experimental.xml.interfaces;
 import dom = std.experimental.xml.dom;
-import std.typecons: rebindable, Flag;
+import std.typecons: rebindable, Flag, BitFlags;
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
@@ -171,6 +171,97 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     return null;
             }
+            
+            BitFlags!(dom.DocumentPosition) compareDocumentPosition(dom.Node!DOMString _other)
+            {
+                enum Ret(dom.DocumentPosition flag) = cast(BitFlags!(dom.DocumentPosition)) flag;
+            
+                auto other = cast(Node)_other;
+                if (!other)
+                    return Ret!(dom.DocumentPosition.DISCONNECTED);
+            
+                if (this is other)
+                    return Ret!(dom.DocumentPosition.NONE);
+                    
+                auto node1 = other;
+                auto node2 = this;
+                Attr attr1 = cast(Attr)node1;
+                Attr attr2 = cast(Attr)node2;
+                
+                if (attr1 && attr1.ownerElement)
+                    node1 = attr1.ownerElement;
+                if (attr2 && attr2.ownerElement)
+                {
+                    node2 = attr2.ownerElement;
+                    if (attr1 && node2 is node1)
+                    {
+                        foreach (attr; (cast(Element)node2).attributes) with (dom.DocumentPosition)
+                        {
+                            if (attr is attr1)
+                                return Ret!IMPLEMENTATION_SPECIFIC | Ret!PRECEDING;
+                            else if (attr is attr2)
+                                return Ret!IMPLEMENTATION_SPECIFIC | Ret!FOLLOWING;
+                        }
+                    }
+                }
+                
+                void rootAndDepth(ref Node node, out int depth)
+                {
+                    while (node.parentNode)
+                    {
+                        node = node.parentNode;
+                        depth++;
+                    }
+                }
+                Node root1 = node1, root2 = node2;
+                int depth1, depth2;
+                rootAndDepth(root1, depth1);
+                rootAndDepth(root2, depth2);
+                
+                if (root1 !is root2) with (dom.DocumentPosition)
+                {
+                    if (cast(void*)root1 < cast(void*)root2)
+                        return Ret!DISCONNECTED | Ret!IMPLEMENTATION_SPECIFIC | Ret!PRECEDING;
+                    else
+                        return Ret!DISCONNECTED | Ret!IMPLEMENTATION_SPECIFIC | Ret!FOLLOWING;
+                }
+                
+                bool swapped = depth1 < depth2;
+                if (swapped)
+                {
+                    import std.algorithm: swap;
+                    swap(depth1, depth2);
+                    swap(node1, node2);
+                    swapped = true;
+                }
+                while (depth1-- > depth2)
+                {
+                    node1 = node1.parentNode;
+                }
+                if (node1 is node2) with (dom.DocumentPosition)
+                {
+                    if (swapped)
+                        return Ret!CONTAINS | Ret!PRECEDING;
+                    else
+                        return Ret!CONTAINED_BY | Ret!FOLLOWING;
+                }
+                while(true)
+                {
+                    if (node1.parentNode is node2.parentNode)
+                    {
+                        while (node1.nextSibling)
+                        {
+                            node1 = node1.nextSibling;
+                            if (node1 is node2)
+                                return Ret!(dom.DocumentPosition.PRECEDING);
+                        }
+                        return Ret!(dom.DocumentPosition.FOLLOWING);
+                    }
+                    node1 = node1.parentNode;
+                    node2 = node2.parentNode;
+                }
+                assert(0, "Control flow should never reach this...\nPlease file an issue");
+            }
         }
         private
         {
@@ -203,16 +294,15 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // methods specialized in NodeWithChildren
         override
         {
-            @property dom.NodeList!DOMString childNodes()
+            @property ChildList childNodes()
             {
-                class EmptyList: dom.NodeList!DOMString
-                {
-                    @property size_t length() { return 0; }
-                    Node item(size_t i) { return null; }
-                }
-                static EmptyList emptyList;
+                static ChildList emptyList;
                 if (!emptyList)
-                    emptyList = allocator.make!EmptyList;
+                {
+                    emptyList = allocator.make!ChildList;
+                    emptyList.outer = this;
+                    emptyList.currentChild = firstChild;
+                }
                 return emptyList;
             }
             @property Node firstChild() { return null; }
@@ -239,7 +329,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // methods specialized in Element
         override
         {
-            @property dom.NamedNodeMap!DOMString attributes() { return null; }
+            @property Element.Map attributes() { return null; }
             bool hasAttributes() { return false; }
         }
         // methods specialized in various subclasses
@@ -341,7 +431,44 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             void normalize() {}
-            dom.DocumentPosition compareDocumentPosition(dom.Node!DOMString other) { return dom.DocumentPosition.IMPLEMENTATION_SPECIFIC; }
+        }
+        // inner class for use in NodeWithChildren
+        class ChildList: dom.NodeList!DOMString
+        {
+            private Node currentChild;
+            // methods specific to NodeList
+            override
+            {
+                Node item(size_t index)
+                {
+                    auto result = rebindable(this.outer.firstChild);
+                    for (size_t i = 0; i < index && result !is null; i++)
+                    {
+                        result = result.nextSibling;
+                    }
+                    return result;
+                }
+                @property size_t length()
+                {
+                    auto child = rebindable(this.outer.firstChild);
+                    size_t result = 0;
+                    while (child)
+                    {
+                        result++;
+                        child = child.nextSibling;
+                    }
+                    return result;
+                }
+            }
+            // more idiomatic methods
+            auto opIndex(size_t i)
+            {
+                return item(i);
+            }
+            // range interface
+            auto front() { return currentChild; }
+            void popFront() { currentChild = currentChild.nextSibling; }
+            bool empty() { return currentChild is null; }
         }
         // method not required by the spec, specialized in NodeWithChildren
         bool isAncestor(Node other) { return false; }
@@ -507,38 +634,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     }
             }
         }
-        class ChildList: dom.NodeList!DOMString
-        {
-            private Node currentChild;
-            // methods specific to NodeList
-            override
-            {
-                Node item(size_t index)
-                {
-                    auto result = rebindable(this.outer.firstChild);
-                    for (size_t i = 0; i < index && result !is null; i++)
-                    {
-                        result = result.nextSibling;
-                    }
-                    return result;
-                }
-                @property size_t length()
-                {
-                    auto child = rebindable(this.outer.firstChild);
-                    size_t result = 0;
-                    while (child)
-                    {
-                        result++;
-                        child = child.nextSibling;
-                    }
-                    return result;
-                }
-            }
-            // range interface
-            auto front() { return currentChild; }
-            void popFront() { currentChild = currentChild.nextSibling; }
-            bool empty() { return currentChild is null; }
-        }
     }
     class DocumentFragment: NodeWithChildren, dom.DocumentFragment!DOMString
     {
@@ -638,119 +733,21 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             } 
             EntityReference createEntityReference(DOMString name) { return null; }
             
-            dom.NodeList!DOMString getElementsByTagName(DOMString tagname)
+            ElementsByTagName getElementsByTagName(DOMString tagname)
             {
-                class ElementList: dom.NodeList!DOMString
-                {
-                    private Document document;
-                    private DOMString tagname;
-                    
-                    private Element findNext(Node node)
-                    {
-                        auto childList = node.childNodes;
-                        auto len = childList.length;
-                        foreach (i; 0..len)
-                        {
-                            auto item = childList.item(i);
-                            if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
-                                return cast(Element)item;
-                                
-                            auto res = findNext(cast(Node)item);
-                            if (res !is null)
-                                return res;
-                        }
-                        return null;
-                    }
-                    
-                    // methods specific to NodeList
-                    override
-                    {
-                        @property size_t length()
-                        {
-                            size_t res = 0;
-                            auto node = findNext(document);
-                            while (node !is null)
-                            {
-                                res++;
-                                node = findNext(node);
-                            }
-                            return res;
-                        }
-                        Element item(size_t i)
-                        {
-                            auto res = findNext(document);
-                            while (res && i > 0)
-                            {
-                                res = findNext(res);
-                                i--;
-                            }
-                            return res;
-                        }
-                    }
-                }
-                auto res = allocator.make!ElementList;
+                auto res = allocator.make!ElementsByTagName;
                 res.document = this;
                 res.tagname = tagname;
+                res.current = res.item(0);
                 return res;
             }
-            dom.NodeList!DOMString getElementsByTagNameNS(DOMString namespaceURI, DOMString localName)
+            ElementsByTagNameNS getElementsByTagNameNS(DOMString namespaceURI, DOMString localName)
             {
-                class ElementList: dom.NodeList!DOMString
-                {
-                    private Document document;
-                    private DOMString namespaceURI, localName;
-                    
-                    private Element findNext(Node node)
-                    {
-                        auto childList = node.childNodes;
-                        auto len = childList.length;
-                        foreach (i; 0..len)
-                        {
-                            auto item = childList.item(i);
-                            if (item.nodeType == dom.NodeType.ELEMENT)
-                            {
-                                auto elem = cast(Element)item;
-                                if (elem.namespaceURI == namespaceURI && elem.localName == localName)
-                                    return elem;
-                            }
-                                
-                            auto res = findNext(cast(Node)item);
-                            if (res !is null)
-                                return res;
-                        }
-                        return null;
-                    }
-                    
-                    // methods specific to NodeList
-                    override
-                    {
-                        @property size_t length()
-                        {
-                            size_t res = 0;
-                            auto node = findNext(document);
-                            while (node !is null)
-                            {
-                                res++;
-                                node = findNext(node);
-                            }
-                            return res;
-                        }
-                        Element item(size_t i)
-                        {
-                            auto res = findNext(document);
-                            while (res && i > 0)
-                            {
-                                res = findNext(res);
-                                i--;
-                            }
-                            return res;
-                        }
-                    }
-                }
-                auto res = allocator.make!ElementList;
+                auto res = allocator.make!ElementsByTagNameNS;
                 res.document = this;
                 res.namespaceURI = namespaceURI;
                 res.localName = localName;
+                res.current = res.item(0);
                 return res;
             }
             Element getElementById(DOMString elementId) { return null; }
@@ -782,6 +779,103 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property DOMConfiguration domConfig() { return _config; }
             void normalizeDocument() { }
             Node renameNode(dom.Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName) { return null; } 
+        }
+        
+        alias ElementsByTagName = ElementsByTagNameImpl!false;
+        alias ElementsByTagNameNS = ElementsByTagNameImpl!true;
+        class ElementsByTagNameImpl(bool ns): dom.NodeList!DOMString
+        {
+            private Document document;
+            private Element current;
+            static if (ns)
+                private DOMString namespaceURI, localName;
+            else
+                private DOMString tagname;
+            
+            private Element findNext(Node node)
+            {
+                foreach (item; node.childNodes)
+                {   
+                    static if (ns)
+                    {
+                        if (item.nodeType == dom.NodeType.ELEMENT)
+                        {
+                            auto elem = cast(Element)item;
+                            if (elem.namespaceURI == namespaceURI && elem.localName == localName)
+                                return elem;
+                        }
+                    }
+                    else
+                        if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                            return cast(Element)item;
+                        
+                    auto res = findNext(item);
+                    if (res !is null)
+                        return res;
+                }
+                return findNextBack(node);
+            }
+            private Element findNextBack(Node node)
+            {
+                if (node.nextSibling)
+                {
+                    auto item = node.nextSibling;
+                    
+                    static if (ns)
+                    {
+                        if (item.nodeType == dom.NodeType.ELEMENT)
+                        {
+                            auto elem = cast(Element)item;
+                            if (elem.namespaceURI == namespaceURI && elem.localName == localName)
+                                return elem;
+                        }
+                    }
+                    else
+                        if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                            return cast(Element)item;
+                            
+                    return findNext(item);
+                }
+                else if (node.parentNode)
+                {
+                    return findNextBack(node.parentNode);
+                }
+                else
+                    return null;
+            }
+            
+            // methods specific to NodeList
+            override
+            {
+                @property size_t length()
+                {
+                    size_t res = 0;
+                    auto node = findNext(document);
+                    while (node !is null)
+                    {
+                        res++;
+                        node = findNext(node);
+                    }
+                    return res;
+                }
+                Element item(size_t i)
+                {
+                    auto res = findNext(document);
+                    while (res && i > 0)
+                    {
+                        res = findNext(res);
+                        i--;
+                    }
+                    return res;
+                }
+            }
+            // more idiomatic methods
+            auto opIndex(size_t i) { return item(i); }
+            
+            // range interface
+            bool empty() { return current is null; }
+            void popFront() { current = findNext(current); }
+            auto front() { return current; }
         }
         private
         {
@@ -1304,11 +1398,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     {
                         attr._previousSibling = res._previousAttr;
                         attr._nextSibling = res._nextAttr;
+                        if (res is firstAttr) firstAttr = attr;
                     }
                     else
                     {
                         attr._nextSibling = firstAttr;
                         firstAttr = attr;
+                        attr._previousSibling = null;
+                        currentAttr = firstAttr;
                     }
                     
                     return res;
@@ -1360,11 +1457,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     {
                         attr._previousSibling = res._previousAttr;
                         attr._nextSibling = res._nextAttr;
+                        if (res is firstAttr) firstAttr = attr;
                     }
                     else
                     {
                         attr._nextSibling = firstAttr;
                         firstAttr = attr;
+                        attr._previousSibling = null;
+                        currentAttr = firstAttr;
                     }
                     
                     return res;
@@ -1392,9 +1492,22 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 Attr firstAttr;
                 Attr currentAttr;
             }
-            auto front() { return currentAttr; }
-            void popFront() { currentAttr = currentAttr._nextAttr; }
-            bool empty() { return currentAttr is null; }
+            // better methods
+            auto opIndex(size_t i) { return item(i); }
+            
+            // range interface
+            auto opSlice()
+            {
+                struct Range
+                {
+                    Attr currentAttr;
+                    
+                    auto front() { return currentAttr; }
+                    void popFront() { currentAttr = currentAttr._nextAttr; }
+                    bool empty() { return currentAttr is null; }
+                }
+                return Range(firstAttr);
+            }
         }
     }
     class Text: CharacterData, dom.Text!DOMString
@@ -1651,6 +1764,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
     }
 }
 
+auto domBuilder(CursorType)(auto ref CursorType cursor)
+{
+    import std.experimental.allocator.gc_allocator;
+    import dompar = std.experimental.xml.domparser;
+    return dompar.domBuilder(cursor, new DOMImplementation!(CursorType.StringType, shared(GCAllocator))());
+}
+
 unittest
 {
     import std.experimental.allocator.gc_allocator;
@@ -1714,3 +1834,54 @@ unittest
     assert(comm.isEqualNode(comm.cloneNode(false)));
     assert(pi.isEqualNode(pi.cloneNode(false)));
 };
+
+unittest
+{
+    import std.experimental.xml.parser;
+    import std.experimental.xml.cursor;
+    import std.experimental.xml.domparser;
+    import std.stdio;
+    
+    string xml = q"{
+    <?xml version = '1.0'?>
+    <books>
+        <book ISBN = '078-5342635362'>
+            <title>The D Programming Language</title>
+            <author>A. Alexandrescu</author>
+        </book>
+        <book ISBN = '978-1515074601'>
+            <title>Programming in D</title>
+            <author>Ali Çehreli</author>
+        </book>
+        <book ISBN = '978-0201704310' about-d = 'no'>
+            <title>Modern C++ Design</title>
+            <author>A. Alexandrescu</author>
+        </book>
+    </books>
+    }";
+    
+    auto builder =
+         chooseParser!xml
+        .cursor
+        .domBuilder;
+        
+    builder.setSource(xml);
+    builder.buildRecursive;
+    
+    auto doc = builder.getDocument;
+    auto books = doc.getElementsByTagName("book");
+    auto authors = doc.getElementsByTagName("author");
+    auto titles = doc.getElementsByTagName("title");
+    
+    enum Pos(dom.DocumentPosition pos) = cast(BitFlags!(dom.DocumentPosition))pos;
+    with (dom.DocumentPosition)
+    {
+        assert(books[1].compareDocumentPosition(authors[2]) == Pos!FOLLOWING);
+        assert(authors[2].compareDocumentPosition(titles[0]) == Pos!PRECEDING);
+        assert(books[1].compareDocumentPosition(titles[1]) == (Pos!CONTAINED_BY | Pos!FOLLOWING));
+        assert(authors[0].compareDocumentPosition(books[0]) == (Pos!CONTAINS | Pos!PRECEDING));
+        assert(titles[2].compareDocumentPosition(titles[2]) == Pos!NONE);
+        assert(books[2].attributes[0].compareDocumentPosition(books[2].attributes[1]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!FOLLOWING));
+        assert(books[2].attributes[1].compareDocumentPosition(books[2].attributes[0]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!PRECEDING));
+    }
+}
