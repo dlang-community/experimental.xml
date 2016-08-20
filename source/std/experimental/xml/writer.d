@@ -120,15 +120,63 @@ struct PrettyPrinters
 
 /++
 +   Component that outputs XML data to an `OutputRange`.
++
++   To format the XML data, it calls specific methods of the `PrettyPrinter`, if
++   they are defined. Otherwise, it just prints the data with the minimal markup required.
++   The currently available format callbacks are:
++   $(UL
++       $(LI `beforeNode`, called as the first operation of outputting every XML node;
++                          expected to return a string to be printed before the node)
++       $(LI `afterNode`, called as the last operation of outputting every XML node;
++                         expected to return a string to be printed after the node)
++       $(LI `increaseLevel`, called after the start of a node that may have children
++                             (like a start tag or a doctype with an internal subset))
++       $(LI `decreaseLevel`, called before the end of a node that had some children
++                             (i.e. before writing a closing tag or the end of a doctype
++                              with an internal subset))
++       $(LI `beforeAttributeName`, called to obtain a string to be used as spacing
++                                   between the tag name and the first attribute name
++                                   and between the attribute value and the name of the
++                                   next attribute; it is not used between the value
++                                   of the last attribute and the closing `>`, nor between
++                                   the tag name and the closing `>` if the element
++                                   has no attributes)
++       $(LI `beforeElementEnd`, called to obtain a string to be used as spacing
++                                before the closing `>` of a tag, that is after the
++                                last attribute name or after the tag name if the
++                                element has no attributes)
++       $(LI `afterAttributeName`, called to obtain a string to be used as spacing
++                                  between the name of an attribute and the `=` sign)
++       $(LI `beforeAttributeValue`, called to obtain a string to be used as spacing
++                                  between the `=` sign and the value of an attribute)
++       $(LI `formatAttribute(outputRange, attibuteValue)`, called to write out the value
++                                                           of an attribute)
++       $(LI `formatAttribute(attributeValue)`, called to obtain a string that represents
++                                               the formatted attribute to be printed; used
++                                               when the previous method is not defined)
++       $(LI `attributeDelimiter`, called to obtain a string that represents the delimiter
++                                  to be used when writing attributes; used when the previous
++                                  two methods are not defined; in this case the attribute
++                                  is not subject to any formatting, except prepending and
++                                  appending the string returned by this method)
++       $(LI `afterCommentStart`, called to obtain a string that represents the spacing
++                                 to be used between the `<!--` opening and the comment contents)
++       $(LI `beforeCommentEnd`, called to obtain a string that represents the spacing
++                                to be used between the comment contents and the closing `-->`)
++       $(LI `betweenPITargetData`, called to obtain a string to be used as spacing
++                                   between the target and data of a processing instruction)
++       $(LI `beforePIEnd`, called to obtain a string to be used as spacing between
++                           the processing instruction data and the closing `?>`)
++   )
 +/
 struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.Minimalizer)
 {
     alias StringType = _StringType;
 
     static if (is(PrettyPrinter))
-        PrettyPrinter prettyPrinter;
+        private PrettyPrinter prettyPrinter;
     else static if (is(PrettyPrinter!StringType))
-        PrettyPrinter!StringType prettyPrinter;
+        private PrettyPrinter!StringType prettyPrinter;
     else
         static assert(0, "Invalid pretty printer type for string type " ~ StringType.stringof);
         
@@ -225,6 +273,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
             mixin(ifAnyCompiles(formatAttribute!"attrs[2]"));
         }
         
+        mixin(ifAnyCompiles(expand!"beforePIEnd"));
         output.put("?>");
         mixin(ifAnyCompiles(expand!"afterNode"));
     }
@@ -440,9 +489,19 @@ unittest
     static assert(isWriter!(typeof(writer)));
 }
 
+/++
++   Returns a `Writer` for the given `StringType`, `outRange` and `PrettyPrinter`.
++/
 auto writerFor(StringType, alias PrettyPrinter = PrettyPrinters.Indenter, OutRange)(ref OutRange outRange)
 {
     auto res = Writer!(StringType, OutRange, PrettyPrinter)();
+    res.setSink(outRange);
+    return res;
+}
+/// ditto
+auto writerFor(StringType, OutRange, PrettyPrinter)(ref OutRange outRange, auto ref PrettyPrinter printer)
+{
+    auto res = Writer!(StringType, OutRange, PrettyPrinter)(printer);
     res.setSink(outRange);
     return res;
 }
@@ -486,6 +545,9 @@ unittest
 
 import dom = std.experimental.xml.dom;
 
+/++
++   Outputs the entire DOM tree rooted at `node` using the given `writer`.
++/
 void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
     if (is(NodeType: dom.Node!(WriterType.StringType)))
 {
@@ -663,8 +725,11 @@ unittest
 }
 
 /++
-+   A writer that validates the input given by the user using a chain of validating
-+   cursors.
++   A wrapper around a writer that, before forwarding every write operation, validates
++   the input given by the user using a chain of validating cursors.
++
++   This type should not be instantiated directly, but with the helper function
++   `withValidation`.
 +/
 struct CheckedWriter(WriterType, CursorType = void)
     if (isWriter!(WriterType) && (is(CursorType == void) || (isCursor!CursorType && is(WriterType.StringType == CursorType.StringType))))
@@ -871,7 +936,20 @@ struct CheckedWriter(WriterType, CursorType = void)
     }
 }
 
-///
+/++
++   Returns a new _writer that wraps the original one, applying a validation to every
++   output operation.
++
++   `validationFun` must return a value that fulfills the cursor API. This template
++   returns instances of `CheckedWriter`.
++
++   Params:
++       validationFun = a function or function template that produces an instance of
++                       a validating cursor
++       Params = the compile-time parameters used to instantiate `validationFun`
++       writer = the original writer, to be enhanced with the validation
++       args = the runtime arguments passed to `validationFun`
++/
 template withValidation(alias validationFun, Params...)
 {
     import std.traits;

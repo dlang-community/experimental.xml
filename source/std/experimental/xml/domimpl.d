@@ -736,7 +736,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             ElementsByTagName getElementsByTagName(DOMString tagname)
             {
                 auto res = allocator.make!ElementsByTagName;
-                res.document = this;
+                res.root = this;
                 res.tagname = tagname;
                 res.current = res.item(0);
                 return res;
@@ -744,15 +744,84 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             ElementsByTagNameNS getElementsByTagNameNS(DOMString namespaceURI, DOMString localName)
             {
                 auto res = allocator.make!ElementsByTagNameNS;
-                res.document = this;
+                res.root = this;
                 res.namespaceURI = namespaceURI;
                 res.localName = localName;
                 res.current = res.item(0);
                 return res;
             }
-            Element getElementById(DOMString elementId) { return null; }
+            Element getElementById(DOMString elementId)
+            {
+                Element find(Node node)
+                {
+                    if (node.nodeType == dom.NodeType.ELEMENT && node.hasAttributes)
+                        foreach (attr; node.attributes)
+                            if (attr.isId && node.nodeValue == elementId)
+                                return cast(Element)node;
+                                
+                    foreach (child; node.childNodes)
+                    {
+                        auto res = find(child);
+                        if (res)
+                            return res;
+                    }
+                    return null;
+                }
+                return find(_root);
+            }
 
-            Node importNode(dom.Node!DOMString importedNode, bool deep) { return null; } 
+            Node importNode(dom.Node!DOMString node, bool deep)
+            {
+                switch (node.nodeType) with (dom.NodeType)
+                {
+                    case ATTRIBUTE:
+                        Attr result;
+                        if (node.prefix)
+                            result = createAttributeNS(node.namespaceURI, node.nodeName);
+                        else
+                            result = createAttribute(node.nodeName);
+                        auto children = node.childNodes;
+                        foreach (i; 0..children.length)
+                            result.appendChild(importNode(children.item(i), true));
+                        return result;
+                    case DOCUMENT_FRAGMENT:
+                        auto result = createDocumentFragment();
+                        if (deep)
+                        {
+                            auto children = node.childNodes;
+                            foreach (i; 0..children.length)
+                                result.appendChild(importNode(children.item(i), deep));
+                        }
+                        return result;
+                    case ELEMENT:
+                        Element result;
+                        if (node.prefix)
+                            result = createElementNS(node.namespaceURI, node.nodeName);
+                        else
+                            result = createElement(node.nodeName);
+                        if (node.hasAttributes)
+                        {
+                            auto attributes = node.attributes;
+                            foreach (i; 0..attributes.length)
+                            {
+                                auto attr = cast(Attr)(importNode(attributes.item(i), deep));
+                                assert(attr);
+                                result.setAttributeNode(attr);
+                            }
+                        }
+                        if (deep)
+                        {
+                            auto children = node.childNodes;
+                            foreach (i; 0..children.length)
+                                result.appendChild(importNode(children.item(i), true));
+                        }
+                        return result;
+                    case PROCESSING_INSTRUCTION:
+                        return createProcessingInstruction(node.nodeName, node.nodeValue);
+                    default:
+                        throw allocator.make!DOMException(dom.ExceptionCode.NOT_SUPPORTED);
+                }
+            }
             Node adoptNode(dom.Node!DOMString source) { return null; } 
 
             @property DOMString inputEncoding() { return null; }
@@ -778,104 +847,21 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             
             @property DOMConfiguration domConfig() { return _config; }
             void normalizeDocument() { }
-            Node renameNode(dom.Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName) { return null; } 
-        }
-        
-        alias ElementsByTagName = ElementsByTagNameImpl!false;
-        alias ElementsByTagNameNS = ElementsByTagNameImpl!true;
-        class ElementsByTagNameImpl(bool ns): dom.NodeList!DOMString
-        {
-            private Document document;
-            private Element current;
-            static if (ns)
-                private DOMString namespaceURI, localName;
-            else
-                private DOMString tagname;
-            
-            private Element findNext(Node node)
+            Node renameNode(dom.Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName)
             {
-                foreach (item; node.childNodes)
-                {   
-                    static if (ns)
-                    {
-                        if (item.nodeType == dom.NodeType.ELEMENT)
-                        {
-                            auto elem = cast(Element)item;
-                            if (elem.namespaceURI == namespaceURI && elem.localName == localName)
-                                return elem;
-                        }
-                    }
-                    else
-                        if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
-                            return cast(Element)item;
-                        
-                    auto res = findNext(item);
-                    if (res !is null)
-                        return res;
-                }
-                return findNextBack(node);
+                auto node = cast(Node)n;
+                if (!node || node.ownerDocument !is this)
+                    throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
+                
+                auto type = node.nodeType;
+                if (type != dom.NodeType.ELEMENT && type != dom.NodeType.ATTRIBUTE)
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_SUPPORTED);
+                
+                auto withNs = (cast(NodeWithNamespace)node);
+                withNs.setQualifiedName(qualifiedName);
+                withNs._namespaceURI = namespaceURI;
+                return node;
             }
-            private Element findNextBack(Node node)
-            {
-                if (node.nextSibling)
-                {
-                    auto item = node.nextSibling;
-                    
-                    static if (ns)
-                    {
-                        if (item.nodeType == dom.NodeType.ELEMENT)
-                        {
-                            auto elem = cast(Element)item;
-                            if (elem.namespaceURI == namespaceURI && elem.localName == localName)
-                                return elem;
-                        }
-                    }
-                    else
-                        if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
-                            return cast(Element)item;
-                            
-                    return findNext(item);
-                }
-                else if (node.parentNode)
-                {
-                    return findNextBack(node.parentNode);
-                }
-                else
-                    return null;
-            }
-            
-            // methods specific to NodeList
-            override
-            {
-                @property size_t length()
-                {
-                    size_t res = 0;
-                    auto node = findNext(document);
-                    while (node !is null)
-                    {
-                        res++;
-                        node = findNext(node);
-                    }
-                    return res;
-                }
-                Element item(size_t i)
-                {
-                    auto res = findNext(document);
-                    while (res && i > 0)
-                    {
-                        res = findNext(res);
-                        i--;
-                    }
-                    return res;
-                }
-            }
-            // more idiomatic methods
-            auto opIndex(size_t i) { return item(i); }
-            
-            // range interface
-            bool empty() { return current is null; }
-            void popFront() { current = findNext(current); }
-            auto front() { return current; }
         }
         private
         {
@@ -998,6 +984,102 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     return super.appendChild(newChild);
             }
         }
+    }
+    alias ElementsByTagName = ElementsByTagNameImpl!false;
+    alias ElementsByTagNameNS = ElementsByTagNameImpl!true;
+    class ElementsByTagNameImpl(bool ns): dom.NodeList!DOMString
+    {
+        private Node root;
+        private Element current;
+        static if (ns)
+            private DOMString namespaceURI, localName;
+        else
+            private DOMString tagname;
+        
+        private Element findNext(Node node)
+        {
+            foreach (item; node.childNodes)
+            {   
+                static if (ns)
+                {
+                    if (item.nodeType == dom.NodeType.ELEMENT)
+                    {
+                        auto elem = cast(Element)item;
+                        if (elem.namespaceURI == namespaceURI && elem.localName == localName)
+                            return elem;
+                    }
+                }
+                else
+                    if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                        return cast(Element)item;
+                    
+                auto res = findNext(item);
+                if (res !is null)
+                    return res;
+            }
+            return findNextBack(node);
+        }
+        private Element findNextBack(Node node)
+        {
+            if (node.nextSibling)
+            {
+                auto item = node.nextSibling;
+                
+                static if (ns)
+                {
+                    if (item.nodeType == dom.NodeType.ELEMENT)
+                    {
+                        auto elem = cast(Element)item;
+                        if (elem.namespaceURI == namespaceURI && elem.localName == localName)
+                            return elem;
+                    }
+                }
+                else
+                    if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                        return cast(Element)item;
+                        
+                return findNext(item);
+            }
+            else if (node.parentNode && node.parentNode !is root)
+            {
+                return findNextBack(node.parentNode);
+            }
+            else
+                return null;
+        }
+        
+        // methods specific to NodeList
+        override
+        {
+            @property size_t length()
+            {
+                size_t res = 0;
+                auto node = findNext(root);
+                while (node !is null)
+                {
+                    res++;
+                    node = findNext(node);
+                }
+                return res;
+            }
+            Element item(size_t i)
+            {
+                auto res = findNext(root);
+                while (res && i > 0)
+                {
+                    res = findNext(res);
+                    i--;
+                }
+                return res;
+            }
+        }
+        // more idiomatic methods
+        auto opIndex(size_t i) { return item(i); }
+        
+        // range interface
+        bool empty() { return current is null; }
+        void popFront() { current = findNext(current); }
+        auto front() { return current; }
     }
     abstract class CharacterData: Node, dom.CharacterData!DOMString
     {
@@ -1257,8 +1339,23 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             void setIdAttributeNS(DOMString namespaceURI, DOMString localName, bool isId) { return; }
             void setIdAttributeNode(dom.Attr!DOMString idAttr, bool isId) { return; }
             
-            dom.NodeList!DOMString getElementsByTagName(DOMString name) { return null; }
-            dom.NodeList!DOMString getElementsByTagNameNS(DOMString namespaceURI, DOMString localName) { return null; }
+            ElementsByTagName getElementsByTagName(DOMString tagname)
+            {
+                auto res = allocator.make!ElementsByTagName;
+                res.root = this;
+                res.tagname = tagname;
+                res.current = res.item(0);
+                return res;
+            }
+            ElementsByTagNameNS getElementsByTagNameNS(DOMString namespaceURI, DOMString localName)
+            {
+                auto res = allocator.make!ElementsByTagNameNS;
+                res.root = this;
+                res.namespaceURI = namespaceURI;
+                res.localName = localName;
+                res.current = res.item(0);
+                return res;
+            }
             
             @property dom.XMLTypeInfo!DOMString schemaTypeInfo() { return null; }
         }
@@ -1297,6 +1394,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 auto cloned = allocator.make!Element();
                 cloned._ownerDocument = ownerDocument;
+                cloned._attrs = allocator.make!Map();
                 cloned.outer = this.outer;
                 super.performClone(cloned, deep);
                 return cloned;
@@ -1764,6 +1862,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
     }
 }
 
+/++
++   Instantiates a `DOMBuilder` specialized for the `DOMImplementation` implemented
++   in this module.
++/
 auto domBuilder(CursorType)(auto ref CursorType cursor)
 {
     import std.experimental.allocator.gc_allocator;
@@ -1843,7 +1945,7 @@ unittest
     import std.stdio;
     
     string xml = q"{
-    <?xml version = '1.0'?>
+    <?xml version = '1.0' standalone = 'yes'?>
     <books>
         <book ISBN = '078-5342635362'>
             <title>The D Programming Language</title>
@@ -1873,6 +1975,9 @@ unittest
     auto authors = doc.getElementsByTagName("author");
     auto titles = doc.getElementsByTagName("title");
     
+    assert(doc.xmlVersion == "1.0");
+    assert(doc.xmlStandalone);
+    
     enum Pos(dom.DocumentPosition pos) = cast(BitFlags!(dom.DocumentPosition))pos;
     with (dom.DocumentPosition)
     {
@@ -1884,4 +1989,6 @@ unittest
         assert(books[2].attributes[0].compareDocumentPosition(books[2].attributes[1]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!FOLLOWING));
         assert(books[2].attributes[1].compareDocumentPosition(books[2].attributes[0]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!PRECEDING));
     }
+    
+    assert(books[1].cloneNode(true).childNodes[1].isEqualNode(authors[1]));
 }

@@ -28,6 +28,9 @@ import dom = std.experimental.xml.dom;
 +   build the DOM tree of the document; as the cursor advances, nodes can be
 +   selectively added to the tree, allowing to built a small representation
 +   containing only the needed parts of the document.
++
++   This type should not be instantiated directly. Instead, the helper function
++   `domBuilder` should be used.
 +/
 struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     if (isCursor!T && is(DOMImplementation : dom.DOMImplementation!(T.StringType)))
@@ -64,6 +67,21 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     {
         cursor.setSource(input);
         document = domImpl.createDocument(null, null, null);
+        
+        if (cursor.getKind == XMLKind.DOCUMENT)
+            foreach (attr; cursor.getAttributes)
+                switch (attr.name)
+                {
+                    case "version":
+                        document.xmlVersion = attr.value;
+                        break;
+                    case "standalone":
+                        document.xmlStandalone = attr.value == "yes";
+                        break;
+                    default:
+                        break;
+                }
+        
         currentNode = document;
     }
     

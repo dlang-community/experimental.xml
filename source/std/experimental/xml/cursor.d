@@ -810,6 +810,9 @@ import std.experimental.allocator.gc_allocator;
 +   its internal buffers and thus invalidate every output. This wrapper returns freshly
 +   allocated strings, thus allowing references to its outputs to outlive calls to advancing
 +   methods.
++
++   This type should not be instantiated directly, but using the helper function
++   `copyingCursor`.
 +/
 struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern)
     if (isCursor!CursorType && isArray!(CursorType.StringType))

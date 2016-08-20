@@ -23,6 +23,26 @@ module std.experimental.xml.validation;
 
 import std.experimental.xml.interfaces;
 
+/**
+*   Wrapper around a cursor that checks whether elements are correctly nested.
+*
+*   It will call `ErrorHandler` whenever it finds a closing tag that does not match
+*   the last start tag. `ErrorHandler` will be called with the first matching tuple
+*   from the following:
+*   $(UL
+*       $(LI `(CursorType, std.container.Array!(CursorType.StringType))`)
+*       $(LI `(CursorType)`)
+*       $(LI `(std.container.Array!(CursorType.StringType))`)
+*       $(LI `()`)
+*   )
+*   Any of these parameters can be taken by `ref`. The second parameter, of type
+*   `std.container.Array!(CursorType.StringType)` represents the stack of currently
+*   open tags. The handler is free to modify it (to implement erro recovery with
+*   automatic XML fixing).
+*
+*   This type should not be instantiated directly, but with the helper function
+*   `elementNestingValidator`.
+*/
 struct ElementNestingValidator(CursorType, alias ErrorHandler)
     if (isCursor!CursorType)
 {
@@ -93,6 +113,9 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
 }
 
 import std.container.array: Array;
+/**
+*   Instantiates an `ElementNestingValidator` with the given `cursor` and `ErrorHandler`
+*/
 auto elementNestingValidator(alias ErrorHandler = (){ assert(0); }, CursorType) (auto ref CursorType cursor)
 {
     auto res = ElementNestingValidator!(CursorType, ErrorHandler)();
@@ -160,6 +183,9 @@ unittest
     assert(count == 1);
 }
 
+/**
+*   Checks whether a character can appear in an XML 1.0 document.
+*/
 pure nothrow @nogc @safe bool isValidXMLCharacter10(dchar c)
 {
     return c == '\r' || c == '\n' || c == '\t'
@@ -168,6 +194,9 @@ pure nothrow @nogc @safe bool isValidXMLCharacter10(dchar c)
         || (0x10000 <= c && c <= 0x10FFFF);
 }
 
+/**
+*   Checks whether a character can appear in an XML 1.1 document.
+*/
 pure nothrow @nogc @safe bool isValidXMLCharacter11(dchar c)
 {
     return (1 <= c && c <= 0xD7FF)
@@ -175,6 +204,9 @@ pure nothrow @nogc @safe bool isValidXMLCharacter11(dchar c)
         || (0x10000 <= c && c <= 0x10FFFF);
 }
 
+/**
+*   Checks whether a character can start an XML name (tag name or attribute name).
+*/
 pure nothrow @nogc @safe bool isValidXMLNameStart(dchar c)
 {
     return c == ':'
@@ -192,6 +224,9 @@ pure nothrow @nogc @safe bool isValidXMLNameStart(dchar c)
         || (0xFDF0 <= c && c <= 0xEFFFF && c != 0xFFFE && c != 0xFFFF);
 }
 
+/**
+*   Checks whether a character can appear inside an XML name (tag name or attribute name).
+*/
 pure nothrow @nogc @safe bool isValidXMLNameChar(dchar c)
 {
     return isValidXMLNameStart(c)
@@ -203,6 +238,9 @@ pure nothrow @nogc @safe bool isValidXMLNameChar(dchar c)
         || (0x203F <= c && c <= 2040);
 }
 
+/**
+*   Checks whether a character can appear in an XML public ID.
+*/
 pure nothrow @nogc @safe bool isValidXMLPublicIdCharacter(dchar c)
 {
     import std.string: indexOf;
@@ -215,6 +253,16 @@ pure nothrow @nogc @safe bool isValidXMLPublicIdCharacter(dchar c)
         || "-'()+,./:=?;!*#@$_%".indexOf(c) != -1;
 }
 
+/**
+*   Wrapper around a cursor that checks whether tag names and attribute names
+*   are well-formed with respect to the specification.
+*
+*   Will call `InvalidTagHandler` every time it encounters an ill-formed tag name
+*   and `InvalidAttrHandler` every time it encounters an ill-formed attribute name.
+*
+*   This type should not be instantiated directly, but with the helper function
+*   `checkXMLNames`.
+*/
 struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
     if (isCursor!CursorType)
 {
@@ -256,6 +304,11 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
         return CheckedAttributes(onInvalidAttrName, cursor.getAttributes);
     }
 }
+
+/**
+*   Returns an instance of `CheckXMLNames` specialized for the given `cursor`,
+*   with the given error handlers;
+*/
 auto checkXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
                   (auto ref CursorType cursor,
                    InvalidTagHandler tagHandler = (CursorType.StringType s) {},
