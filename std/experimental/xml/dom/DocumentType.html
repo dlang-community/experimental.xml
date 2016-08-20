@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Interface DocumentType</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class="selected module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dtd.html" class=" module">dtd</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Interface DocumentType</h1>
+			<section>
+				<p>Each <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> has a <code class="lang-d"><span class="pln">doctype</span></code> attribute whose value is either <code class="lang-d"><span class="kwd">null</span></code> or a
+   <code class="lang-d"><span class="typ"><span class="typ">DocumentType</span></span></code> object. The <code class="lang-d"><span class="typ"><span class="typ">DocumentType</span></span></code> interface in the DOM Core provides
+   an interface to the list of entities that are defined for the document, and
+   little else because the effect of namespaces and the various XML schema efforts
+   on DTD representation are not clearly understood as of this writing.
+</p>
+<section><p>DOM Level 3 doesn't support editing <code class="lang-d"><span class="typ">DocumentType</span></code> nodes. <code class="lang-d"><span class="typ">DocumentType</span></code> nodes are read-only.
+</p>
+</section>
+
+					<section>
+						<h3>Template arguments</h3>
+						<div class="prototype">
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">DocumentType</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							</code>
+						</div>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.entities.html" class="public property"><code>entities</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a>!DOMString</code></td>
+								<td>A <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a></span></a></code> containing the general entities, both external and internal,
+   declared in the DTD. Parameter entities are not contained. Duplicates are discarded.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.internalSubset.html" class="public property"><code>internalSubset</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The internal subset as a string, or <code class="lang-d"><span class="kwd">null</span></code> if there is none.
+   This is does not contain the delimiting square brackets.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.name.html" class="public property"><code>name</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The name of DTD; i.e., the name immediately following the <code class="lang-d"><span class="pln">DOCTYPE</span></code> keyword.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.notations.html" class="public property"><code>notations</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a>!DOMString</code></td>
+								<td>A <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a></span></a></code> containing the notations declared in the DTD. Duplicates are discarded.
+   Every node in this map also implements the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Notation.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Notation.html"><span class="typ">Notation</span></a></span></a></code> interface.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.publicId.html" class="public property"><code>publicId</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The public identifier of the external subset.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/DocumentType.systemId.html" class="public property"><code>systemId</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The system identifier of the external subset. This may be an absolute URI or not.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

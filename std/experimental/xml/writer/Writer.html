@@ -92,6 +92,54 @@ $('#symbolSearchPane').show();
 			<section>
 				<p>Component that outputs XML data to an <code class="lang-d"><span class="typ">OutputRange</span></code>.
 </p>
+<section><p>To format the XML data, it calls specific methods of the <code class="lang-d"><span class="typ">PrettyPrinter</span></code>, if
+   they are defined. Otherwise, it just prints the data with the minimal markup required.
+   The currently available format callbacks are:
+   <ul>       <li><code class="lang-d"><span class="pln">beforeNode</span></code>, called as the first operation of outputting every XML node;
+                          expected to return a string to be printed before the node</li>
+       <li><code class="lang-d"><span class="pln">afterNode</span></code>, called as the last operation of outputting every XML node;
+                         expected to return a string to be printed after the node</li>
+       <li><code class="lang-d"><span class="pln">increaseLevel</span></code>, called after the start of a node that may have children
+                             (like a start tag or a doctype with an internal subset)</li>
+       <li><code class="lang-d"><span class="pln">decreaseLevel</span></code>, called before the end of a node that had some children
+                             (i.e. before writing a closing tag or the end of a doctype
+                              with an internal subset)</li>
+       <li><code class="lang-d"><span class="pln">beforeAttributeName</span></code>, called to obtain a string to be used as spacing
+                                   between the tag name and the first attribute name
+                                   and between the attribute value and the name of the
+                                   next attribute; it is not used between the value
+                                   of the last attribute and the closing <code class="lang-d"><span class="pun">&gt;</span></code>, nor between
+                                   the tag name and the closing <code class="lang-d"><span class="pun">&gt;</span></code> if the element
+                                   has no attributes</li>
+       <li><code class="lang-d"><span class="pln">beforeElementEnd</span></code>, called to obtain a string to be used as spacing
+                                before the closing <code class="lang-d"><span class="pun">&gt;</span></code> of a tag, that is after the
+                                last attribute name or after the tag name if the
+                                element has no attributes</li>
+       <li><code class="lang-d"><span class="pln">afterAttributeName</span></code>, called to obtain a string to be used as spacing
+                                  between the name of an attribute and the <code class="lang-d"><span class="pun">=</span></code> sign</li>
+       <li><code class="lang-d"><span class="pln">beforeAttributeValue</span></code>, called to obtain a string to be used as spacing
+                                  between the <code class="lang-d"><span class="pun">=</span></code> sign and the value of an attribute</li>
+       <li><code class="lang-d"><span class="pln">formatAttribute</span><span class="pun">(</span><span class="pln">outputRange</span><span class="pun">, </span><span class="pln">attibuteValue</span><span class="pun">)</span></code>, called to write out the value
+                                                           of an attribute</li>
+       <li><code class="lang-d"><span class="pln">formatAttribute</span><span class="pun">(</span><span class="pln">attributeValue</span><span class="pun">)</span></code>, called to obtain a string that represents
+                                               the formatted attribute to be printed; used
+                                               when the previous method is not defined</li>
+       <li><code class="lang-d"><span class="pln">attributeDelimiter</span></code>, called to obtain a string that represents the delimiter
+                                  to be used when writing attributes; used when the previous
+                                  two methods are not defined; in this case the attribute
+                                  is not subject to any formatting, except prepending and
+                                  appending the string returned by this method</li>
+       <li><code class="lang-d"><span class="pln">afterCommentStart</span></code>, called to obtain a string that represents the spacing
+                                 to be used between the <code class="lang-d"><span class="pun">&lt;!--</span></code> opening and the comment contents</li>
+       <li><code class="lang-d"><span class="pln">beforeCommentEnd</span></code>, called to obtain a string that represents the spacing
+                                to be used between the comment contents and the closing <code class="lang-d"><span class="pun">--&gt;</span></code></li>
+       <li><code class="lang-d"><span class="pln">betweenPITargetData</span></code>, called to obtain a string to be used as spacing
+                                   between the target and data of a processing instruction</li>
+       <li><code class="lang-d"><span class="pln">beforePIEnd</span></code>, called to obtain a string to be used as spacing between
+                           the processing instruction data and the closing <code class="lang-d"><span class="pun">?&gt;</span></code></li>
+   </ul>
+</p>
+</section>
 
 					<section>
 						<h3>Template arguments</h3>

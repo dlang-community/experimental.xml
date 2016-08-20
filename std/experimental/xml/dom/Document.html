@@ -108,6 +108,260 @@ $('#symbolSearchPane').show();
 							</code>
 						</div>
 					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.doctype.html" class="public property"><code>doctype</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/DocumentType.html"><span class="typ">DocumentType</span></a>!DOMString</code></td>
+								<td>The <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentType.html"><span class="typ">DocumentType</span></a></code> associated with this document. For XML documents without a
+   document type declaration this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.documentElement.html" class="public property"><code>documentElement</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">Element</span>!DOMString</code></td>
+								<td>This is a convenience attribute that allows direct access to the child node
+   that is the document element of the document.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.documentURI.html" class="public property"><code>documentURI</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The location of the document or <code class="lang-d"><span class="kwd">null</span></code> if undefined or if the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code>
+   was created using <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMImplementation.createDocument.html"><span class="typ">DOMImplementation<wbr/></span><span class="pun">.</span><span class="pln">createDocument</span></a></code>. No lexical checking
+   is performed when setting this attribute; this could result in a <code class="lang-d"><span class="kwd">null</span></code>
+   value returned when using <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.baseURI.html"><span class="typ">Node<wbr/></span><span class="pun">.</span><span class="pln">baseURI</span></a></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.domConfig.html" class="public property"><code>domConfig</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/DOMConfiguration.html"><span class="typ">DOMConfiguration</span></a>!DOMString</code></td>
+								<td>The configuration used when <code class="lang-d"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span><span class="pun">()</span></code> is invoked.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.implementation.html" class="public property"><code>implementation</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/DOMImplementation.html"><span class="typ">DOMImplementation</span></a>!DOMString</code></td>
+								<td>The <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMImplementation.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/DOMImplementation.html"><span class="typ">DOMImplementation</span></a></span></a></code> object that handles this document. A DOM application
+   may use objects from multiple implementations.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.inputEncoding.html" class="public property"><code>inputEncoding</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying the encoding used for this document at the time of
+   the parsing. This is <code class="lang-d"><span class="kwd">null</span></code> when it is not known, such as when the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code>
+   was created in memory.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.strictErrorChecking.html" class="public property"><code>strictErrorChecking</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td>An attribute specifying whether error checking is enforced or not.
+   When set to <code class="lang-d"><span class="kwd">false</span></code>, the implementation is free to not test every possible
+   error case normally defined on DOM operations, and not raise any <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></code>
+   on DOM operations or report errors while using <code class="lang-d"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span><span class="pun">()</span></code>.
+   In case of error, the behavior is undefined. This attribute is <code class="lang-d"><span class="kwd">true</span></code> by default.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.xmlEncoding.html" class="public property"><code>xmlEncoding</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying, as part of the XML declaration, the encoding of
+   this document. This is <code class="lang-d"><span class="kwd">null</span></code> when unspecified or when it is not known,
+   such as when the Document was created in memory.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.xmlStandalone.html" class="public property"><code>xmlStandalone</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td>An attribute specifying, as part of the XML declaration, whether this document
+   is standalone. This is <code class="lang-d"><span class="kwd">false</span></code> when unspecified.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.xmlVersion.html" class="public property"><code>xmlVersion</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying, as part of the XML declaration, the version number
+   of this document. If there is no declaration and if this document supports
+   the "XML" feature, the value is "1.0". If this document does not support
+   the "XML" feature, the value is always <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createAttribute.html" class="public">
+										<code>createAttribute</code>
+									</a>
+								</td>
+								<td>Creates an <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code> of the given name. Note that the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code> instance can
+   then be set on an <code class="lang-d"><span class="typ">Element</span></code> using the <code class="lang-d"><span class="pln">setAttributeNode</span></code> method.
+   To create an attribute with a qualified name and namespace URI, use the
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.createAttributeNS.html"><span class="pln">createAttributeNS</span></a></code> method.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createAttributeNS.html" class="public">
+										<code>createAttributeNS</code>
+									</a>
+								</td>
+								<td>Creates an attribute of the given qualified name and namespace URI.
+   Per the XML Namespaces specification, applications must use the value <code class="lang-d"><span class="kwd">null</span></code>
+   as the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.createAttributeNS.html#namespaceURI"><span class="pln"><a href="../../../../std/experimental/xml/dom/Document.createAttributeNS.html#namespaceURI"><span class="pln">namespaceURI</span></a></span></a></code> parameter for methods if they wish to have no namespace.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createCDATASection.html" class="public">
+										<code>createCDATASection</code>
+									</a>
+								</td>
+								<td>Creates a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/CDATASection.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/CDATASection.html"><span class="typ">CDATASection</span></a></span></a></code> node whose value is the specified string.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createComment.html" class="public">
+										<code>createComment</code>
+									</a>
+								</td>
+								<td>Creates a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Comment.html"><span class="typ">Comment</span></a></code> node given the specified string.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createDocumentFragment.html" class="public">
+										<code>createDocumentFragment</code>
+									</a>
+								</td>
+								<td>Creates an empty <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></span></a></code> object.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createElement.html" class="public">
+										<code>createElement</code>
+									</a>
+								</td>
+								<td>Creates an <code class="lang-d"><span class="typ">Element</span></code> of the type specified.
+   In addition, if there are known attributes with default values, <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></span></a></code> nodes
+   representing them are automatically created and attached to the element.
+   To create an <code class="lang-d"><span class="typ">Element</span></code> with a qualified name and namespace URI, use the
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.createElementNS.html"><span class="pln"><a href="../../../../std/experimental/xml/dom/Document.createElementNS.html"><span class="pln">createElementNS</span></a></span></a></code> method.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createElementNS.html" class="public">
+										<code>createElementNS</code>
+									</a>
+								</td>
+								<td>Creates an <code class="lang-d"><span class="typ">Element</span></code> of the given qualified name and namespace URI.
+   Per the XML Namespaces specification, applications must use the value <code class="lang-d"><span class="kwd">null</span></code>
+   as the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.createElementNS.html#namespaceURI"><span class="pln"><a href="../../../../std/experimental/xml/dom/Document.createElementNS.html#namespaceURI"><span class="pln">namespaceURI</span></a></span></a></code> parameter for methods if they wish to have no namespace.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createProcessingInstruction.html" class="public">
+										<code>createProcessingInstruction</code>
+									</a>
+								</td>
+								<td>Creates a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/ProcessingInstruction.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/ProcessingInstruction.html"><span class="typ">ProcessingInstruction</span></a></span></a></code> node given the specified name and data strings.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createTextNode.html" class="public">
+										<code>createTextNode</code>
+									</a>
+								</td>
+								<td>Creates a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></code> node given the specified string.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.getElementById.html" class="public">
+										<code>getElementById</code>
+									</a>
+								</td>
+								<td>Returns the <code class="lang-d"><span class="typ">Element</span></code> that has an ID attribute with the given value. If no
+   such element exists, this returns <code class="lang-d"><span class="kwd">null</span></code>. If more than one element has an
+   ID attribute with that value, what is returned is undefined.
+   The DOM implementation is expected to use the attribute <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.isId.html"><span class="typ">Attr<wbr/></span><span class="pun">.</span><span class="pln">isId</span></a></code> to
+   determine if an attribute is of type ID.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.getElementsByTagName.html" class="public">
+										<code>getElementsByTagName</code>
+									</a>
+								</td>
+								<td>Returns a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></span></a></code> of all the <code class="lang-d"><span class="typ">Element</span></code>s in document order with a given
+   tag name and are contained in the document.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.getElementsByTagNameNS.html" class="public">
+										<code>getElementsByTagNameNS</code>
+									</a>
+								</td>
+								<td>Returns a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code> of all the <code class="lang-d"><span class="typ">Element</span></code>s with a given local name and
+   namespace URI in document order.
+</td>
+							</tr>
+						</table>
+					</section>
 
 			</section>
 			<section>

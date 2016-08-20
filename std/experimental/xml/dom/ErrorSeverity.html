@@ -90,7 +90,7 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Enum ErrorSeverity</h1>
 			<section>
-				<p>An integer indicating the severity of the error.
+				<p>An integer indicating the severity of a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMError.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/DOMError.html"><span class="typ">DOMError</span></a></span></a></code>.
 </p>
 
 					<p>The enum base type is
@@ -109,26 +109,28 @@ $('#symbolSearchPane').show();
 								<td>
 									<code>ERROR</code>
 								</td>
-								<td>The severity of the error described by the DOMError is error. A <code class="lang-d"><span class="pln">ERROR</span></code>
+								<td>The severity of the error described by the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMError.html"><span class="typ">DOMError</span></a></code> is error. A <code class="lang-d"><span class="pln">ERROR</span></code>
    may not cause the processing to stop if the error can be recovered, unless
-   DOMErrorHandler.handleError() returns false.
+   the call of the <code class="lang-d"><span class="typ">DOMErrorHandler</span></code> returns <code class="lang-d"><span class="kwd">false</span></code>.
 </td>
 							</tr>
 							<tr>
 								<td>
 									<code>FATAL_ERROR</code>
 								</td>
-								<td>The severity of the error described by the <code class="lang-d"><span class="typ">DOMError</span></code> is fatal error. A <code class="lang-d"><span class="pln">FATAL_ERROR</span></code>
-   will cause the normal processing to stop. The return value of DOMErrorHandler.handleError()
-   is ignored unless the implementation chooses to continue, in which case the behavior becomes undefined.
+								<td>The severity of the error described by the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMError.html"><span class="typ">DOMError</span></a></code> is fatal error. A <code class="lang-d"><span class="pln">FATAL_ERROR</span></code>
+   will cause the normal processing to stop. The return value of calling the <code class="lang-d"><span class="typ">DOMErrorHandler</span></code>
+   is ignored unless the implementation chooses to continue, in which case
+   the behavior becomes undefined.
 </td>
 							</tr>
 							<tr>
 								<td>
 									<code>WARNING</code>
 								</td>
-								<td>The severity of the error described by the DOMError is warning. A <code class="lang-d"><span class="pln">WARNING</span></code>
-   will not cause the processing to stop, unless DOMErrorHandler.handleError() returns false.
+								<td>The severity of the error described by the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMError.html"><span class="typ">DOMError</span></a></code> is warning. A <code class="lang-d"><span class="pln">WARNING</span></code>
+   will not cause the processing to stop, unless the call of the <code class="lang-d"><span class="typ">DOMErrorHandler</span></code>
+   returns <code class="lang-d"><span class="kwd">false</span></code>.
 </td>
 							</tr>
 						</table>

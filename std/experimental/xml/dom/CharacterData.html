@@ -93,7 +93,7 @@ $('#symbolSearchPane').show();
 				<p>The <code class="lang-d"><span class="typ"><span class="typ">CharacterData</span></span></code> interface extends <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></span></a></code> with a set of attributes and methods
    for accessing character data in the DOM. For clarity this set is defined here
    rather than on each object that uses these attributes and methods. No DOM objects
-   correspond directly to <code class="lang-d"><span class="typ"><span class="typ">CharacterData</span></span></code>, though <code class="lang-d"><span class="typ">Text</span></code> and others do inherit
+   correspond directly to <code class="lang-d"><span class="typ"><span class="typ">CharacterData</span></span></code>, though <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> and others do inherit
    the interface from it. All offsets in this interface start from <code class="lang-d"><span class="lit">0</span></code>.
 </p>
 
@@ -103,6 +103,62 @@ $('#symbolSearchPane').show();
 							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">CharacterData</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
 							</code>
 						</div>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/CharacterData.appendData.html" class="public">
+										<code>appendData</code>
+									</a>
+								</td>
+								<td>Append the string to the end of the character data of the node. Upon success,
+   data provides access to the concatenation of data and the DOMString specified.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/CharacterData.deleteData.html" class="public">
+										<code>deleteData</code>
+									</a>
+								</td>
+								<td>Remove a range of characters from the node. Upon success, <code class="lang-d"><span class="pln">data</span></code> and <code class="lang-d"><span class="pln">length</span></code> reflect the change.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/CharacterData.insertData.html" class="public">
+										<code>insertData</code>
+									</a>
+								</td>
+								<td>Insert a string at the specified offset.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/CharacterData.replaceData.html" class="public">
+										<code>replaceData</code>
+									</a>
+								</td>
+								<td>Replace <code class="lang-d"><a href="../../../../std/experimental/xml/dom/CharacterData.replaceData.html#count"><span class="pln"><a href="../../../../std/experimental/xml/dom/CharacterData.replaceData.html#count"><span class="pln">count</span></a></span></a></code> characters starting at the specified offset with the specified string.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/CharacterData.substringData.html" class="public">
+										<code>substringData</code>
+									</a>
+								</td>
+								<td>Extracts a substring of <code class="lang-d"><span class="pln">data</span></code> starting at <code class="lang-d"><a href="../../../../std/experimental/xml/dom/CharacterData.substringData.html#offset"><span class="pln"><a href="../../../../std/experimental/xml/dom/CharacterData.substringData.html#offset"><span class="pln">offset</span></a></span></a></code>, with length <code class="lang-d"><a href="../../../../std/experimental/xml/dom/CharacterData.substringData.html#count"><span class="pln"><a href="../../../../std/experimental/xml/dom/CharacterData.substringData.html#count"><span class="pln">count</span></a></span></a></code>.
+</td>
+							</tr>
+						</table>
 					</section>
 
 			</section>

@@ -93,14 +93,14 @@ $('#symbolSearchPane').show();
 				<p>The <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface is the primary datatype for the entire Document Object Model.
    It represents a single node in the document tree. While all objects implementing
    the <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface expose methods for dealing with children, not all objects
-   implementing the <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface may have children. For example, <code class="lang-d"><span class="typ">Text</span></code> nodes
+   implementing the <code class="lang-d"><span class="typ"><span class="typ">Node</span></span></code> interface may have children. For example, <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes
    may not have children, and adding children to such nodes results in a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMException.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></span></a></code>
    being raised.
 </p>
-<section><p>The attributes <code class="lang-d"><span class="pln">nodeName</span></code>, <code class="lang-d"><span class="pln">nodeValue</span></code> and <code class="lang-d"><span class="pln">attributes</span></code> are included as a mechanism
+<section><p>The attributes <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.nodeName.html"><span class="pln">nodeName</span></a></code>, <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.nodeValue.html"><span class="pln">nodeValue</span></a></code> and <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.attributes.html"><span class="pln">attributes</span></a></code> are included as a mechanism
    to get at node information without casting down to the specific derived interface.
-   In cases where there is no obvious mapping of these attributes for a specific <code class="lang-d"><span class="pln">nodeType</span></code>
-   (e.g., <code class="lang-d"><span class="pln">nodeValue</span></code> for an <code class="lang-d"><span class="typ">Element</span></code> or attributes for a <code class="lang-d"><span class="typ">Comment</span></code>), this returns <code class="lang-d"><span class="kwd">null</span></code>.
+   In cases where there is no obvious mapping of these attributes for a specific <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.nodeType.html"><span class="pln">nodeType</span></a></code>
+   (e.g., <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.nodeValue.html"><span class="pln">nodeValue</span></a></code> for an <code class="lang-d"><span class="typ">Element</span></code> or attributes for a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Comment.html"><span class="typ">Comment</span></a></code>), this returns <code class="lang-d"><span class="kwd">null</span></code>.
    Note that the specialized interfaces may contain additional and more convenient
    mechanisms to get and set the relevant information.
 </p>
@@ -112,6 +112,320 @@ $('#symbolSearchPane').show();
 							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">Node</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
 							</code>
 						</div>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.attributes.html" class="public property"><code>attributes</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a>!DOMString</code></td>
+								<td>A <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.html"><span class="typ">NamedNodeMap</span></a></code> containing the attributes of this node (if it is an <code class="lang-d"><span class="typ">Element</span></code>) or <code class="lang-d"><span class="kwd">null</span></code> otherwise.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.baseURI.html" class="public property"><code>baseURI</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The absolute base URI of this node or null if the implementation wasn't able to obtain an absolute URI
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.childNodes.html" class="public property"><code>childNodes</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a>!DOMString</code></td>
+								<td>A <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code> that contains all children of this node. If there are no children, this is a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code> containing no nodes.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.firstChild.html" class="public property"><code>firstChild</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString</code></td>
+								<td>The first child of this node. If there is no such node, this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.lastChild.html" class="public property"><code>lastChild</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString</code></td>
+								<td>The last child of this node. If there is no such node, this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.localName.html" class="public property"><code>localName</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>Returns the local part of the qualified name of this node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.namespaceURI.html" class="public property"><code>namespaceURI</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The namespace URI of this node, or <code class="lang-d"><span class="kwd">null</span></code> if it is unspecified.
+   This is not a computed value that is the result of a namespace lookup based
+   on an examination of the namespace declarations in scope. It is merely the
+   namespace URI given at creation time.
+   For nodes of any type other than <code class="lang-d"><span class="pln">ELEMENT</span></code> and <code class="lang-d"><span class="pln">ATTRIBUTE</span></code> and nodes created
+   with a DOM Level 1 method, such as <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.createElement.html"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">createElement</span></a></code>, this is always <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.nextSibling.html" class="public property"><code>nextSibling</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString</code></td>
+								<td>The node immediately following this node. If there is no such node, this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.nodeName.html" class="public property"><code>nodeName</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The name of this node, depending on its type.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.nodeType.html" class="public property"><code>nodeType</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/NodeType.html"><span class="typ">NodeType</span></a></code></td>
+								<td>A code representing the type of the underlying object.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.nodeValue.html" class="public property"><code>nodeValue</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The value of this node, depending on its type.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.ownerDocument.html" class="public property"><code>ownerDocument</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a>!DOMString</code></td>
+								<td>The <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> object associated with this node. This is also the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code>
+   object used to create new nodes. When this node is a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> or a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentType.html"><span class="typ">DocumentType</span></a></code>
+   which is not used with any <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> yet, this is <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.parentNode.html" class="public property"><code>parentNode</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString</code></td>
+								<td>The parent of this node. All nodes, except <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code>, <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code>, <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code>,
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Entity.html"><span class="typ">Entity</span></a></code>, and <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Notation.html"><span class="typ">Notation</span></a></code> may have a parent. However, if a node has just been
+   created and not yet added to the tree, or if it has been removed from the tree,
+   this is <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.prefix.html" class="public property"><code>prefix</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The namespace prefix of this node, or <code class="lang-d"><span class="kwd">null</span></code> if it is unspecified.
+   When it is defined to be <code class="lang-d"><span class="kwd">null</span></code>, setting it has no effect, including if
+   the node is read-only.
+   Note that setting this attribute, when permitted, changes the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.nodeName.html"><span class="pln">nodeName</span></a></code>
+   attribute, which holds the qualified name, as well as the <code class="lang-d"><span class="pln">tagName</span></code> and
+   <code class="lang-d"><span class="pln">name</span></code> attributes of the <code class="lang-d"><span class="typ">Element</span></code> and <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code> interfaces, when applicable.
+   Setting the prefix to <code class="lang-d"><span class="kwd">null</span></code> makes it unspecified, setting it to an empty
+   string is implementation dependent.
+   Note also that changing the prefix of an attribute that is known to have a
+   default value, does not make a new attribute with the default value and the
+   original prefix appear, since the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.namespaceURI.html"><span class="pln">namespaceURI</span></a></code> and <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.localName.html"><span class="pln">localName</span></a></code> do not change.
+   For nodes of any type other than <code class="lang-d"><span class="pln">ELEMENT</span></code> and <code class="lang-d"><span class="pln">ATTRIBUTE</span></code> and nodes created
+   with a DOM Level 1 method, such as <code class="lang-d"><span class="pln">createElement</span></code> from the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code>
+   interface, this is always <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.previousSibling.html" class="public property"><code>previousSibling</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString</code></td>
+								<td>The node immediately preceding this node. If there is no such node, this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.cloneNode.html" class="public">
+										<code>cloneNode</code>
+									</a>
+								</td>
+								<td>Returns a duplicate of this node, i.e., serves as a generic copy constructor
+   for nodes. The duplicate node has no parent (<code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.parentNode.html"><span class="pln">parentNode</span></a></code> is <code class="lang-d"><span class="kwd">null</span></code>) and no
+   user data. User data associated to the imported node is not carried over.
+   However, if any <code class="lang-d"><a href="../../../../std/experimental/xml/dom/UserData.html"><span class="typ">UserData</span></a></code> handlers has been specified along with the
+   associated data these handlers will be called with the appropriate parameters
+   before this method returns.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.compareDocumentPosition.html" class="public">
+										<code>compareDocumentPosition</code>
+									</a>
+								</td>
+								<td>Compares the reference node, i.e. the node on which this method is being
+   called, with a node, i.e. the one passed as a parameter, with regard to
+   their position in the document and according to the document order.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.getUserData.html" class="public">
+										<code>getUserData</code>
+									</a>
+								</td>
+								<td>Retrieves the object associated to a key on a this node. The object must
+   first have been set to this node by calling <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.setUserData.html"><span class="pln"><a href="../../../../std/experimental/xml/dom/Node.setUserData.html"><span class="pln">setUserData</span></a></span></a></code> with the same key.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.hasAttributes.html" class="public">
+										<code>hasAttributes</code>
+									</a>
+								</td>
+								<td>Returns whether this node (if it is an element) has any attributes.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.hasChildNodes.html" class="public">
+										<code>hasChildNodes</code>
+									</a>
+								</td>
+								<td>Returns whether this node has any children.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.insertBefore.html" class="public">
+										<code>insertBefore</code>
+									</a>
+								</td>
+								<td>Inserts the node <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#newChild"><span class="pln">newChild</span></a></code> before the existing child node <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#refChild"><span class="pln">refChild</span></a></code>.
+   If <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#refChild"><span class="pln">refChild</span></a></code> is <code class="lang-d"><span class="kwd">null</span></code>, insert <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#newChild"><span class="pln">newChild</span></a></code> at the end of the list of children.
+   If <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#newChild"><span class="pln">newChild</span></a></code> is a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code> object, all of its children are inserted,
+   in the same order, before <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#refChild"><span class="pln">refChild</span></a></code>. If the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.insertBefore.html#newChild"><span class="pln">newChild</span></a></code> is already in the
+   tree, it is first removed.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.isDefaultNamespace.html" class="public">
+										<code>isDefaultNamespace</code>
+									</a>
+								</td>
+								<td>This method checks if the specified <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.isDefaultNamespace.html#namespaceURI"><span class="pln">namespaceURI</span></a></code> is the default namespace or not.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.isSupported.html" class="public">
+										<code>isSupported</code>
+									</a>
+								</td>
+								<td>Tests whether the DOM implementation implements a specific feature and that feature is supported by this node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.lookupNamespaceURI.html" class="public">
+										<code>lookupNamespaceURI</code>
+									</a>
+								</td>
+								<td>Look up the namespace URI associated to the given <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.lookupNamespaceURI.html#prefix"><span class="pln">prefix</span></a></code>, starting from this node.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.lookupPrefix.html" class="public">
+										<code>lookupPrefix</code>
+									</a>
+								</td>
+								<td>Look up the prefix associated to the given namespace URI, starting from this node.
+   The default namespace declarations are ignored by this method.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.removeChild.html" class="public">
+										<code>removeChild</code>
+									</a>
+								</td>
+								<td>Removes the child node indicated by <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.removeChild.html#oldChild"><span class="pln">oldChild</span></a></code> from the list of children, and returns it.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.replaceChild.html" class="public">
+										<code>replaceChild</code>
+									</a>
+								</td>
+								<td>Replaces the child node <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#oldChild"><span class="pln">oldChild</span></a></code> with <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#newChild"><span class="pln">newChild</span></a></code> in the list of children,
+   and returns the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#oldChild"><span class="pln">oldChild</span></a></code> node.
+   If <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#newChild"><span class="pln">newChild</span></a></code> is a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code> object, <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#oldChild"><span class="pln">oldChild</span></a></code> is replaced by
+   all of the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code> children, which are inserted in the same
+   order. If the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.replaceChild.html#newChild"><span class="pln">newChild</span></a></code> is already in the tree, it is first removed.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Node.setUserData.html" class="public">
+										<code>setUserData</code>
+									</a>
+								</td>
+								<td>Associate an object to a key on this node.
+   The object can later be retrieved from this node by calling <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.getUserData.html"><span class="pln">getUserData</span></a></code> with the same key.
+</td>
+							</tr>
+						</table>
 					</section>
 
 			</section>

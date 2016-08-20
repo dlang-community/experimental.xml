@@ -109,6 +109,29 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
+							<a id="Attr" class="public" href="../../../std/experimental/xml/dom/Attr.html">
+								<code>Attr</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">Attr</span></code> interface represents an attribute in an <code class="lang-d"><span class="typ">Element</span></code> object. Typically
+   the allowable values for the attribute are defined in a schema associated with the document.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="CDATASection" class="public" href="../../../std/experimental/xml/dom/CDATASection.html">
+								<code>CDATASection</code>
+							</a>
+						</td>
+						<td>CDATA sections are used to escape blocks of text containing characters that would
+   otherwise be regarded as markup. The only delimiter that is recognized in a CDATA
+   section is the "]]&gt;" string that ends the CDATA section. CDATA sections cannot be nested.
+   Their primary purpose is for including material such as XML fragments, without
+   needing to escape all the delimiters.
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a id="CharacterData" class="public" href="../../../std/experimental/xml/dom/CharacterData.html">
 								<code>CharacterData</code>
 							</a>
@@ -116,8 +139,18 @@ $('#symbolSearchPane').show();
 						<td>The <code class="lang-d"><span class="typ">CharacterData</span></code> interface extends <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> with a set of attributes and methods
    for accessing character data in the DOM. For clarity this set is defined here
    rather than on each object that uses these attributes and methods. No DOM objects
-   correspond directly to <code class="lang-d"><span class="typ">CharacterData</span></code>, though <code class="lang-d"><span class="typ">Text</span></code> and others do inherit
+   correspond directly to <code class="lang-d"><span class="typ">CharacterData</span></code>, though <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></code> and others do inherit
    the interface from it. All offsets in this interface start from <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Comment" class="public" href="../../../std/experimental/xml/dom/Comment.html">
+								<code>Comment</code>
+							</a>
+						</td>
+						<td>This interface inherits from <code class="lang-d"><a href="../../../std/experimental/xml/dom/CharacterData.html"><span class="typ">CharacterData</span></a></code> and represents the content of a
+   comment, i.e., all the characters between the starting '<!--' and ending '-->'.
 </td>
 					</tr>
 					<tr>
@@ -145,6 +178,41 @@ $('#symbolSearchPane').show();
    role, a <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> object can potentially be a heavyweight object, depending
    on the underlying implementation. What is really needed for this is a very lightweight
    object. <code class="lang-d"><span class="typ">DocumentFragment</span></code> is such an object.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DocumentType" class="public" href="../../../std/experimental/xml/dom/DocumentType.html">
+								<code>DocumentType</code>
+							</a>
+						</td>
+						<td>Each <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> has a <code class="lang-d"><span class="pln">doctype</span></code> attribute whose value is either <code class="lang-d"><span class="kwd">null</span></code> or a
+   <code class="lang-d"><span class="typ">DocumentType</span></code> object. The <code class="lang-d"><span class="typ">DocumentType</span></code> interface in the DOM Core provides
+   an interface to the list of entities that are defined for the document, and
+   little else because the effect of namespaces and the various XML schema efforts
+   on DTD representation are not clearly understood as of this writing.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMConfiguration" class="public" href="../../../std/experimental/xml/dom/DOMConfiguration.html">
+								<code>DOMConfiguration</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">DOMConfiguration</span></code> interface represents the configuration of a document
+   and maintains a table of recognized parameters. Using the configuration, it
+   is possible to change <code class="lang-d"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></code> behavior, such as replacing
+   the <code class="lang-d"><a href="../../../std/experimental/xml/dom/CDATASection.html"><span class="typ">CDATASection</span></a></code> nodes with <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></code> nodes or specifying the type of the schema
+   that must be used when the validation of the <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></code> is requested.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="DOMError" class="public" href="../../../std/experimental/xml/dom/DOMError.html">
+								<code>DOMError</code>
+							</a>
+						</td>
+						<td>DOMError is an interface that describes an error.
 </td>
 					</tr>
 					<tr>
@@ -183,6 +251,15 @@ $('#symbolSearchPane').show();
 					</tr>
 					<tr>
 						<td>
+							<a id="DOMLocator" class="public" href="../../../std/experimental/xml/dom/DOMLocator.html">
+								<code>DOMLocator</code>
+							</a>
+						</td>
+						<td><code class="lang-d"><span class="typ">DOMLocator</span></code> is an interface that describes a location (e.g. where an error occurred).
+</td>
+					</tr>
+					<tr>
+						<td>
 							<a id="DOMStringList" class="public" href="../../../std/experimental/xml/dom/DOMStringList.html">
 								<code>DOMStringList</code>
 							</a>
@@ -191,6 +268,27 @@ $('#symbolSearchPane').show();
    of <code class="lang-d"><span class="typ">DOMString</span></code> values, without defining or constraining how this collection is
    implemented. The items in the DOMStringList are accessible via an integral index,
    starting from <code class="lang-d"><span class="lit">0</span></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Entity" class="public" href="../../../std/experimental/xml/dom/Entity.html">
+								<code>Entity</code>
+							</a>
+						</td>
+						<td>This interface represents a known entity, either parsed or unparsed, in an XML
+   document. Note that this models the entity itself not the entity declaration.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="EntityReference" class="public" href="../../../std/experimental/xml/dom/EntityReference.html">
+								<code>EntityReference</code>
+							</a>
+						</td>
+						<td><code class="lang-d"><span class="typ">EntityReference</span></code> nodes may be used to represent an entity reference in the tree.
+   When an <code class="lang-d"><span class="typ">EntityReference</span></code> node represents a reference to an unknown entity, the
+   node has no children and its replacement value, when used by <code class="lang-d"><a href="../../../std/experimental/xml/dom/Attr.value.html"><span class="typ">Attr<wbr/></span><span class="pun">.</span><span class="pln">value</span></a></code> for example, is empty.
 </td>
 					</tr>
 					<tr>
@@ -217,7 +315,7 @@ $('#symbolSearchPane').show();
 						<td>The <code class="lang-d"><span class="typ">Node</span></code> interface is the primary datatype for the entire Document Object Model.
    It represents a single node in the document tree. While all objects implementing
    the <code class="lang-d"><span class="typ">Node</span></code> interface expose methods for dealing with children, not all objects
-   implementing the <code class="lang-d"><span class="typ">Node</span></code> interface may have children. For example, <code class="lang-d"><span class="typ">Text</span></code> nodes
+   implementing the <code class="lang-d"><span class="typ">Node</span></code> interface may have children. For example, <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></code> nodes
    may not have children, and adding children to such nodes results in a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></code>
    being raised.
 </td>
@@ -231,6 +329,53 @@ $('#symbolSearchPane').show();
 						<td>The <code class="lang-d"><span class="typ">NodeList</span></code> interface provides the abstraction of an ordered collection of
    nodes, without defining or constraining how this collection is implemented.
    <code class="lang-d"><span class="typ">NodeList</span></code> objects in the DOM are live.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Notation" class="public" href="../../../std/experimental/xml/dom/Notation.html">
+								<code>Notation</code>
+							</a>
+						</td>
+						<td>This interface represents a notation declared in the DTD. A notation either
+   declares, by name, the format of an unparsed entity or is used for formal
+   declaration of processing instruction targets. The <code class="lang-d"><span class="pln">nodeName</span></code> attribute
+   inherited from <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> is set to the declared name of the notation.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="ProcessingInstruction" class="public" href="../../../std/experimental/xml/dom/ProcessingInstruction.html">
+								<code>ProcessingInstruction</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">ProcessingInstruction</span></code> interface represents a "processing instruction",
+   used in XML as a way to keep processor-specific information in the text of the document.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="Text" class="public" href="../../../std/experimental/xml/dom/Text.html">
+								<code>Text</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">Text</span></code> interface inherits from <code class="lang-d"><a href="../../../std/experimental/xml/dom/CharacterData.html"><span class="typ">CharacterData</span></a></code> and represents the textual
+   content (termed character data in XML) of an <code class="lang-d"><span class="typ">Element</span></code> or <code class="lang-d"><a href="../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code>. If there is
+   no markup inside an element's content, the text is contained in a single object
+   implementing the <code class="lang-d"><span class="typ">Text</span></code> interface that is the only child of the element. If
+   there is markup, it is parsed into the information items (elements, comments,
+   etc.) and <code class="lang-d"><span class="typ">Text</span></code> nodes that form the list of children of the element.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="XMLTypeInfo" class="public" href="../../../std/experimental/xml/dom/XMLTypeInfo.html">
+								<code>XMLTypeInfo</code>
+							</a>
+						</td>
+						<td>The <code class="lang-d"><span class="typ">TypeInfo</span></code> interface represents a type referenced from <code class="lang-d"><span class="typ">Element</span></code> or <code class="lang-d"><a href="../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a></code>
+   nodes, specified in the schemas associated with the document. The type is a
+   pair of a namespace URI and name properties, and depends on the document's schema.
 </td>
 					</tr>
 				</table>
@@ -273,6 +418,7 @@ $('#symbolSearchPane').show();
 							</a>
 						</td>
 						<td>A bitmask indicating the relative document position of a node with respect to another node.
+   Returned by <code class="lang-d"><a href="../../../std/experimental/xml/dom/Node.compareDocumentPosition.html"><span class="typ">Node<wbr/></span><span class="pun">.</span><span class="pln">compareDocumentPosition</span></a></code>.
 </td>
 					</tr>
 					<tr>
@@ -281,7 +427,7 @@ $('#symbolSearchPane').show();
 								<code>ErrorSeverity</code>
 							</a>
 						</td>
-						<td>An integer indicating the severity of the error.
+						<td>An integer indicating the severity of a <code class="lang-d"><a href="../../../std/experimental/xml/dom/DOMError.html"><span class="typ">DOMError</span></a></code>.
 </td>
 					</tr>
 					<tr>
@@ -331,7 +477,7 @@ $('#symbolSearchPane').show();
 						<td>
 <code class="prettyprint lang-d"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">variant<wbr/></span><span class="pun">.</span><span class="typ">VariantN</span>!(32L)</code>
 						</td>
-						<td>The DOMUserData type is used to store application data.
+						<td>The DOMUserData type is used to store application data inside DOM nodes.
 </td>
 					</tr>
 					<tr>

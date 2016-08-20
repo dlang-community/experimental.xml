@@ -109,6 +109,122 @@ $('#symbolSearchPane').show();
 							</code>
 						</div>
 					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.length.html" class="public property"><code>length</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="pln">size_t</span></code></td>
+								<td>The number of nodes in the list. The range of valid child node indices is
+   <code class="lang-d"><span class="lit">0</span></code> to <code class="lang-d"><span class="pln">length</span><span class="pun">-</span><span class="lit">1</span></code> inclusive.
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.getNamedItem.html" class="public">
+										<code>getNamedItem</code>
+									</a>
+								</td>
+								<td>Retrieves a node specified by name.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.getNamedItemNS.html" class="public">
+										<code>getNamedItemNS</code>
+									</a>
+								</td>
+								<td>Retrieves a node specified by local name and namespace URI.
+   Per the XML Namespaces specification, applications must use the value <code class="lang-d"><span class="kwd">null</span></code>
+   as the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.getNamedItemNS.html#namespaceURI"><span class="pln">namespaceURI</span></a></code> parameter for methods if they wish to have no namespace.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.item.html" class="public">
+										<code>item</code>
+									</a>
+								</td>
+								<td>Returns the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.item.html#index"><span class="pln">index</span></a></code>th item in the collection. If <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.item.html#index"><span class="pln">index</span></a></code> is greater than
+   or equal to the number of nodes in the list, this returns <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.removeNamedItem.html" class="public">
+										<code>removeNamedItem</code>
+									</a>
+								</td>
+								<td>Removes a node specified by name. When this map contains the attributes
+   attached to an element, if the removed attribute is known to have a default
+   value, an attribute immediately appears containing the default value as
+   well as the corresponding namespace URI, local name, and prefix when applicable.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.removeNamedItemNS.html" class="public">
+										<code>removeNamedItemNS</code>
+									</a>
+								</td>
+								<td>Removes a node specified by local name and namespace URI. A removed attribute
+   may be known to have a default value when this map contains the attributes attached
+   to an element, as returned by the attributes attribute of the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></span></a></code> interface.
+   If so, an attribute immediately appears containing the default value as well
+   as the corresponding namespace URI, local name, and prefix when applicable.
+   Per the XML Namespaces specification, applications must use the value <code class="lang-d"><span class="kwd">null</span></code>
+   as the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.removeNamedItemNS.html#namespaceURI"><span class="pln"><a href="../../../../std/experimental/xml/dom/NamedNodeMap.removeNamedItemNS.html#namespaceURI"><span class="pln">namespaceURI</span></a></span></a></code> parameter for methods if they wish to have no namespace.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.setNamedItem.html" class="public">
+										<code>setNamedItem</code>
+									</a>
+								</td>
+								<td>Adds a node using its <code class="lang-d"><span class="pln">nodeName</span></code> attribute. If a node with that name is
+   already present in this map, it is replaced by the new one. Replacing a
+   node by itself has no effect.
+   As the <code class="lang-d"><span class="pln">nodeName</span></code> attribute is used to derive the name which the node must
+   be stored under, multiple nodes of certain types (those that have a "special"
+   string value) cannot be stored as the names would clash. This is seen as
+   preferable to allowing nodes to be aliased.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/NamedNodeMap.setNamedItemNS.html" class="public">
+										<code>setNamedItemNS</code>
+									</a>
+								</td>
+								<td>Adds a node using its <code class="lang-d"><span class="pln">namespaceURI</span></code> and <code class="lang-d"><span class="pln">localName</span></code>. If a node with that
+   namespace URI and that local name is already present in this map, it is
+   replaced by the new one. Replacing a node by itself has no effect.
+   Per the XML Namespaces specification, applications must use the value <code class="lang-d"><span class="kwd">null</span></code>
+   as the namespaceURI parameter for methods if they wish to have no namespace.
+</td>
+							</tr>
+						</table>
+					</section>
 
 			</section>
 			<section>

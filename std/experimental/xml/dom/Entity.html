@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Interface Entity</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class="selected module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dtd.html" class=" module">dtd</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Interface Entity</h1>
+			<section>
+				<p>This interface represents a known entity, either parsed or unparsed, in an XML
+   document. Note that this models the entity itself not the entity declaration.
+</p>
+<section><p>The <code class="lang-d"><span class="pln">nodeName</span></code> attribute that is inherited from <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> contains the name of the entity.
+</p>
+
+<p>   An XML processor may choose to completely expand entities before the structure
+   model is passed to the DOM; in this case there will be no <code class="lang-d"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ">EntityReference</span></a></code>
+   nodes in the document tree.
+</p>
+
+<p>   DOM Level 3 does not support editing <code class="lang-d"><span class="typ">Entity</span></code> nodes; if a user wants to make
+   changes to the contents of an <code class="lang-d"><span class="typ">Entity</span></code>, every related <code class="lang-d"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ">EntityReference</span></a></code> node
+   has to be replaced in the structure model by a clone of the <code class="lang-d"><span class="typ">Entity</span></code>'s contents,
+   and then the desired changes must be made to each of those clones instead.
+   <code class="lang-d"><span class="typ">Entity</span></code> nodes and all their descendants are readonly.
+</p>
+
+<p>   An <code class="lang-d"><span class="typ">Entity</span></code> node does not have any parent.
+</p>
+</section>
+
+					<section>
+						<h3>Template arguments</h3>
+						<div class="prototype">
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">Entity</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							</code>
+						</div>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.inputEncoding.html" class="public property"><code>inputEncoding</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying the encoding used for this entity at the time of
+   parsing, when it is an external parsed entity. This is <code class="lang-d"><span class="kwd">null</span></code> if it an
+   entity from the internal subset or if it is not known.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.notationName.html" class="public property"><code>notationName</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>For unparsed entities, the name of the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Notation.html"><span class="typ">Notation</span></a></code> for the entity. For parsed entities, this is <code class="lang-d"><span class="kwd">null</span></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.publicId.html" class="public property"><code>publicId</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The public identifier associated with the entity if specified, and <code class="lang-d"><span class="kwd">null</span></code> otherwise.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.systemId.html" class="public property"><code>systemId</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>The system identifier associated with the entity if specified, and <code class="lang-d"><span class="kwd">null</span></code> otherwise.
+   This may be an absolute URI or not.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.xmlEncoding.html" class="public property"><code>xmlEncoding</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying, as part of the text declaration, the encoding of
+   this entity, when it is an external parsed entity. This is <code class="lang-d"><span class="kwd">null</span></code> otherwise.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Entity.xmlVersion.html" class="public property"><code>xmlVersion</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>An attribute specifying, as part of the text declaration, the version
+   number of this entity, when it is an external parsed entity. This is
+   <code class="lang-d"><span class="kwd">null</span></code> otherwise.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>

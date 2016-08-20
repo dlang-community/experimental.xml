@@ -90,7 +90,13 @@ $('#symbolSearchPane').show();
 		<div id="main-contents">
 			<h1>Template withValidation</h1>
 			<section>
-				<p></p>
+				<p>Returns a new writer that wraps the original one, applying a validation to every
+   output operation.
+</p>
+<section><p><code class="lang-d"><span class="pln">validationFun</span></code> must return a value that fulfills the cursor API. This template
+   returns instances of <code class="lang-d"><a href="../../../../std/experimental/xml/writer/CheckedWriter.html"><span class="typ">CheckedWriter</span></a></code>.
+</p>
+</section>
 
 					<section>
 						<h2>Arguments</h2>
@@ -116,6 +122,15 @@ $('#symbolSearchPane').show();
 							</tr>
 						</table>
 					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="validationFun">validationFun</td><td> a function or function template that produces an instance of
+                       a validating cursor</td></tr>
+<tr><td id="Params">Params</td><td> the compile-time parameters used to instantiate <code class="lang-d"><span class="pln">validationFun</span></code></td></tr>
+<tr><td id="writer">writer</td><td> the original writer, to be enhanced with the validation</td></tr>
+<tr><td id="args">args</td><td> the runtime arguments passed to <code class="lang-d"><span class="pln">validationFun</span></code></td></tr>
+</table>
+</section>
 
 			</section>
 			<section>

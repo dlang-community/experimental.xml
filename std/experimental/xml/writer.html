@@ -110,6 +110,24 @@ $('#symbolSearchPane').show();
 						<td>Writes the contents of a cursor to a writer.
 </td>
 					</tr>
+					<tr>
+						<td>
+							<a id="writeDOM" class="public" href="../../../std/experimental/xml/writer/writeDOM.html">
+								<code>writeDOM</code>
+							</a>
+						</td>
+						<td>Outputs the entire DOM tree rooted at <code class="lang-d"><a href="../../../std/experimental/xml/writer/writeDOM.html#node"><span class="pln">node</span></a></code> using the given <code class="lang-d"><a href="../../../std/experimental/xml/writer/writeDOM.html#writer"><span class="pln">writer</span></a></code>.
+</td>
+					</tr>
+					<tr>
+						<td>
+							<a id="writerFor" class="public" href="../../../std/experimental/xml/writer/writerFor.html">
+								<code>writerFor</code>
+							</a>
+						</td>
+						<td>Returns a <code class="lang-d"><a href="../../../std/experimental/xml/writer/Writer.html"><span class="typ">Writer</span></a></code> for the given <code class="lang-d"><span class="typ">StringType</span></code>, <code class="lang-d"><a href="../../../std/experimental/xml/writer/writerFor.html#outRange"><span class="pln">outRange</span></a></code> and <code class="lang-d"><span class="typ">PrettyPrinter</span></code>.
+</td>
+					</tr>
 				</table>
 			</section>
 			<section>
@@ -126,8 +144,8 @@ $('#symbolSearchPane').show();
 								<code>CheckedWriter</code>
 							</a>
 						</td>
-						<td>A writer that validates the input given by the user using a chain of validating
-   cursors.
+						<td>A wrapper around a writer that, before forwarding every write operation, validates
+   the input given by the user using a chain of validating cursors.
 </td>
 					</tr>
 					<tr>
@@ -164,7 +182,9 @@ $('#symbolSearchPane').show();
 								<code>withValidation</code>
 							</a>
 						</td>
-						<td></td>
+						<td>Returns a new writer that wraps the original one, applying a validation to every
+   output operation.
+</td>
 					</tr>
 				</table>
 			</section>

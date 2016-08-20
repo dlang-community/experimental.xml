@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8"/>
+		<title>Interface Attr</title>
+		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
+		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
+		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
+		<script type="text/javascript" src="../../../../scripts/ddox.js">/**/</script>
+	</head>
+	<body onload="setupDdox();">
+		<nav id="main-nav">
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">std</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">experimental</a>
+						<ul class="tree-view">
+							<li class="tree-view">
+								<a href="#" class="package">xml</a>
+						<ul class="tree-view">
+							<li>
+								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dom.html" class="selected module">dom</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/dtd.html" class=" module">dtd</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/faststrings.html" class=" module">faststrings</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/interfaces.html" class=" module">interfaces</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/legacy.html" class=" module">legacy</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/validation.html" class=" module">validation</a>
+							</li>
+							<li>
+								<a href="../../../../std/experimental/xml/writer.html" class=" module">writer</a>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+							</li>
+						</ul>
+				<noscript>
+					<p style="color: red">The search functionality needs JavaScript enabled</p>
+				</noscript>
+				<div id="symbolSearchPane" style="display: none">
+					<p>
+						<input id="symbolSearch" type="text" placeholder="Search for symbols" onchange="performSymbolSearch(24);" onkeypress="this.onchange();" onpaste="this.onchange();" oninput="this.onchange();"/>
+					</p>
+	<ul id="symbolSearchResults" style="display: none"></ul>
+	<script type="application/javascript" src="../../../../symbols.js"></script>
+	<script type="application/javascript">
+var symbolSearchRootDir = "../../../../";
+$('#symbolSearchPane').show();
+	</script>
+				</div>
+		</nav>
+		<div id="main-contents">
+			<h1>Interface Attr</h1>
+			<section>
+				<p>The <code class="lang-d"><span class="typ"><span class="typ">Attr</span></span></code> interface represents an attribute in an <code class="lang-d"><span class="typ">Element</span></code> object. Typically
+   the allowable values for the attribute are defined in a schema associated with the document.
+</p>
+<section><p><code class="lang-d"><span class="typ">Attr</span></code> objects inherit the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> interface, but since they are not actually
+   child nodes of the element they describe, the DOM does not consider them part
+   of the document tree. Thus, the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> attributes <code class="lang-d"><span class="pln">parentNode</span></code>, <code class="lang-d"><span class="pln">previousSibling</span></code>
+   and <code class="lang-d"><span class="pln">nextSibling</span></code> have a <code class="lang-d"><span class="kwd">null</span></code> value for <code class="lang-d"><span class="typ">Attr</span></code> objects. The DOM takes the
+   view that attributes are properties of elements rather than having a separate
+   identity from the elements they are associated with; this should make it more
+   efficient to implement such features as default attributes associated with all
+   elements of a given type. Furthermore, <code class="lang-d"><span class="typ">Attr</span></code> nodes may not be immediate children
+   of a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code>. However, they can be associated with <code class="lang-d"><span class="typ">Element</span></code> nodes
+   contained within a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DocumentFragment.html"><span class="typ">DocumentFragment</span></a></code>. In short, users and implementors of the
+   DOM need to be aware that <code class="lang-d"><span class="typ">Attr</span></code> nodes have some things in common with other
+   objects inheriting the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></code> interface, but they also are quite distinct.
+</p>
+</section>
+
+					<section>
+						<h3>Template arguments</h3>
+						<div class="prototype">
+							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">Attr</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							</code>
+						</div>
+					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.isId.html" class="public property"><code>isId</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td>Returns whether this attribute is known to be of type ID (i.e. to contain
+   an identifier for its owner element) or not. When it is and its value is
+   unique, the ownerElement of this attribute can be retrieved using the method
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.getElementById.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">getElementById</span></a></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.name.html" class="public property"><code>name</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>Returns the name of this attribute. If <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.localName.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a><wbr/></span><span class="pun">.</span><span class="pln">localName</span></a></code> is different from
+   <code class="lang-d"><span class="kwd">null</span></code>, this attribute is a qualified name.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.ownerElement.html" class="public property"><code>ownerElement</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">Element</span>!DOMString</code></td>
+								<td>The <code class="lang-d"><span class="typ">Element</span></code> node this attribute is attached to or <code class="lang-d"><span class="kwd">null</span></code> if this attribute is not in use.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.schemaTypeInfo.html" class="public property"><code>schemaTypeInfo</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/XMLTypeInfo.html"><span class="typ">XMLTypeInfo</span></a>!DOMString</code></td>
+								<td>The type information associated with this attribute. While the type information
+   contained in this attribute is guarantee to be correct after loading the
+   document or invoking <code class="lang-d"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></code>, <code class="lang-d"><span class="pln"><span class="pln">schemaTypeInfo</span></span></code> may
+   not be reliable if the node was moved.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.specified.html" class="public property"><code>specified</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td><code class="lang-d"><span class="kwd">true</span></code> if this attribute was explicitly given a value in the instance document,
+   <code class="lang-d"><span class="kwd">false</span></code> otherwise. If the application changed the value of this attribute
+   node (even if it ends up having the same value as the default value) then
+   it is set to <code class="lang-d"><span class="kwd">true</span></code>. The implementation may handle attributes with default
+   values from other schemas similarly but applications should use <code class="lang-d"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></code>
+   to guarantee this information is up-to-date.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Attr.value.html" class="public property"><code>value</code></a>
+									<span class="tableEntryAnnotation">[get, set]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">DOMString</span></code></td>
+								<td>On retrieval, the value of the attribute is returned as a <code class="lang-d"><span class="typ">DOMString</span></code>.
+   Character and general entity references are replaced with their values.
+   See also the method <code class="lang-d"><span class="pln">getAttribute</span></code> on the <code class="lang-d"><span class="typ">Element</span></code> interface.
+   On setting, this creates a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> node with the unparsed contents of the
+   string, i.e. any characters that an XML processor would recognize as markup
+   are instead treated as literal text.
+   See also the method <code class="lang-d"><span class="typ">Element<wbr/></span><span class="pun">.</span><span class="pln">setAttribute</span></code>.
+</td>
+							</tr>
+						</table>
+					</section>
+
+			</section>
+			<section>
+				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
+
+			</section>
+			<section>
+				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
+
+			</section>
+			<section>
+				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
+
+			</section>
+		</div>
+	</body>
+</html>
