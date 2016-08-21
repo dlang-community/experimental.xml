@@ -109,8 +109,16 @@ struct Appender(T, Alloc)
         else
             delta = max(arr.length/2, requiredGrowth);
 
-        auto done = allocator.expandArray(arr, delta);
-        assert(done, "Could not grow appender array");
+        if (!arr.length)
+        {
+            arr = allocator.makeArray!(Unqual!T)(delta);
+            assert(arr, "Could not allocate array");
+        }
+        else
+        {
+            auto done = allocator.expandArray(arr, delta);
+            assert(done, "Could not grow appender array");
+        }
     }
 
     /**
