@@ -6,14 +6,14 @@
 # std.experimental.xml (GSoC 2016)
 
 ## About
-This project aims to become a substitution for the current std.xml in Phobos.  
-It will provide various APIs to parse, validate and output XML documents.  
+This project aims to become a replacement for the current std.xml in Phobos.  
+It will provide various APIs to parse, validate, and output XML documents.  
 It is still in its early development, and this document describes only currently
 implemented features.  
-It is being developed by Lodovico Giaretta as a project for Google Summer of Code 2016.
+It is being developed by Lodovico Giaretta (@lodo1995) as a project for Google Summer of Code 2016.
 
 ## Implementation status
-Most features are useable: the lexers, parser, cursor, SAX parser, and writer are
+Most features are usable: the lexers, parser, cursor, SAX parser, and writer are
 quite stable and used internally for testing purposes.
 The DOM Level 3 implementation and the validation layer are still a work in progress.
 
