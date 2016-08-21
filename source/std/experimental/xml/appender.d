@@ -16,15 +16,15 @@ module std.experimental.xml.appender;
 +/
 struct Appender(T, Alloc)
 {
-    import std.experimental.allocator;   
+    import std.experimental.allocator;
     import std.array;
     import std.range.primitives;
     import std.traits;
-    
+
     Alloc* allocator;
     private Unqual!T[] arr;
     private size_t used;
-    
+
     public this(ref Alloc alloc)
     {
         allocator = &alloc;
@@ -33,7 +33,7 @@ struct Appender(T, Alloc)
     {
         allocator = alloc;
     }
-    
+
     public void put(U)(U item)
         if(!isInputRange!U)
     {
@@ -50,7 +50,7 @@ struct Appender(T, Alloc)
             arr[used++] = cast(T)item;
         }
     }
-    
+
     public void put(Range)(Range range)
         if (isInputRange!Range)
     {
@@ -66,7 +66,7 @@ struct Appender(T, Alloc)
         {
             auto len = range.length;
             ensureAddable(len);
-            
+
             static if (is(typeof(arr[] = range[])))
             {
                 arr[used..(used+len)] = range[];
@@ -91,16 +91,16 @@ struct Appender(T, Alloc)
             }
         }
     }
-    
+
     private void ensureAddable(size_t sz)
     {
         import std.algorithm: max;
-        
+
         if (arr.length - used >= sz)
             return;
-        
+
         auto requiredGrowth = sz + used - arr.length;
-        
+
         size_t delta;
         if (arr.length == 0)
             delta = max(8, requiredGrowth);
@@ -108,11 +108,11 @@ struct Appender(T, Alloc)
             delta = max(arr.length, requiredGrowth);
         else
             delta = max(arr.length/2, requiredGrowth);
-        
+
         auto done = allocator.expandArray(arr, delta);
         assert(done, "Could not grow appender array");
     }
-    
+
     /**
      * Reserve at least newCapacity elements for appending.  Note that more elements
      * may be reserved than requested.  If newCapacity <= capacity, then nothing is
@@ -151,7 +151,7 @@ struct Appender(T, Alloc)
          */
         return cast(typeof(return))(arr[0..used]);
     }
-    
+
     /**
      * Clears the managed array.  This allows the elements of the array to be reused
      * for appending.
@@ -174,17 +174,17 @@ struct Appender(T, Alloc)
 @nogc unittest
 {
     import std.experimental.allocator.mallocator;
-    
+
     static immutable arr1 = [1];
     static immutable arr234 = [2, 3, 4];
     static immutable arr1234 = [1, 2, 3, 4];
-    
+
     auto app = Appender!(int, shared(Mallocator))(Mallocator.instance);
     assert(app.data is null);
-    
+
     app.put(1);
     assert(app.data == arr1);
-    
+
     app.put(arr234);
     assert(app.data == arr1234);
 }

@@ -40,7 +40,8 @@ alias UserData = Variant;
 +   the application to implement various behaviors regarding the data it associates
 +   to the DOM nodes.
 +/
-alias UserDataHandler(DOMString) = void delegate(UserDataOperation, DOMString, UserData, Node!DOMString, Node!DOMString);
+alias UserDataHandler(DOMString) =
+        void delegate(UserDataOperation, DOMString, UserData, Node!DOMString, Node!DOMString);
 
 /++
 +   An integer indicating which type of node this is.
@@ -205,8 +206,8 @@ abstract class DOMException: Exception
 {
     ///
     @property ExceptionCode code();
-    
-    /// 
+
+    ///
     pure nothrow @nogc @safe this(string msg, string file = __FILE__, size_t line = __LINE__)
     {
         super(msg, file, line);
@@ -263,7 +264,7 @@ interface DOMImplementation(DOMString)
     +   made available. Entity reference expansions and default attribute additions do not occur.
     +/
     DocumentType!DOMString createDocumentType(DOMString qualifiedName, DOMString publicId, DOMString systemId);
-    
+
     /++
     +   Creates a DOM Document object of the specified type with its document element.
     +
@@ -273,7 +274,7 @@ interface DOMImplementation(DOMString)
     +   was created makes this very unlikely to happen.
     +/
     Document!DOMString createDocument(DOMString namespaceURI, DOMString qualifiedName, DocumentType!DOMString doctype);
-    
+
     bool hasFeature(string feature, string version_);
     Object getFeature(string feature, string version_);
 }
@@ -371,7 +372,7 @@ interface Document(DOMString): Node!DOMString
     ProcessingInstruction!DOMString createProcessingInstruction(DOMString target, DOMString data);
     /++
     +   Creates an `Attr` of the given name. Note that the `Attr` instance can
-    +   then be set on an `Element` using the `setAttributeNode` method. 
+    +   then be set on an `Element` using the `setAttributeNode` method.
     +   To create an attribute with a qualified name and namespace URI, use the
     +   `createAttributeNS` method.
     +/
@@ -382,6 +383,11 @@ interface Document(DOMString): Node!DOMString
     +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
     +/
     Attr!DOMString createAttributeNS(DOMString namespaceURI, DOMString qualifiedName);
+    /++
+    +   Creates an `EntityReference` object. In addition, if the referenced entity
+    +   is known, the child list of the `EntityReference` node is made the same as
+    +   that of the corresponding `Entity` node.
+    +/
     EntityReference!DOMString createEntityReference(DOMString name);
 
     /++
@@ -397,7 +403,7 @@ interface Document(DOMString): Node!DOMString
     /++
     +   Returns the `Element` that has an ID attribute with the given value. If no
     +   such element exists, this returns `null`. If more than one element has an
-    +   ID attribute with that value, what is returned is undefined. 
+    +   ID attribute with that value, what is returned is undefined.
     +   The DOM implementation is expected to use the attribute `Attr.isId` to
     +   determine if an attribute is of type ID.
     +
@@ -405,8 +411,22 @@ interface Document(DOMString): Node!DOMString
     +/
     Element!DOMString getElementById(DOMString elementId);
 
+    /++
+    +   Imports a node from another document to this document, without altering or
+    +   removing the source node from the original document; this method creates a
+    +   new copy of the source node. The returned node has no parent; (`parentNode` is `null`).
+    +
+    +   For all nodes, importing a node creates a node object owned by the importing
+    +   document, with attribute values identical to the source node's `nodeName` and
+    +   `nodeType`, plus the attributes related to namespaces (`prefix`, `localName`,
+    +   and `namespaceURI`). As in the `cloneNode` operation, the source node is
+    +   not altered. User data associated to the imported node is not carried over.
+    +   However, if any `UserData` handlers has been specified along with the associated
+    +   data these handlers will be called with the appropriate parameters before this
+    +   method returns.
+    +/
     Node!DOMString importNode(Node!DOMString importedNode, bool deep);
-    Node!DOMString adoptNode(Node!DOMString source); // raises(DOMException)
+    Node!DOMString adoptNode(Node!DOMString source);
 
     /++
     +   An attribute specifying the encoding used for this document at the time of
@@ -420,7 +440,7 @@ interface Document(DOMString): Node!DOMString
     +   such as when the Document was created in memory.
     +/
     @property DOMString xmlEncoding();
-    
+
     /++
     +   An attribute specifying, as part of the XML declaration, whether this document
     +   is standalone. This is `false` when unspecified.
@@ -449,7 +469,7 @@ interface Document(DOMString): Node!DOMString
     @property bool strictErrorChecking();
     /// ditto
     @property void strictErrorChecking(bool);
-    
+
     /++
     +   The location of the document or `null` if undefined or if the `Document`
     +   was created using `DOMImplementation.createDocument`. No lexical checking
@@ -459,10 +479,32 @@ interface Document(DOMString): Node!DOMString
     @property DOMString documentURI();
     /// ditto
     @property void documentURI(DOMString);
-    
+
     /// The configuration used when `Document.normalizeDocument()` is invoked.
     @property DOMConfiguration!DOMString domConfig();
+    /++
+    +   This method acts as if the document was going through a save and load cycle,
+    +   putting the document in a "normal" form. As a consequence, this method
+    +   updates the replacement tree of `EntityReference` nodes and normalizes `Text`
+    +   nodes, as defined in the method Node.normalize().
+    +/
     void normalizeDocument();
+    /++
+    +   Rename an existing node of type `ELEMENT` or `ATTRIBUTE`.
+    +
+    +   When possible this simply changes the name of the given node, otherwise
+    +   this creates a new node with the specified name and replaces the existing
+    +   node with the new node as described below.
+    +   If simply changing the name of the given node is not possible, the following
+    +   operations are performed: a new node is created, any registered event
+    +   listener is registered on the new node, any user data attached to the old
+    +   node is removed from that node, the old node is removed from its parent
+    +   if it has one, the children are moved to the new node, if the renamed node
+    +   is an `Element` its attributes are moved to the new node, the new node is
+    +   inserted at the position the old node used to have in its parent's child
+    +   nodes list if it has one, the user data that was attached to the old node
+    +   is attached to the new node.
+    +/
     Node!DOMString renameNode(Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName);
 }
 
@@ -524,14 +566,14 @@ interface Node(DOMString)
     @property DOMString namespaceURI();
     /// The absolute base URI of this node or null if the implementation wasn't able to obtain an absolute URI
     @property DOMString baseURI();
-    
+
     /// The value of this node, depending on its type.
     @property DOMString nodeValue();
     /// ditto
     @property void nodeValue(DOMString);
     @property DOMString textContent();
     @property void textContent(DOMString);
-    
+
     /++
     +   The parent of this node. All nodes, except `Attr`, `Document`, `DocumentFragment`,
     +   `Entity`, and `Notation` may have a parent. However, if a node has just been
@@ -555,12 +597,12 @@ interface Node(DOMString)
     +   which is not used with any `Document` yet, this is `null`.
     +/
     @property Document!DOMString ownerDocument();
-    
+
     /// A `NamedNodeMap` containing the attributes of this node (if it is an `Element`) or `null` otherwise.
     @property NamedNodeMap!DOMString attributes();
     /// Returns whether this node (if it is an element) has any attributes.
     bool hasAttributes();
-    
+
     /++
     +   Inserts the node `newChild` before the existing child node `refChild`.
     +   If `refChild` is `null`, insert `newChild` at the end of the list of children.
@@ -582,7 +624,7 @@ interface Node(DOMString)
     Node!DOMString appendChild(Node!DOMString newChild);
     /// Returns whether this node has any children.
     bool hasChildNodes();
-    
+
     /++
     +   Returns a duplicate of this node, i.e., serves as a generic copy constructor
     +   for nodes. The duplicate node has no parent (`parentNode` is `null`) and no
@@ -594,13 +636,21 @@ interface Node(DOMString)
     Node!DOMString cloneNode(bool deep);
     bool isSameNode(Node!DOMString other);
     bool isEqualNode(Node!DOMString arg);
-    
+
+    /++
+    +   Puts all `Text` nodes in the full depth of the sub-tree underneath this
+    +   `Node`, including attribute nodes, into a "normal" form where only structure
+    +   (e.g., elements, comments, processing instructions, CDATA sections, and entity
+    +   references) separates `Text` nodes, i.e., there are neither adjacent `Text`
+    +   nodes nor empty `Text` nodes. This can be used to ensure that the DOM view
+    +   of a document is the same as if it were saved and re-loaded.
+    +/
     void normalize();
-    
+
     /// Tests whether the DOM implementation implements a specific feature and that feature is supported by this node.
     bool isSupported(string feature, string version_);
     Object getFeature(string feature, string version_);
-    
+
     /++
     +   Retrieves the object associated to a key on a this node. The object must
     +   first have been set to this node by calling `setUserData` with the same key.
@@ -732,9 +782,9 @@ interface CharacterData(DOMString): Node!DOMString
 {
     @property DOMString data();
     @property void data(DOMString);
-    
+
     @property size_t length();
-    
+
     /// Extracts a substring of `data` starting at `offset`, with length `count`.
     DOMString substringData(size_t offset, size_t count);
     /++
@@ -764,7 +814,7 @@ interface CharacterData(DOMString): Node!DOMString
 +   elements of a given type. Furthermore, `Attr` nodes may not be immediate children
 +   of a `DocumentFragment`. However, they can be associated with `Element` nodes
 +   contained within a `DocumentFragment`. In short, users and implementors of the
-+   DOM need to be aware that `Attr` nodes have some things in common with other 
++   DOM need to be aware that `Attr` nodes have some things in common with other
 +   objects inheriting the `Node` interface, but they also are quite distinct.
 +/
 interface Attr(DOMString): Node!DOMString
@@ -780,7 +830,7 @@ interface Attr(DOMString): Node!DOMString
     +   node (even if it ends up having the same value as the default value) then
     +   it is set to `true`. The implementation may handle attributes with default
     +   values from other schemas similarly but applications should use `Document.normalizeDocument`
-    +   to guarantee this information is up-to-date. 
+    +   to guarantee this information is up-to-date.
     +/
     @property bool specified();
     /++
@@ -818,55 +868,125 @@ interface Element(DOMString): Node!DOMString
 {
     /// The name of the element. If `Node.localName` is different from `null`, this attribute is a qualified name.
     @property DOMString tagName();
-    
+
     /// Retrieves an attribute value by name.
     DOMString getAttribute(DOMString name);
+    /++
+    +   Adds a new attribute. If an attribute with that name is already present in
+    +   the element, its value is changed to be that of the value parameter. This
+    +   value is a simple string; it is not parsed as it is being set. So any markup
+    +   (such as syntax to be recognized as an entity reference) is treated as
+    +   literal text, and needs to be appropriately escaped by the implementation
+    +   when it is written out. In order to assign an attribute value that contains
+    +   entity references, the user must create an `Attr` node plus any `Text` and
+    +   `EntityReference` nodes, build the appropriate subtree, and use `setAttributeNode`
+    +   to assign it as the value of an attribute.
+    +   To set an attribute with a qualified name and namespace URI, use the `setAttributeNS` method.
+    +/
     void setAttribute(DOMString name, DOMString value);
+    /++
+    +   Removes an attribute by name. If a default value for the removed attribute
+    +   is defined in the DTD, a new attribute immediately appears with the default
+    +   value as well as the corresponding namespace URI, local name, and prefix
+    +   when applicable.
+    +   To remove an attribute by local name and namespace URI, use the `removeAttributeNS` method.
+    +/
     void removeAttribute(DOMString name);
-    
+
     /// Retrieves an attribute node by name.
     Attr!DOMString getAttributeNode(DOMString name);
+    /++
+    +   Adds a new attribute node. If an attribute with that name (`nodeName`) is
+    +   already present in the element, it is replaced by the new one. Replacing an
+    +   attribute node by itself has no effect.
+    +   To add a new attribute node with a qualified name and namespace URI, use
+    +   the `setAttributeNodeNS` method.
+    +/
     Attr!DOMString setAttributeNode(Attr!DOMString newAttr);
+    /++
+    +   Removes the specified attribute node. If a default value for the removed attribute
+    +   is defined in the DTD, a new attribute immediately appears with the default
+    +   value as well as the corresponding namespace URI, local name, and prefix
+    +   when applicable.
+    +/
     Attr!DOMString removeAttributeNode(Attr!DOMString oldAttr);
-    
+
     /++
     +   Retrieves an attribute value by local name and namespace URI.
     +   Per the XML Namespaces specification, applications must use the value `null`
     +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
     +/
     DOMString getAttributeNS(DOMString namespaceURI, DOMString localName);
+    /++
+    +   Adds a new attribute. If an attribute with the same local name and namespace
+    +   URI is already present on the element, its prefix is changed to be the prefix
+    +   part of the qualifiedName, and its value is changed to be the value parameter.
+    +   This value is a simple string; it is not parsed as it is being set. So any markup
+    +   (such as syntax to be recognized as an entity reference) is treated as
+    +   literal text, and needs to be appropriately escaped by the implementation
+    +   when it is written out. In order to assign an attribute value that contains
+    +   entity references, the user must create an `Attr` node plus any `Text` and
+    +   `EntityReference` nodes, build the appropriate subtree, and use `setAttributeNode`
+    +   to assign it as the value of an attribute.
+    +   Per the XML Namespaces specification, applications must use the value `null`
+    +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
+    +/
     void setAttributeNS(DOMString namespaceURI, DOMString qualifiedName, DOMString value);
+    /++
+    +   Removes an attribute by local name and namespace URI. If a default value
+    +   for the removed attribute is defined in the DTD, a new attribute immediately
+    +   appears with the default value as well as the corresponding namespace URI,
+    +   local name, and prefix when applicable.
+    +   Per the XML Namespaces specification, applications must use the value `null`
+    +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
+    +/
     void removeAttributeNS(DOMString namespaceURI, DOMString localName);
-    
+
     /++
     +   Retrieves an `Attr` node by local name and namespace URI.
     +   Per the XML Namespaces specification, applications must use the value `null`
     +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
     +/
     Attr!DOMString getAttributeNodeNS(DOMString namespaceURI, DOMString localName);
+    /++
+    +   Adds a new attribute. If an attribute with that local name and that namespace
+    +   URI is already present in the element, it is replaced by the new one. Replacing
+    +   an attribute node by itself has no effect.
+    +   Per the XML Namespaces specification, applications must use the value `null`
+    +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
+    +/
     Attr!DOMString setAttributeNodeNS(Attr!DOMString newAttr);
-    
+
+    /// Returns `true` when an attribute with a given `name` is specified on this element or has a default value, `false` otherwise.
     bool hasAttribute(DOMString name);
+    /++
+    +   Returns `true` when an attribute with a given `localName` and `namespaceURI`
+    +   is specified on this element or has a default value, `false` otherwise.
+    +   Per the XML Namespaces specification, applications must use the value `null`
+    +   as the `namespaceURI` parameter for methods if they wish to have no namespace.
+    +/
     bool hasAttributeNS(DOMString namespaceURI, DOMString localName);
-    
+
     /++
     +   If the parameter `isId` is `true`, this method declares the specified
     +   attribute to be a user-determined ID attribute. This affects the value of
     +   `Attr.isId` and the behavior of `Document.getElementById`, but does not
     +   change any schema that may be in use, in particular this does not affect
     +   the `Attr.schemaTypeInfo` of the specified `Attr` node. Use the value `false`
-    +   for the parameter `isId` to undeclare an attribute for being a user-determined ID attribute. 
+    +   for the parameter `isId` to undeclare an attribute for being a user-determined ID attribute.
     +/
     void setIdAttribute(DOMString name, bool isId);
     /// ditto
     void setIdAttributeNS(DOMString namespaceURI, DOMString localName, bool isId);
     /// ditto
     void setIdAttributeNode(Attr!DOMString idAttr, bool isId);
-    
+
+    /// Returns a `NodeList` of all descendant `Element`s with a given tag name, in document order.
     NodeList!DOMString getElementsByTagName(DOMString name);
+    /// Returns a `NodeList` of all the descendant `Element`s with a given local name and namespace URI in document order.
     NodeList!DOMString getElementsByTagNameNS(DOMString namespaceURI, DOMString localName);
-    
-    /// The type information associated with this element. 
+
+    /// The type information associated with this element.
     @property XMLTypeInfo!DOMString schemaTypeInfo();
 }
 
@@ -880,10 +1000,20 @@ interface Element(DOMString): Node!DOMString
 +/
 interface Text(DOMString): CharacterData!DOMString
 {
+    /++
+    +   Breaks this node into two nodes at the specified `offset`, keeping both
+    +   in the tree as siblings. After being split, this node will contain all
+    +   the content up to the `offset` point. A new node of the same type, which
+    +   contains all the content at and after the `offset` point, is returned.
+    +   If the original node had a parent node, the new node is inserted as the
+    +   next sibling of the original node. When the `offset` is equal to the length
+    +   of this node, the new node has no data.
+    +/
     Text!DOMString splitText(size_t offset);
-    
+
+    /// Returns whether this text node contains element content whitespace, often abusively called "ignorable whitespace".
     @property bool isElementContentWhitespace();
-    
+
     @property DOMString wholeText();
     Text!DOMString replaceWholeText(DOMString content);
 }
@@ -975,7 +1105,7 @@ interface DocumentType(DOMString): Node!DOMString
     @property DOMString name();
     /++
     +   A `NamedNodeMap` containing the general entities, both external and internal,
-    +   declared in the DTD. Parameter entities are not contained. Duplicates are discarded. 
+    +   declared in the DTD. Parameter entities are not contained. Duplicates are discarded.
     +/
     @property NamedNodeMap!DOMString entities();
     /++
@@ -1072,8 +1202,8 @@ interface Entity(DOMString): Node!DOMString
 +   `EntityReference` nodes may be used to represent an entity reference in the tree.
 +   When an `EntityReference` node represents a reference to an unknown entity, the
 +   node has no children and its replacement value, when used by `Attr.value` for example, is empty.
-+  
-+   As for `Entity` nodes, `EntityReference` nodes and all their descendants are readonly. 
++
++   As for `Entity` nodes, `EntityReference` nodes and all their descendants are readonly.
 +/
 interface EntityReference(DOMString): Node!DOMString
 {

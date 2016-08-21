@@ -49,7 +49,7 @@
 +   foreach (author; dom.getElementsByTagName("author"))
 +       if (author.textContent == "A. Alexandrescu")
 +           author.textContent = "Andrei Alexandrescu";
-+   
++
 +   // write it out to "catalogue.xml"
 +   auto file = File("catalogue.xml", "w");
 +   file.lockingTextWriter
@@ -247,7 +247,7 @@ public import dom = std.experimental.xml.dom;
 @nogc unittest
 {
     import std.typecons: Yes, No;
-   
+
     string xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
@@ -260,14 +260,14 @@ public import dom = std.experimental.xml.dom;
         <ccc/>
     </aaa>
     };
-    
+
     auto cursor =
          chooseLexer!xml
         .parse!(No.preserveWhitespace)
         .cursor!(Yes.conflateCDATA)
         .checkXMLNames;
-        
+
     cursor.setSource(xml);
-        
+
     assert(cursor.getKind == XMLKind.DOCUMENT);
 }

@@ -46,7 +46,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     if (isLexer!L)
 {
     import std.meta: staticIndexOf;
-    
+
     /++
     +   The structure returned in output from the low level parser.
     +   Represents an XML token, delimited by specific patterns, based on its kind.
@@ -56,7 +56,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     {
         /++ The content of the token, delimiters excluded +/
         L.CharacterType[] content;
-        
+
         /++ Represents the kind of token +/
         XMLKind kind;
     }
@@ -66,18 +66,18 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
     private XMLToken next;
 
     mixin UsesErrorHandler!ErrorHandler;
-    
+
     /++ Generic constructor; forwards its arguments to the lexer constructor +/
     this(Args...)(Args args)
     {
         lexer = L(args);
     }
-    
+
     alias InputType = L.InputType;
     alias CharacterType = L.CharacterType;
-    
+
     /++
-    +   See detailed documentation in 
+    +   See detailed documentation in
     +   $(LINK2 ../interfaces/isParser, `std.experimental.xml.interfaces.isParser`)
     +/
     void setSource(InputType input)
@@ -86,7 +86,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
         ready = false;
         insideDTD = false;
     }
-    
+
     static if (isSaveableLexer!L)
     {
         auto save()
@@ -96,24 +96,24 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
             return result;
         }
     }
-    
+
     private CharacterType[] fetchContent(size_t start = 0, size_t stop = 0)
     {
         return lexer.get[start..($ - stop)];
     }
-    
+
     /++
-    +   See detailed documentation in 
+    +   See detailed documentation in
     +   $(LINK2 ../interfaces/isParser, `std.experimental.xml.interfaces.isParser`)
     +/
     bool empty()
     {
         static if (preserveWhitespace == No.preserveWhitespace)
             lexer.dropWhile(" \r\n\t");
-            
+
         return !ready && lexer.empty;
     }
-    
+
     /// ditto
     auto front()
     {
@@ -121,23 +121,23 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
             fetchNext();
         return next;
     }
-    
+
     /// ditto
     void popFront()
     {
         front();
         ready = false;
     }
-    
+
     private void fetchNext()
     {
         if (!preserveWhitespace || insideDTD)
             lexer.dropWhile(" \r\n\t");
-        
+
         assert(!lexer.empty);
-        
+
         lexer.start();
-        
+
         // dtd end
         if (insideDTD && lexer.testAndAdvance(']'))
         {
@@ -150,7 +150,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
             next.content = null;
             insideDTD = false;
         }
-        
+
         // text element
         else if (!lexer.testAndAdvance('<'))
         {
@@ -158,7 +158,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
             next.kind = XMLKind.TEXT;
             next.content = fetchContent();
         }
-        
+
         // tag end
         else if (lexer.testAndAdvance('/'))
         {
@@ -184,7 +184,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
                     lexer.advanceUntil('"', true);
                 else
                     lexer.advanceUntil('\'', true);
-                    
+
             if (c == 2)
             {
                 lexer.advanceUntil('>', true); // should be the first character after '/'
@@ -197,7 +197,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
                 next.kind = XMLKind.ELEMENT_START;
             }
         }
-        
+
         // cdata or conditional
         else if (lexer.testAndAdvance('['))
         {
@@ -247,7 +247,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
                     lexer.advanceUntil('"', true);
                 else
                     lexer.advanceUntil('\'', true);
-                
+
             // doctype
             if (lexer.get.length>= 9 && fastEqual(lexer.get()[2..9], "DOCTYPE"))
             {
@@ -299,7 +299,7 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
                 }
             }
         }
-        
+
         ready = true;
     }
 }
@@ -328,14 +328,26 @@ auto parse(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
 import std.experimental.xml.lexers;
 import std.experimental.allocator.gc_allocator;
 
+/++
++   Instantiates a parser suitable for the given `InputType`.
++
++   This is completely equivalent to
++   ---
++   auto parser = 
++        chooseLexer!(InputType, reuseBuffer)(alloc, handler)
++       .parse!(preserveWhitespace)(handler)
++   ---
++/
 auto chooseParser(InputType,
                   Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
                   Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer,
                   Alloc, ErrorHandler)
                  (ref Alloc alloc, ErrorHandler handler = () { assert(0, "XML syntax error"); })
 {
-    return chooseLexer!(InputType, reuseBuffer, Alloc, ErrorHandler)(alloc, handler).parse!(preserveWhitespace)(handler);
+    return chooseLexer!(InputType, reuseBuffer, Alloc, ErrorHandler)(alloc, handler)
+          .parse!(preserveWhitespace)(handler);
 }
+/// ditto
 auto chooseParser(alias InputType,
                   Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
                   Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer,
@@ -344,6 +356,7 @@ auto chooseParser(alias InputType,
 {
     return chooseParser!(typeof(InputType), preserveWhitespace, reuseBuffer, Alloc, ErrorHandler)(alloc, handler);
 }
+/// ditto
 auto chooseParser(InputType, Alloc = shared(GCAllocator),
                   Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
                   Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer,
@@ -353,6 +366,7 @@ auto chooseParser(InputType, Alloc = shared(GCAllocator),
 {
     return chooseParser!(InputType, preserveWhitespace, reuseBuffer, Alloc, ErrorHandler)(Alloc.instance, handler);
 }
+/// ditto
 auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
                   Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
                   Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer,
@@ -360,7 +374,8 @@ auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
                  (ErrorHandler handler = () { assert(0, "XML syntax error"); })
     if (is(typeof(Alloc.instance)))
 {
-    return chooseParser!(typeof(InputType), preserveWhitespace, reuseBuffer, Alloc, ErrorHandler)(Alloc.instance, handler);
+    return chooseParser!(typeof(InputType), preserveWhitespace, reuseBuffer, Alloc, ErrorHandler)
+                        (Alloc.instance, handler);
 }
 
 @nogc unittest
@@ -369,7 +384,7 @@ auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
     import std.experimental.allocator.mallocator;
     import std.string: lineSplitter;
     import std.algorithm: equal;
-    
+
     string xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
@@ -382,53 +397,53 @@ auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
         <ccc/>
     </aaa>
     };
-    
+
     auto handler = () { assert(0, "Oopss..."); };
     auto lexer = RangeLexer!(string, typeof(handler), shared(Mallocator))(Mallocator.instance);
     lexer.errorHandler = handler;
     auto parser = lexer.parse;
     parser.setSource(xml);
-    
+
     alias XMLKind = typeof(parser.front.kind);
-    
+
     assert(parser.front.kind == XMLKind.PROCESSING_INSTRUCTION);
     assert(parser.front.content == "xml encoding = \"utf-8\" ");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_START);
     assert(parser.front.content == "aaa xmlns:myns=\"something\"");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_START);
     assert(parser.front.content == "myns:bbb myns:att='>'");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.COMMENT);
     assert(parser.front.content == " lol ");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.TEXT);
     // use lineSplitter so the unittest does not depend on the newline policy of this file
     static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
     assert(parser.front.content.lineSplitter.equal(linesArr));
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_END);
     assert(parser.front.content == "myns:bbb");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.CDATA);
     assert(parser.front.content == " Ciaone! ");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_EMPTY);
     assert(parser.front.content == "ccc");
     parser.popFront();
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_END);
     assert(parser.front.content == "aaa");
     parser.popFront();
-    
+
     assert(parser.empty);
 }
 
@@ -437,7 +452,7 @@ unittest
     import std.experimental.xml.lexers;
     import std.algorithm: find;
     import std.string: stripRight;
-    
+
     string xml = q{
     <!DOCTYPE mydoc https://myUri.org/bla [
         <!ELEMENT myelem ANY>
@@ -447,39 +462,39 @@ unittest
         <!FOODECL asdffdsa >
     ]>
     };
-    
+
     auto parser = chooseParser!xml;
     parser.setSource(xml);
-    
+
     alias XMLKind = typeof(parser.front.kind);
-    
+
     assert(parser.front.kind == XMLKind.DTD_START);
     assert(parser.front.content == " mydoc https://myUri.org/bla ");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.ELEMENT_DECL);
     assert(parser.front.content == " myelem ANY");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.ENTITY_DECL);
     assert(parser.front.content == "   myent    \"replacement text\"");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.ATTLIST_DECL);
     assert(parser.front.content == " myelem foo CDATA #REQUIRED ");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.NOTATION_DECL);
     assert(parser.front.content == " PUBLIC 'h'");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.DECLARATION);
     assert(parser.front.content == "FOODECL asdffdsa ");
     parser.popFront;
-    
+
     assert(parser.front.kind == XMLKind.DTD_END);
     assert(!parser.front.content);
     parser.popFront;
-    
+
     assert(parser.empty);
 }

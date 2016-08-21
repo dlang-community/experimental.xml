@@ -36,10 +36,10 @@ struct SAXParser(T, alias H)
         alias HandlerType = H!T;
     else
         alias HandlerType = H;
-        
+
     private T cursor;
     public HandlerType handler;
-    
+
     /++
     +   Initializes this parser (and the underlying low level one) with the given input.
     +/
@@ -47,7 +47,7 @@ struct SAXParser(T, alias H)
     {
         cursor.setSource(input);
     }
-    
+
     static if (isSaveableCursor!T)
     {
         auto save()
@@ -57,7 +57,7 @@ struct SAXParser(T, alias H)
             return result;
         }
     }
-    
+
     /++
     +   Processes the entire document; every time a node of
     +   `XMLKind` XXX is found, the corresponding method `onXXX(underlyingCursor)`
@@ -120,7 +120,7 @@ struct SAXParser(T, alias H)
                 }
                 default: break;
             }
-            
+
             if (cursor.enter)
             {
             }
@@ -168,13 +168,13 @@ unittest
         <ccc/>
     </aaa>
     };
-    
+
     static struct MyHandler(T)
     {
         int max_nesting;
         int current_nesting;
         int total_invocations;
-        
+
         void onElementStart(ref T node)
         {
             total_invocations++;
@@ -204,16 +204,16 @@ unittest
             total_invocations++;
         }
     }
-    
-    auto parser = 
+
+    auto parser =
          chooseLexer!xml
         .parse
         .cursor
         .saxParser!MyHandler;
-        
+
     parser.setSource(xml);
     parser.processDocument();
-    
+
     assert(parser.handler.max_nesting == 2);
     assert(parser.handler.current_nesting == 0);
     assert(parser.handler.total_invocations == 9);

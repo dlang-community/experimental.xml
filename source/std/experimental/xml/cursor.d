@@ -36,19 +36,19 @@ enum CursorError
     /// The attributes could not be parsed due to invalid syntax
     INVALID_ATTRIBUTE_SYNTAX,
 }
-    
+
 package struct Attribute(StringType)
 {
     StringType value;
     private StringType _name;
     private size_t colon;
-    
+
     this(StringType qualifiedName, StringType value)
     {
         this.value = value;
         name = qualifiedName;
     }
-    
+
     @property auto name() inout
     {
         return _name;
@@ -92,26 +92,26 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     +   i.e., the one accepted by the underlying low level parser.
     +/
     alias InputType = P.InputType;
-    
+
     /++ The type of characters in the input, as returned by the underlying low level parser. +/
     alias CharacterType = P.CharacterType;
-    
+
     /++ The type of sequences of CharacterType, as returned by this parser +/
     alias StringType = CharacterType[];
-    
+
     private P parser;
     private ElementType!P currentNode;
     private bool starting, _documentEnd, nextFailed;
     private ptrdiff_t colon;
     private size_t nameEnd;
     private ErrorHandler handler;
-    
+
     /++ Generic constructor; forwards its arguments to the parser constructor +/
     this(Args...)(Args args)
     {
         parser = P(args);
     }
-    
+
     static if (isSaveableLowLevelParser!P)
     {
         public auto save()
@@ -121,7 +121,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             return result;
         }
     }
-    
+
     private void callHandler(CursorError err)
     {
         if (handler != null)
@@ -129,7 +129,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         else
             assert(0);
     }
-    
+
     private bool advanceInput()
     {
         colon = colon.max;
@@ -143,7 +143,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         _documentEnd = true;
         return false;
     }
-    
+
     /++
     +   Overrides the current error handler with a new one.
     +   It will be called whenever a non-fatal error occurs.
@@ -154,7 +154,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         assert(handler, "Trying to set null error handler");
         this.handler = handler;
     }
-    
+
     /++
     +   Initializes this cursor (and the underlying low level parser) with the given input.
     +/
@@ -165,12 +165,16 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         _documentEnd = false;
         colon = colon.max;
         nameEnd = 0;
-        
+
         parser.setSource(input);
         if (!parser.empty)
         {
-            if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION && parser.front.content.length >= 3 && fastEqual(parser.front.content[0..3], "xml"))
+            if (parser.front.kind == XMLKind.PROCESSING_INSTRUCTION &&
+                parser.front.content.length >= 3 &&
+                fastEqual(parser.front.content[0..3], "xml"))
+            {
                 currentNode = parser.front;
+            }
             else
             {
                 // document without xml declaration???
@@ -181,13 +185,13 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             starting = true;
         }
     }
-    
+
     /++ Returns whether the cursor is at the end of the document. +/
     bool documentEnd()
     {
         return _documentEnd;
     }
-    
+
     /++
     +   Returns whether the cursor is at the beginning of the document
     +   (i.e. whether no enter/next/exit has been performed successfully and thus
@@ -197,7 +201,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     {
         return starting;
     }
-    
+
     /++
     +   Advances to the first child of the current node and returns true.
     +   If it returns false, the cursor is either on the same node (it wasn't
@@ -213,7 +217,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                 return advanceInput();
             else
                 nameEnd = 0;
-            
+
             currentNode = parser.front;
             return true;
         }
@@ -228,16 +232,16 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         else
             return false;
     }
-    
+
     /++ Advances to the end of the parent of the current node. +/
     void exit()
     {
         if (!nextFailed)
             while (next()) {}
-        
+
         nextFailed = false;
     }
-    
+
     /++
     +   Advances to the next sibling of the current node.
     +   Returns whether it succeded. If it fails, either the
@@ -271,20 +275,20 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         }
         return true;
     }
-    
+
     /++ Returns the kind of the current node. +/
     XMLKind getKind() const
     {
         if (starting)
             return XMLKind.DOCUMENT;
-            
+
         static if (conflateCDATA == Yes.conflateCDATA)
             if (currentNode.kind == XMLKind.CDATA)
                 return XMLKind.TEXT;
-                
+
         return currentNode.kind;
     }
-    
+
     /++
     +   If the current node is an element or a doctype, return its complete name;
     +   it it is a processing instruction, return its target;
@@ -316,7 +320,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                 return currentNode.content[0..nameEnd];
         }
     }
-    
+
     /++
     +   If the current node is an element, return its local name (without namespace prefix);
     +   otherwise, return the same result as getName().
@@ -332,7 +336,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         }
         return name;
     }
-    
+
     /++
     +   If the current node is an element, return its namespace prefix;
     +   otherwise, the result in unspecified;
@@ -344,7 +348,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             auto name = getName;
             if (colon == colon.max)
                 colon = fastIndexOf(name, ':');
-                
+
             if (colon >= 0)
                 return name[0..colon];
             else
@@ -352,7 +356,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         }
         return [];
     }
-    
+
     /++
     +   If the current node is an element, return its attributes as a range of triplets
     +   (prefix, name, value); if the current node is the document node, return the attributes
@@ -366,18 +370,18 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
             private Attribute!StringType attr;
             private Cursor* cursor;
             private bool error;
-            
+
             private this(StringType str, ref Cursor cur)
             {
                 content = str;
                 cursor = &cur;
             }
-            
+
             bool empty()
             {
                 if (error)
                     return true;
-                    
+
                 auto i = content.fastIndexOfNeither(" \r\n\t");
                 if (i >= 0)
                 {
@@ -386,7 +390,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                 }
                 return true;
             }
-            
+
             auto front()
             {
                 if (attr == attr.init)
@@ -394,7 +398,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                     auto i = content.fastIndexOfNeither(" \r\n\t");
                     assert(i >= 0, "No more attributes...");
                     content = content[i..$];
-                    
+
                     auto sep = fastIndexOf(content[0..$], '=');
                     if (sep == -1)
                     {
@@ -403,7 +407,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                         error = true;
                         return attr.init;
                     }
-                    
+
                     auto name = content[0..sep];
                     auto delta = fastIndexOfAny(name, " \r\n\t");
                     if (delta >= 0)
@@ -419,7 +423,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                         name = name[0..delta];
                     }
                     attr.name = name;
-                    
+
                     size_t attEnd;
                     size_t quote;
                     delta = (sep + 1 < content.length) ? fastIndexOfNeither(content[sep + 1..$], " \r\n\t") : -1;
@@ -457,14 +461,14 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
                 }
                 return attr;
             }
-            
+
             auto popFront()
             {
                 front();
                 attr = attr.init;
             }
         }
-    
+
         auto kind = currentNode.kind;
         if (kind == XMLKind.ELEMENT_START || kind == XMLKind.ELEMENT_EMPTY || kind == XMLKind.PROCESSING_INSTRUCTION)
         {
@@ -474,7 +478,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
         else
             return AttributesRange();
     }
-    
+
     /++
     +   Return the text content of a CDATA section, a comment or a text node;
     +   in all other cases, returns the entire node without the name
@@ -483,7 +487,7 @@ struct Cursor(P, Flag!"conflateCDATA" conflateCDATA = Yes.conflateCDATA, ErrorHa
     {
         return currentNode.content[nameEnd..$];
     }
-    
+
     /++ Returns the entire text of the current node. +/
     StringType getAll() const
     {
@@ -514,7 +518,7 @@ unittest
     import std.string: lineSplitter, strip;
     import std.algorithm: map;
     import std.array: array;
-    
+
     wstring xml = q{
     <?xml encoding = "utf-8" ?>
     <!DOCTYPE mydoc https://myUri.org/bla [
@@ -534,12 +538,12 @@ unittest
         <ccc/>
     </aaa>
     };
-    
+
     auto cursor = chooseLexer!xml.parse.cursor;
     cursor.setSource(xml);
-    
+
     assert(cursor.atBeginning);
-    
+
     // <?xml encoding = "utf-8" ?>
     assert(cursor.getKind() == XMLKind.DOCUMENT);
     assert(cursor.getName() == "xml");
@@ -547,47 +551,47 @@ unittest
     assert(cursor.getLocalName() == "xml");
     assert(cursor.getAttributes().array == [Attribute!wstring("encoding", "utf-8")]);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
-    
+
     assert(cursor.enter());
         assert(!cursor.atBeginning);
-    
+
         // <!DOCTYPE mydoc https://myUri.org/bla [
         assert(cursor.getKind == XMLKind.DTD_START);
         assert(cursor.getAll == " mydoc https://myUri.org/bla ");
-        
+
         assert(cursor.enter);
             // <!ELEMENT myelem ANY>
             assert(cursor.getKind == XMLKind.ELEMENT_DECL);
             assert(cursor.getAll == " myelem ANY");
-            
+
             assert(cursor.next);
             // <!ENTITY   myent    "replacement text">
             assert(cursor.getKind == XMLKind.ENTITY_DECL);
             assert(cursor.getAll == "   myent    \"replacement text\"");
-            
+
             assert(cursor.next);
             // <!ATTLIST myelem foo CDATA #REQUIRED >
             assert(cursor.getKind == XMLKind.ATTLIST_DECL);
             assert(cursor.getAll == " myelem foo CDATA #REQUIRED ");
-            
+
             assert(cursor.next);
             // <!NOTATION PUBLIC 'h'>
             assert(cursor.getKind == XMLKind.NOTATION_DECL);
             assert(cursor.getAll == " PUBLIC 'h'");
-            
+
             assert(cursor.next);
             // <!FOODECL asdffdsa >
             assert(cursor.getKind == XMLKind.DECLARATION);
             assert(cursor.getAll == "FOODECL asdffdsa ");
-            
+
             assert(!cursor.next);
         cursor.exit;
-        
+
         // ]>
         assert(cursor.getKind == XMLKind.DTD_END);
         assert(!cursor.getAll);
         assert(cursor.next);
-    
+
         // <aaa xmlns:myns="something">
         assert(cursor.getKind() == XMLKind.ELEMENT_START);
         assert(cursor.getName() == "aaa");
@@ -595,7 +599,7 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes().array == [Attribute!wstring("xmlns:myns", "something")]);
         assert(cursor.getContent() == " xmlns:myns=\"something\"");
-        
+
         assert(cursor.enter());
             // <myns:bbb myns:att='>'>
             assert(cursor.getKind() == XMLKind.ELEMENT_START);
@@ -604,10 +608,10 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes().array == [Attribute!wstring("myns:att", ">")]);
             assert(cursor.getContent() == " myns:att='>'");
-            
+
             assert(cursor.enter());
             cursor.exit();
-            
+
             // </myns:bbb>
             assert(cursor.getKind() == XMLKind.ELEMENT_END);
             assert(cursor.getName() == "myns:bbb");
@@ -615,7 +619,7 @@ unittest
             assert(cursor.getLocalName() == "bbb");
             assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == []);
-            
+
             assert(cursor.next());
             // <<![CDATA[ Ciaone! ]]>
             assert(cursor.getKind() == XMLKind.TEXT);
@@ -624,7 +628,7 @@ unittest
             assert(cursor.getLocalName() == "");
             assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == " Ciaone! ");
-            
+
             assert(cursor.next());
             // <ccc/>
             assert(cursor.getKind() == XMLKind.ELEMENT_EMPTY);
@@ -633,10 +637,10 @@ unittest
             assert(cursor.getLocalName() == "ccc");
             assert(cursor.getAttributes().empty);
             assert(cursor.getContent() == []);
-            
+
             assert(!cursor.next());
         cursor.exit();
-        
+
         // </aaa>
         assert(cursor.getKind() == XMLKind.ELEMENT_END);
         assert(cursor.getName() == "aaa");
@@ -644,10 +648,10 @@ unittest
         assert(cursor.getLocalName() == "aaa");
         assert(cursor.getAttributes().empty);
         assert(cursor.getContent() == []);
-        
+
         assert(!cursor.next());
     cursor.exit();
-    
+
     assert(cursor.documentEnd);
     assert(!cursor.atBeginning);
 }
@@ -665,11 +669,11 @@ auto children(T)(ref T cursor)
     {
         T* cursor;
         bool endReached;
-        
+
         bool empty() const { return endReached; }
         void popFront() { endReached = !cursor.next(); }
         ref T front() { return *cursor; }
-        
+
         ~this() { cursor.exit; }
     }
     return XMLRange(&cursor, cursor.enter);
@@ -682,7 +686,7 @@ auto children(T)(ref T cursor)
     import std.string: lineSplitter, strip;
     import std.algorithm: map, equal;
     import std.array: array;
-    
+
     string xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
@@ -695,15 +699,15 @@ auto children(T)(ref T cursor)
         <ccc/>
     </aaa>
     };
-    
+
     import std.experimental.allocator.mallocator;
-    
+
     auto handler = () { assert(0, "Some problem here..."); };
     auto lexer = RangeLexer!(string, typeof(handler), shared(Mallocator))(Mallocator.instance);
     lexer.errorHandler = handler;
     auto cursor = lexer.parse.cursor!(Yes.conflateCDATA);
     cursor.setSource(xml);
-    
+
     // <?xml encoding = "utf-8" ?>
     assert(cursor.getKind() == XMLKind.DOCUMENT);
     assert(cursor.getName() == "xml");
@@ -714,7 +718,7 @@ auto children(T)(ref T cursor)
     attrs.popFront;
     assert(attrs.empty);
     assert(cursor.getContent() == " encoding = \"utf-8\" ");
-    
+
     {
         auto range1 = cursor.children;
         // <aaa xmlns:myns="something">
@@ -727,7 +731,7 @@ auto children(T)(ref T cursor)
         attrs.popFront;
         assert(attrs.empty);
         assert(range1.front.getContent() == " xmlns:myns=\"something\"");
-        
+
         {
             auto range2 = range1.front.children();
             // <myns:bbb myns:att='>'>
@@ -740,7 +744,7 @@ auto children(T)(ref T cursor)
             attrs.popFront;
             assert(attrs.empty);
             assert(range2.front.getContent() == " myns:att='>'");
-            
+
             {
                 auto range3 = range2.front.children();
                 // <!-- lol -->
@@ -750,7 +754,7 @@ auto children(T)(ref T cursor)
                 assert(range3.front.getLocalName() == "");
                 assert(range3.front.getAttributes.empty);
                 assert(range3.front.getContent() == " lol ");
-                
+
                 range3.popFront;
                 assert(!range3.empty);
                 // Lots of Text!
@@ -763,11 +767,11 @@ auto children(T)(ref T cursor)
                 // split and strip so the unittest does not depend on the newline policy or indentation of this file
                 static immutable linesArr = ["Lots of Text!", "            On multiple lines!", "        "];
                 assert(range3.front.getContent().lineSplitter.equal(linesArr));
-                
+
                 range3.popFront;
                 assert(range3.empty);
             }
-            
+
             range2.popFront;
             assert(!range2.empty);
             // <<![CDATA[ Ciaone! ]]>
@@ -777,7 +781,7 @@ auto children(T)(ref T cursor)
             assert(range2.front.getLocalName() == "");
             assert(range2.front.getAttributes().empty);
             assert(range2.front.getContent() == " Ciaone! ");
-            
+
             range2.popFront;
             assert(!range2.empty());
             // <ccc/>
@@ -787,15 +791,15 @@ auto children(T)(ref T cursor)
             assert(range2.front.getLocalName() == "ccc");
             assert(range2.front.getAttributes().empty);
             assert(range2.front.getContent() == []);
-            
+
             range2.popFront;
             assert(range2.empty());
         }
-        
+
         range1.popFront;
         assert(range1.empty);
     }
-    
+
     assert(cursor.documentEnd());
 }
 
@@ -820,17 +824,17 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
     alias StringType = CursorType.StringType;
 
     mixin UsesAllocator!Alloc;
-    
+
     CursorType cursor;
     alias cursor this;
-    
+
     static if (intern == Yes.intern)
     {
         import std.typecons: Rebindable;
-        
+
         Rebindable!(immutable StringType)[const StringType] interned;
     }
-        
+
     private auto copy(StringType str)
     {
         static if (intern == Yes.intern)
@@ -839,24 +843,24 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
             if (match)
                 return *match;
         }
-        
+
         import std.traits: Unqual;
         import std.experimental.allocator;
         import std.range.primitives: ElementEncodingType;
         import core.stdc.string: memcpy;
-        
+
         alias ElemType = ElementEncodingType!StringType;
         auto cp = cast(ElemType[]) allocator.makeArray!(Unqual!ElemType)(str.length);
         memcpy(cast(void*)cp.ptr, cast(void*)str.ptr, str.length * ElemType.sizeof);
-        
+
         static if (intern == Yes.intern)
         {
             interned[str] = cp;
         }
-        
+
         return cp;
     }
-    
+
     auto getName()
     {
         return copy(cursor.getName);
@@ -877,16 +881,16 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
     {
         return copy(cursor.getAll);
     }
-    
+
     auto getAttributes()
     {
         struct CopyRange
         {
             typeof(cursor.getAttributes()) attrs;
             alias attrs this;
-            
+
             private CopyingCursor* parent;
-            
+
             auto front()
             {
                 auto attr = attrs.front;
@@ -910,7 +914,8 @@ auto copyingCursor(Flag!"intern" intern = No.intern, CursorType, Alloc)(auto ref
     return res;
 }
 /// ditto
-auto copyingCursor(Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern, CursorType)(auto ref CursorType cursor)
+auto copyingCursor(Alloc = shared(GCAllocator), Flag!"intern" intern = No.intern, CursorType)
+                  (auto ref CursorType cursor)
     if (is(typeof(Alloc.instance)))
 {
     auto res = CopyingCursor!(CursorType, Alloc, intern)(Alloc.instance);
@@ -923,7 +928,7 @@ unittest
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.experimental.allocator.mallocator;
-    
+
     wstring xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa>
@@ -934,14 +939,14 @@ unittest
         Hello, world!
     </aaa>
     };
-    
-    auto cursor = 
+
+    auto cursor =
          chooseLexer!xml
         .parse
         .cursor!(Yes.conflateCDATA)
         .copyingCursor!(Yes.intern)(Mallocator.instance);
     cursor.setSource(xml);
-    
+
     assert(cursor.enter);
     auto a1 = cursor.getName;
     assert(cursor.enter);
@@ -954,7 +959,7 @@ unittest
     auto b2 = cursor.getName;
     cursor.exit;
     auto a4 = cursor.getName;
-    
+
     assert(a1 is a2);
     assert(a2 is a3);
     assert(a3 is a4);

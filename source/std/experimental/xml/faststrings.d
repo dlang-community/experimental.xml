@@ -71,7 +71,7 @@ unittest
     assert(fastLastIndexOf([1, 2], 3.14) == -1);
 }
 
-/++ 
+/++
 + Returns the index of the first occurrence of any of the values in the second
 + slice inside the first one.
 +/
@@ -123,10 +123,10 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
     if (str.fastIndexOfAny("&<>'\"") >= 0)
     {
         import std.experimental.xml.appender;
-        
+
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length + 3);
-        
+
         app.xmlEscapedWrite(str);
         return app.data;
     }
@@ -149,7 +149,7 @@ void xmlEscapedWrite(Out, T)(ref Out output, T[] str)
     while ((i = str.fastIndexOfAny("&<>'\"")) >= 0)
     {
         output.put(str[0..i]);
-        
+
         if (str[i] == '&')
             output.put(amp);
         else if (str[i] == '<')
@@ -160,7 +160,7 @@ void xmlEscapedWrite(Out, T)(ref Out output, T[] str)
             output.put(apos);
         else if (str[i] == '"')
             output.put(quot);
-            
+
         str = str[i+1..$];
     }
     output.put(str);
@@ -173,7 +173,7 @@ struct xmlPredefinedEntities(T)
     static immutable T[] gt = ">";
     static immutable T[] apos = "'";
     static immutable T[] quot = "\"";
-    
+
     auto opBinaryRight(string op, U)(U key) const @nogc
         if (op == "in")
     {
@@ -212,15 +212,16 @@ T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, U repla
     return xmlUnescape!strict(str, Alloc.instance, replacements);
 }
 /// ditto
-T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
+T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)
+               (T[] str, ref Alloc alloc, U replacements = xmlPredefinedEntities!T())
 {
     if (str.fastIndexOf('&') >= 0)
     {
         import std.experimental.xml.appender;
-        
+
         auto app = Appender!(T, Alloc)(alloc);
         app.reserve(str.length);
-        
+
         app.xmlUnescapedWrite!strict(str, replacements);
         return app.data;
     }
@@ -233,20 +234,21 @@ T[] xmlUnescape(Flag!"strict" strict = Yes.strict, T, Alloc, U)(T[] str, ref All
 +   The set of known entities can be specified with the last parameter, which must support
 +   the `in` operator (it is treated as an associative array).
 +/
-void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)(ref Out output, T[] str, U replacements = xmlPredefinedEntities!T())
+void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)
+                      (ref Out output, T[] str, U replacements = xmlPredefinedEntities!T())
 {
     ptrdiff_t i;
     while ((i = str.fastIndexOf('&')) >= 0)
     {
         output.put(str[0..i]);
-    
+
         ptrdiff_t j = str[(i+1)..$].fastIndexOf(';');
         static if (strict == Yes.strict)
             assert (j > 0, "Missing ';' ending XML entity");
         else
             if (j < 0) break;
         auto ent = str[(i+1)..(i+j+1)];
-        
+
         // character entities
         if (ent[0] == '#')
         {
@@ -296,7 +298,7 @@ void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)(ref Out out
                 }
             output.put(*repl);
         }
-        
+
         str = str[(i+j+2)..$];
     }
     output.put(str);
@@ -307,7 +309,7 @@ void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)(ref Out out
     import std.experimental.allocator.mallocator;
     auto alloc = Mallocator.instance;
     assert(xmlEscape("some standard string"d, alloc) == "some standard string"d);
-    assert(xmlEscape("& \"some\" <standard> 'string'", alloc) == 
+    assert(xmlEscape("& \"some\" <standard> 'string'", alloc) ==
                      "&amp; &quot;some&quot; &lt;standard&gt; &apos;string&apos;");
     assert(xmlEscape("<&'>>>\"'\"<&&"w, alloc) ==
                      "&lt;&amp;&apos;&gt;&gt;&gt;&quot;&apos;&quot;&lt;&amp;&amp;"w);

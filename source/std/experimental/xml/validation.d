@@ -47,20 +47,20 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
     if (isCursor!CursorType)
 {
     import std.experimental.xml.interfaces;
-    
+
     alias StringType = CursorType.StringType;
- 
-    import std.container.array;   
+
+    import std.container.array;
     private Array!StringType stack;
-    
+
     private CursorType cursor;
     alias cursor this;
-    
+
     this(Args...)(Args args)
     {
         cursor = CursorType(args);
     }
-    
+
     private void callHandler()
     {
         static if (__traits(compiles, ErrorHandler(cursor, stack)))
@@ -72,7 +72,7 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
         else
             ErrorHandler();
     }
-    
+
     bool enter()
     {
         if (cursor.getKind == XMLKind.ELEMENT_START)
@@ -100,7 +100,7 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
             else
             {
                 import std.experimental.xml.faststrings;
-        
+
                 if (!fastEqual(stack.back, cursor.getName))
                 {
                     callHandler();
@@ -128,7 +128,7 @@ unittest
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
-    
+
     auto xml = q{
         <?xml?>
         <aaa>
@@ -143,10 +143,10 @@ unittest
             </fff>
         </aaa>
     };
-    
+
     int count = 0;
-    
-    auto validator = 
+
+    auto validator =
          chooseLexer!xml
         .parse
         .cursor
@@ -163,9 +163,9 @@ unittest
                     while (stack.back != cursor.getName());
                 stack.removeBack();
             });
-        
+
     validator.setSource(xml);
-    
+
     void inspectOneLevel(T)(ref T cursor)
     {
         do
@@ -179,7 +179,7 @@ unittest
         while (cursor.next());
     }
     inspectOneLevel(validator);
-    
+
     assert(count == 1);
 }
 
@@ -269,21 +269,21 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
     alias StringType = CursorType.StringType;
     InvalidTagHandler onInvalidTagName;
     InvalidAttrHandler onInvalidAttrName;
-    
+
     CursorType cursor;
     alias cursor this;
-    
+
     auto getName()
     {
         import std.algorithm: all;
-        
+
         auto name = cursor.getName;
         if (cursor.getKind != XMLKind.ELEMENT_END)
             if (!name[0].isValidXMLNameStart || !name.all!isValidXMLNameChar)
                 onInvalidTagName(name);
         return name;
     }
-    
+
     auto getAttributes()
     {
         struct CheckedAttributes
@@ -291,7 +291,7 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
             typeof(onInvalidAttrName) callback;
             typeof(cursor.getAttributes()) attrs;
             alias attrs this;
-            
+
             auto front()
             {
                 import std.algorithm: all;
@@ -327,7 +327,7 @@ unittest
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
     import std.stdio;
-    
+
     auto xml = q{
         <?xml?>
         <aa.a at;t = "hi!">
@@ -338,16 +338,16 @@ unittest
             </dd-d>
         </aa.a>
     };
-    
+
     int count = 0;
-    
+
     auto cursor =
          chooseLexer!xml
         .parse
         .cursor
         .checkXMLNames((string s) { count++; }, (string s) { count++; });
     cursor.setSource(xml);
-    
+
     void inspectOneLevel(T)(ref T cursor)
     {
         import std.array;
@@ -364,6 +364,6 @@ unittest
         while (cursor.next);
     }
     inspectOneLevel(cursor);
-    
+
     assert(count == 3);
 }

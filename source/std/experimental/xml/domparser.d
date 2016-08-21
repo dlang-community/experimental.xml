@@ -24,7 +24,7 @@ import std.experimental.xml.cursor;
 import dom = std.experimental.xml.dom;
 
 /++
-+   Built on top of Cursor, the DOM builder adds to it the ability to 
++   Built on top of Cursor, the DOM builder adds to it the ability to
 +   build the DOM tree of the document; as the cursor advances, nodes can be
 +   selectively added to the tree, allowing to built a small representation
 +   containing only the needed parts of the document.
@@ -34,7 +34,7 @@ import dom = std.experimental.xml.dom;
 +/
 struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     if (isCursor!T && is(DOMImplementation : dom.DOMImplementation!(T.StringType)))
-{   
+{
     import std.traits: ReturnType;
 
     /++
@@ -43,23 +43,23 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     +/
     T cursor;
     alias cursor this;
-    
+
     alias StringType = T.StringType;
-    
+
     alias DocumentType = ReturnType!(DOMImplementation.createDocument);
     alias NodeType = typeof(DocumentType.firstChild);
-    
+
     private NodeType currentNode;
     private DocumentType document;
     private DOMImplementation domImpl;
     private bool already_built;
-    
+
     this(Args...)(DOMImplementation impl, auto ref Args args)
     {
         cursor = typeof(cursor)(args);
         domImpl = impl;
     }
-    
+
     /++
     +   Initializes this builder and the underlying components.
     +/
@@ -67,7 +67,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     {
         cursor.setSource(input);
         document = domImpl.createDocument(null, null, null);
-        
+
         if (cursor.getKind == XMLKind.DOCUMENT)
             foreach (attr; cursor.getAttributes)
                 switch (attr.name)
@@ -81,10 +81,10 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
                     default:
                         break;
                 }
-        
+
         currentNode = document;
     }
-    
+
     /++
     +   Same as `cursor.enter`. When entering a node, that node is automatically
     +   built into the DOM, so that its children can then be safely built if needed.
@@ -93,14 +93,14 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     {
         if (cursor.atBeginning)
             return cursor.enter;
-            
+
         if (cursor.getKind != XMLKind.ELEMENT_START)
             return false;
-        
+
         if (!already_built)
         {
             auto elem = createCurrent;
-            
+
             if (cursor.enter)
             {
                 currentNode.appendChild(elem);
@@ -116,7 +116,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         }
         return false;
     }
-    
+
     /++
     +   Same as `cursor.exit`
     +/
@@ -127,7 +127,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         already_built = false;
         cursor.exit;
     }
-    
+
     /++
     +   Same as `cursor.next`.
     +/
@@ -136,7 +136,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         already_built = false;
         return cursor.next;
     }
-    
+
     /++
     +   Adds the current node to the DOM. This operation does not advance the input.
     +   Calling it more than once does not change the result.
@@ -145,14 +145,14 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     {
         if (already_built || cursor.atBeginning)
             return;
-            
+
         auto cur = createCurrent;
         if (cur)
             currentNode.appendChild(createCurrent);
-            
+
         already_built = true;
     }
-    
+
     /++
     +   Recursively adds the current node and all its children to the DOM tree.
     +   Behaves as `cursor.next`: it advances the input to the next sibling, returning
@@ -167,10 +167,10 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         }
         else
             build;
-            
+
         return next;
     }
-    
+
     private NodeType createCurrent()
     // TODO: namespace handling
     {
@@ -196,7 +196,7 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
                 return null;
         }
     }
-    
+
     /++
     +   Returns the Document being built by this builder.
     +/
@@ -224,9 +224,9 @@ unittest
     import std.experimental.xml.cursor;
     import std.experimental.allocator.gc_allocator;
     import domimpl = std.experimental.xml.domimpl;
-    
+
     alias DOMImplType = domimpl.DOMImplementation!string;
-    
+
     string xml = q{
     <?xml encoding = "utf-8" ?>
     <aaa xmlns:myns="something">
@@ -239,18 +239,18 @@ unittest
         <ccc/>
     </aaa>
     };
-    
+
     auto builder =
          chooseLexer!xml
         .parse
         .cursor
         .copyingCursor
         .domBuilder(new DOMImplType());
-    
+
     builder.setSource(xml);
     builder.buildRecursive;
     auto doc = builder.getDocument;
-    
+
     assert(doc.getElementsByTagName("ccc").length == 1);
     assert(doc.documentElement.getAttribute("xmlns:myns") == "something");
 }

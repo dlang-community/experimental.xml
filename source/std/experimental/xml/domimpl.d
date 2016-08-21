@@ -28,7 +28,7 @@ import std.experimental.allocator.gc_allocator;
 
 /++
 +   An implementation of $(LINK2 ../dom/DOMImplementation, `std.experimental.xml.dom.DOMImplementation`).
-+   
++
 +   It allows to specify a custom allocator to be used when creating instances of the DOM classes.
 +   As keeping track of the lifetime of every node would be very complex, this implementation
 +   does not try to do so. Instead, no object is ever deallocated; it is the users responsibility
@@ -38,7 +38,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         : dom.DOMImplementation!DOMString
 {
     mixin UsesAllocator!(Alloc, true);
-    
+
     override
     {
         DocumentType createDocumentType(DOMString qualifiedName, DOMString publicId, DOMString systemId)
@@ -55,13 +55,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             auto doctype = cast(DocumentType)_doctype;
             if (_doctype && !doctype)
                 throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
-                
+
             auto doc = allocator.make!Document;
             doc.outer = this;
             doc._ownerDocument = doc;
             doc._doctype = doctype;
             doc._config = allocator.make!DOMConfiguration();
-            
+
             if (namespaceURI)
             {
                 if (!qualifiedName)
@@ -70,7 +70,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             else if (qualifiedName)
                 doc.appendChild(doc.createElement(qualifiedName));
-            
+
             return doc;
         }
         bool hasFeature(string feature, string version_)
@@ -86,7 +86,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 return null;
         }
     }
-    
+
     class DOMException: dom.DOMException
     {
         pure nothrow @nogc @safe this(dom.ExceptionCode code, string file = __FILE__, size_t line = __LINE__)
@@ -108,7 +108,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property Node previousSibling() { return _previousSibling; }
             @property Node nextSibling() { return _nextSibling; }
             @property Document ownerDocument() { return _ownerDocument; }
-    
+
             bool isSameNode(dom.Node!DOMString other)
             {
                 return this is other;
@@ -116,10 +116,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             bool isEqualNode(dom.Node!DOMString other)
             {
                 import std.traits: AliasSeq;
-            
+
                 if (!other || nodeType != other.nodeType)
                     return false;
-                    
+
                 foreach (field; AliasSeq!("nodeName", "localName", "namespaceURI", "prefix", "nodeValue"))
                 {
                     mixin("auto a = " ~ field ~ ";\n");
@@ -127,7 +127,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     if ((a is null && b !is null) || (b is null && a !is null) || (a !is null && b !is null && a != b))
                         return false;
                 }
-                
+
                 auto thisWithChildren = cast(NodeWithChildren)this;
                 if (thisWithChildren)
                 {
@@ -141,10 +141,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     if (otherChild !is null)
                         return false;
                 }
-                    
+
                 return true;
             }
-    
+
             dom.UserData setUserData(string key, dom.UserData data, dom.UserDataHandler!DOMString handler)
             {
                 userData[key] = data;
@@ -158,7 +158,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     return userData[key];
                 return dom.UserData(null);
             }
-            
+
             bool isSupported(string feature, string version_)
             {
                 return (feature == "Core" || feature == "XML")
@@ -171,23 +171,23 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     return null;
             }
-            
+
             BitFlags!(dom.DocumentPosition) compareDocumentPosition(dom.Node!DOMString _other)
             {
                 enum Ret(dom.DocumentPosition flag) = cast(BitFlags!(dom.DocumentPosition)) flag;
-            
+
                 auto other = cast(Node)_other;
                 if (!other)
                     return Ret!(dom.DocumentPosition.DISCONNECTED);
-            
+
                 if (this is other)
                     return Ret!(dom.DocumentPosition.NONE);
-                    
+
                 auto node1 = other;
                 auto node2 = this;
                 Attr attr1 = cast(Attr)node1;
                 Attr attr2 = cast(Attr)node2;
-                
+
                 if (attr1 && attr1.ownerElement)
                     node1 = attr1.ownerElement;
                 if (attr2 && attr2.ownerElement)
@@ -204,7 +204,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         }
                     }
                 }
-                
+
                 void rootAndDepth(ref Node node, out int depth)
                 {
                     while (node.parentNode)
@@ -217,7 +217,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 int depth1, depth2;
                 rootAndDepth(root1, depth1);
                 rootAndDepth(root2, depth2);
-                
+
                 if (root1 !is root2) with (dom.DocumentPosition)
                 {
                     if (cast(void*)root1 < cast(void*)root2)
@@ -225,7 +225,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     else
                         return Ret!DISCONNECTED | Ret!IMPLEMENTATION_SPECIFIC | Ret!FOLLOWING;
                 }
-                
+
                 bool swapped = depth1 < depth2;
                 if (swapped)
                 {
@@ -269,7 +269,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             dom.UserDataHandler!DOMString[string] userDataHandlers;
             Node _previousSibling, _nextSibling, _parentNode;
             Document _ownerDocument;
-            
+
             // internal methods
             Element parentElement()
             {
@@ -307,7 +307,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             @property Node firstChild() { return null; }
             @property Node lastChild() { return null; }
-            
+
             Node insertBefore(dom.Node!DOMString _newChild, dom.Node!DOMString _refChild)
             {
                 throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
@@ -345,7 +345,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     return parentNode.baseURI;
                 return null;
             }
-            
+
             Node cloneNode(bool deep) { return null; }
         }
         // methods specialized in Element and Attribute
@@ -363,7 +363,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (!namespaceURI)
                     return null;
-                    
+
                 switch (nodeType) with (dom.NodeType)
                 {
                     case ENTITY:
@@ -401,7 +401,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         auto parentElement = parentElement();
                         if (parentElement)
                             return parentElement.lookupNamespaceURI(prefix);
-                            
+
                         return null;
                 }
             }
@@ -492,12 +492,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 return _lastChild;
             }
-            
+
             Node insertBefore(dom.Node!DOMString _newChild, dom.Node!DOMString _refChild)
             {
                 if (!_refChild)
                     return appendChild(_newChild);
-                    
+
                 auto newChild = cast(Node)_newChild;
                 auto refChild = cast(Node)_refChild;
                 if (!newChild || !refChild || newChild.ownerDocument !is ownerDocument)
@@ -506,14 +506,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (refChild.parentNode !is this)
                     throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
-                    
+
                 if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
                 {
                     for (auto child = rebindable(newChild); child !is null; child = child.nextSibling)
                         insertBefore(child, refChild);
                     return newChild;
                 }
-                    
+
                 if (newChild.parentNode)
                     newChild.parentNode.removeChild(newChild);
                 newChild._parentNode = this;
@@ -563,14 +563,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 if (newChild.parentNode !is null)
                     newChild.parentNode.removeChild(newChild);
-                    
+
                 if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
                 {
                     for (auto node = rebindable(newChild.firstChild); node !is null; node = node.nextSibling)
                         appendChild(node);
                     return newChild;
                 }
-                    
+
                 newChild._parentNode = this;
                 if (lastChild)
                 {
@@ -597,32 +597,34 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 }
                 return false;
             }
-            
+
             @property DOMString textContent()
             {
-                DOMString result;
+                import std.experimental.xml.appender;
+
+                auto result = Appender!(typeof(this.textContent()[0]), typeof(*allocator))(allocator);
                 for (auto child = rebindable(firstChild); child !is null; child = child.nextSibling)
                 {
                     if (child.nodeType != dom.NodeType.COMMENT &&
                         child.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
                     {
-                        result ~= child.textContent;
+                        result.put(child.textContent);
                     }
                 }
-                return result;
+                return result.data;
             }
             @property void textContent(DOMString newVal)
             {
                 while (firstChild)
                     removeChild(firstChild);
-                    
+
                 _firstChild = _lastChild = ownerDocument.createTextNode(newVal);
             }
         }
         private
         {
             Node _firstChild, _lastChild;
-            
+
             void performClone(NodeWithChildren dest, bool deep)
             {
                 super.performClone(dest, deep);
@@ -652,7 +654,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property DocumentType doctype() { return _doctype; }
             @property DOMImplementation implementation() { return this.outer; }
             @property Element documentElement() { return _root; }
-            
+
             Element createElement(DOMString tagName)
             {
                 auto res = allocator.make!Element();
@@ -713,7 +715,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 res._data = data;
                 res._ownerDocument = this;
                 return res;
-            } 
+            }
             Attr createAttribute(DOMString name)
             {
                 auto res = allocator.make!Attr();
@@ -730,9 +732,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 res._namespaceURI = namespaceURI;
                 res._ownerDocument = this;
                 return res;
-            } 
+            }
             EntityReference createEntityReference(DOMString name) { return null; }
-            
+
             ElementsByTagName getElementsByTagName(DOMString tagname)
             {
                 auto res = allocator.make!ElementsByTagName;
@@ -756,9 +758,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (node.nodeType == dom.NodeType.ELEMENT && node.hasAttributes)
                         foreach (attr; node.attributes)
-                            if (attr.isId && node.nodeValue == elementId)
+                        {
+                            if (attr.isId && attr.nodeValue == elementId)
                                 return cast(Element)node;
-                                
+                        }
                     foreach (child; node.childNodes)
                     {
                         auto res = find(child);
@@ -822,11 +825,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         throw allocator.make!DOMException(dom.ExceptionCode.NOT_SUPPORTED);
                 }
             }
-            Node adoptNode(dom.Node!DOMString source) { return null; } 
+            Node adoptNode(dom.Node!DOMString source) { return null; }
 
             @property DOMString inputEncoding() { return null; }
             @property DOMString xmlEncoding() { return null; }
-            
+
             @property bool xmlStandalone() { return _standalone; }
             @property void xmlStandalone(bool b) { _standalone = b; }
 
@@ -841,10 +844,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
             @property bool strictErrorChecking() { return _strictErrorChecking; }
             @property void strictErrorChecking(bool b) { _strictErrorChecking = b; }
-            
+
             @property DOMString documentURI() { return _documentURI; }
             @property void documentURI(DOMString uri) { _documentURI = uri; }
-            
+
             @property DOMConfiguration domConfig() { return _config; }
             void normalizeDocument() { }
             Node renameNode(dom.Node!DOMString n, DOMString namespaceURI, DOMString qualifiedName)
@@ -852,11 +855,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 auto node = cast(Node)n;
                 if (!node || node.ownerDocument !is this)
                     throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
-                
+
                 auto type = node.nodeType;
                 if (type != dom.NodeType.ELEMENT && type != dom.NodeType.ATTRIBUTE)
                     throw allocator.make!DOMException(dom.ExceptionCode.NOT_SUPPORTED);
-                
+
                 auto withNs = (cast(NodeWithNamespace)node);
                 withNs.setQualifiedName(qualifiedName);
                 withNs._namespaceURI = namespaceURI;
@@ -876,7 +879,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             @property dom.NodeType nodeType() { return dom.NodeType.DOCUMENT; }
             @property DOMString nodeName() { return "#document"; }
-            
+
             DOMString lookupPrefix(DOMString namespaceURI)
             {
                 return documentElement.lookupPrefix(namespaceURI);
@@ -899,7 +902,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (_root)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.insertBefore(newChild, refChild);
                     _root = cast(Element)newChild;
                     return res;
@@ -908,12 +911,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (_doctype)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.insertBefore(newChild, refChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
-                else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
+                else if (newChild.nodeType != dom.NodeType.COMMENT &&
+                         newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
                     throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.insertBefore(newChild, refChild);
@@ -924,7 +928,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (oldChild !is _root)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.replaceChild(newChild, oldChild);
                     _root = cast(Element)newChild;
                     return res;
@@ -933,12 +937,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (oldChild !is _doctype)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.replaceChild(newChild, oldChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
-                else if (newChild.nodeType != dom.NodeType.COMMENT && newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
+                else if (newChild.nodeType != dom.NodeType.COMMENT &&
+                         newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
                     throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
                 else
                     return super.replaceChild(newChild, oldChild);
@@ -966,7 +971,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (_root)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.appendChild(newChild);
                     _root = cast(Element)newChild;
                     return res;
@@ -975,7 +980,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (_doctype)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                        
+
                     auto res = super.appendChild(newChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
@@ -995,11 +1000,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             private DOMString namespaceURI, localName;
         else
             private DOMString tagname;
-        
+
         private Element findNext(Node node)
         {
             foreach (item; node.childNodes)
-            {   
+            {
                 static if (ns)
                 {
                     if (item.nodeType == dom.NodeType.ELEMENT)
@@ -1012,7 +1017,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
                         return cast(Element)item;
-                    
+
                 auto res = findNext(item);
                 if (res !is null)
                     return res;
@@ -1024,7 +1029,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             if (node.nextSibling)
             {
                 auto item = node.nextSibling;
-                
+
                 static if (ns)
                 {
                     if (item.nodeType == dom.NodeType.ELEMENT)
@@ -1037,7 +1042,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
                         return cast(Element)item;
-                        
+
                 return findNext(item);
             }
             else if (node.parentNode && node.parentNode !is root)
@@ -1047,7 +1052,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             else
                 return null;
         }
-        
+
         // methods specific to NodeList
         override
         {
@@ -1075,7 +1080,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         }
         // more idiomatic methods
         auto opIndex(size_t i) { return item(i); }
-        
+
         // range interface
         bool empty() { return current is null; }
         void popFront() { current = findNext(current); }
@@ -1089,7 +1094,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property DOMString data() { return _data; }
             @property void data(DOMString newVal) { _data = newVal; }
             @property size_t length() { return _data.length; }
-            
+
             DOMString substringData(size_t offset, size_t count)
             {
                 if (offset > length)
@@ -1100,30 +1105,61 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             void appendData(DOMString arg)
             {
-                _data ~= arg;
+                import std.traits: Unqual;
+
+                auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length + arg.length);
+                newData[0 .. data.length] = _data[];
+                newData[data.length .. $] = arg[];
+
+                _data = cast(typeof(_data))newData;
             }
             void insertData(size_t offset, DOMString arg)
             {
+                import std.traits: Unqual;
+
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
-                _data = _data[0..offset] ~ arg ~ _data[offset..$];
+                auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length + arg.length);
+                newData[0 .. offset] = _data[0 .. offset];
+                newData[offset .. (offset + arg.length)] = arg;
+                newData[(offset + arg.length) .. $] = _data[offset .. $];
+
+                _data = cast(typeof(_data))newData;
             }
             void deleteData(size_t offset, size_t count)
             {
+                import std.traits: Unqual;
+
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 import std.algorithm: min;
-                data = _data[0..offset] ~ _data[min(offset + count, length)..$];
+                auto end = min(offset + count, length);
+
+                auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length - end + offset);
+                newData[0 .. offset] = _data[0 .. offset];
+                newData[offset .. $] = data[end .. $];
+
+                _data = cast(typeof(_data))newData;
             }
             void replaceData(size_t offset, size_t count, DOMString arg)
             {
+                import std.traits: Unqual;
+
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
                 import std.algorithm: min;
-                _data = _data[0..offset] ~ arg ~ _data[min(offset + count, length)..$];
+                auto end = min(offset + count, length);
+
+                auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))
+                                                   (_data.length - end + offset + arg.length);
+                newData[0 .. offset] = _data[0 .. offset];
+                newData[offset .. (offset + arg.length)] = arg[];
+                newData[(offset + arg.length) .. $] = _data[end .. $];
+
+                _data = cast(typeof(_data))newData;
             }
         }
         // inherited from Node
@@ -1137,7 +1173,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         private
         {
             DOMString _data;
-            
+
             // internal method
             private void performClone(CharacterData dest, bool deep)
             {
@@ -1152,11 +1188,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             DOMString _name, _namespaceURI;
             size_t _colon;
-            
+
             void setQualifiedName(DOMString name)
             {
                 import std.experimental.xml.faststrings;
-                
+
                 _name = name;
                 ptrdiff_t i = name.fastIndexOf(':');
                 if (i > 0)
@@ -1174,7 +1210,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             @property DOMString nodeName() { return _name; }
-            
+
             @property DOMString localName()
             {
                 if (!_colon)
@@ -1187,7 +1223,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             @property void prefix(DOMString pre)
             {
-                _name = pre ~ ':' ~ localName;
+                import std.traits: Unqual;
+
+                auto newName = allocator.makeArray!(Unqual!(typeof(_name[0])))(pre.length + localName.length + 1);
+                newName[0 .. pre.length] = pre[];
+                newName[pre.length] = ':';
+                newName[(pre.length + 1) .. $] = localName[];
+
+                _name = cast(typeof(_name))newName;
                 _colon = pre.length;
             }
             @property DOMString namespaceURI() { return _namespaceURI; }
@@ -1202,14 +1245,16 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property bool specified() { return _specified; }
             @property DOMString value()
             {
-                DOMString result = [];
+                import std.experimental.xml.appender;
+
+                auto result = Appender!(typeof(_name[0]), typeof(*allocator))(allocator);
                 auto child = rebindable(firstChild);
                 while (child)
                 {
-                    result ~= child.textContent;
+                    result.put(child.textContent);
                     child = child.nextSibling;
                 }
-                return result;
+                return result.data;
             }
             @property void value(DOMString newVal)
             {
@@ -1220,12 +1265,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
             @property Element ownerElement() { return _ownerElement; }
             @property dom.XMLTypeInfo!DOMString schemaTypeInfo() { return null; }
-            @property bool isId() { return false; }
+            @property bool isId() { return _isId; }
         }
         private
         {
             Element _ownerElement;
-            bool _specified = true;
+            bool _specified = true, _isId = false;
             @property Attr _nextAttr() { return cast(Attr)_nextSibling; }
             @property Attr _previousAttr() { return cast(Attr)_previousSibling; }
         }
@@ -1233,14 +1278,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             @property dom.NodeType nodeType() { return dom.NodeType.ATTRIBUTE; }
-            
+
             @property DOMString nodeValue() { return value; }
             @property void nodeValue(DOMString newVal) { value = newVal; }
-            
+
             // overridden because we reuse _nextSibling and _previousSibling with another meaning
             @property Attr nextSibling() { return null; }
             @property Attr previousSibling() { return null; }
-            
+
             Attr cloneNode(bool deep)
             {
                 Attr cloned = allocator.make!Attr();
@@ -1250,7 +1295,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 cloned._specified = true;
                 return cloned;
             }
-            
+
             DOMString lookupPrefix(DOMString namespaceURI)
             {
                 if (ownerElement)
@@ -1277,7 +1322,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             @property DOMString tagName() { return _name; }
-    
+
             DOMString getAttribute(DOMString name)
             {
                 return _attrs.getNamedItem(name).value;
@@ -1293,7 +1338,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 _attrs.removeNamedItem(name);
             }
-            
+
             Attr getAttributeNode(DOMString name)
             {
                 return _attrs.getNamedItem(name);
@@ -1302,8 +1347,16 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 return _attrs.setNamedItem(newAttr);
             }
-            Attr removeAttributeNode(dom.Attr!DOMString oldAttr) { return null; }
-            
+            Attr removeAttributeNode(dom.Attr!DOMString oldAttr)
+            {
+                if (_attrs.getNamedItemNS(oldAttr.namespaceURI, oldAttr.name) is oldAttr)
+                    return _attrs.removeNamedItemNS(oldAttr.namespaceURI, oldAttr.name);
+                else if (_attrs.getNamedItem(oldAttr.name) is oldAttr)
+                    return _attrs.removeNamedItem(oldAttr.name);
+
+                throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+            }
+
             DOMString getAttributeNS(DOMString namespaceURI, DOMString localName)
             {
                 return _attrs.getNamedItemNS(namespaceURI, localName).value;
@@ -1319,13 +1372,16 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 _attrs.removeNamedItemNS(namespaceURI, localName);
             }
-            
+
             Attr getAttributeNodeNS(DOMString namespaceURI, DOMString localName)
             {
                 return _attrs.getNamedItemNS(namespaceURI, localName);
             }
-            Attr setAttributeNodeNS(dom.Attr!DOMString newAttr) { return null; }
-            
+            Attr setAttributeNodeNS(dom.Attr!DOMString newAttr)
+            {
+                return _attrs.setNamedItemNS(newAttr);
+            }
+
             bool hasAttribute(DOMString name)
             {
                 return _attrs.getNamedItem(name) !is null;
@@ -1334,11 +1390,33 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 return _attrs.getNamedItemNS(namespaceURI, localName) !is null;
             }
-            
-            void setIdAttribute(DOMString name, bool isId) { return; }
-            void setIdAttributeNS(DOMString namespaceURI, DOMString localName, bool isId) { return; }
-            void setIdAttributeNode(dom.Attr!DOMString idAttr, bool isId) { return; }
-            
+
+            void setIdAttribute(DOMString name, bool isId)
+            {
+                auto attr = _attrs.getNamedItem(name);
+                if (attr)
+                    attr._isId = isId;
+                else
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+            }
+            void setIdAttributeNS(DOMString namespaceURI, DOMString localName, bool isId)
+            {
+                auto attr = _attrs.getNamedItemNS(namespaceURI, localName);
+                if (attr)
+                    attr._isId = isId;
+                else
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+            }
+            void setIdAttributeNode(dom.Attr!DOMString idAttr, bool isId)
+            {
+                if (_attrs.getNamedItemNS(idAttr.namespaceURI, idAttr.name) is idAttr)
+                    (cast(Attr)idAttr)._isId = isId;
+                else if (_attrs.getNamedItem(idAttr.name) is idAttr)
+                    (cast(Attr)idAttr)._isId = isId;
+                else
+                    throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
+            }
+
             ElementsByTagName getElementsByTagName(DOMString tagname)
             {
                 auto res = allocator.make!ElementsByTagName;
@@ -1356,13 +1434,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 res.current = res.item(0);
                 return res;
             }
-            
+
             @property dom.XMLTypeInfo!DOMString schemaTypeInfo() { return null; }
         }
         private
         {
             Map _attrs;
-            
+
             // internal methods
             DOMString lookupNamespacePrefix(DOMString namespaceURI, Element originalElement)
             {
@@ -1373,9 +1451,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 }
                 if (hasAttributes)
                     foreach (attr; attributes)
-                        if (attr.prefix == "xmlns" && attr.value == namespaceURI && originalElement.lookupNamespaceURI(attr.localName) == namespaceURI)
+                        if (attr.prefix == "xmlns" && attr.value == namespaceURI &&
+                            originalElement.lookupNamespaceURI(attr.localName) == namespaceURI)
+                        {
                             return attr.localName;
-                        
+                        }
                 auto parentElement = parentElement();
                 if (parentElement)
                     return parentElement.lookupNamespacePrefix(namespaceURI, originalElement);
@@ -1386,10 +1466,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         override
         {
             @property dom.NodeType nodeType() { return dom.NodeType.ELEMENT; }
-            
+
             @property Map attributes() { return _attrs.length > 0 ? _attrs : null; }
             bool hasAttributes() { return _attrs.length > 0; }
-            
+
             Element cloneNode(bool deep)
             {
                 auto cloned = allocator.make!Element();
@@ -1399,7 +1479,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 super.performClone(cloned, deep);
                 return cloned;
             }
-            
+
             DOMString lookupPrefix(DOMString namespaceURI)
             {
                 return lookupNamespacePrefix(namespaceURI, this);
@@ -1408,7 +1488,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (namespaceURI && prefix == prefix)
                     return namespaceURI;
-                
+
                 if (hasAttributes)
                 {
                     foreach (attr; attributes)
@@ -1438,7 +1518,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 return false;
             }
         }
-        
+
         class Map: dom.NamedNodeMap!DOMString
         {
             // specific to NamedNodeMap
@@ -1478,20 +1558,20 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
                         throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
-                        
+
                     Attr attr = cast(Attr)arg;
                     if (!attr)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                    
+
                     if (attr._previousAttr)
                         attr._previousAttr._nextSibling = attr._nextAttr;
                     if (attr._nextAttr)
                         attr._nextAttr._previousSibling = attr._previousAttr;
-                    
+
                     auto res = firstAttr;
                     while (res && res.nodeName != attr.nodeName)
                         res = res._nextAttr;
-                    
+
                     if (res)
                     {
                         attr._previousSibling = res._previousAttr;
@@ -1505,7 +1585,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         attr._previousSibling = null;
                         currentAttr = firstAttr;
                     }
-                    
+
                     return res;
                 }
                 Attr removeNamedItem(DOMString name)
@@ -1513,7 +1593,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     auto res = firstAttr;
                     while (res && res.nodeName != name)
                         res = res._nextAttr;
-                    
+
                     if (res)
                     {
                         if (res._previousAttr)
@@ -1537,20 +1617,20 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
                         throw allocator.make!DOMException(dom.ExceptionCode.WRONG_DOCUMENT);
-                        
+
                     Attr attr = cast(Attr)arg;
                     if (!attr)
                         throw allocator.make!DOMException(dom.ExceptionCode.HIERARCHY_REQUEST);
-                    
+
                     if (attr._previousAttr)
                         attr._previousAttr._nextSibling = attr._nextAttr;
                     if (attr._nextAttr)
                         attr._nextAttr._previousSibling = attr._previousAttr;
-                    
+
                     auto res = firstAttr;
                     while (res && (res.localName != attr.localName || res.namespaceURI != attr.namespaceURI))
                         res = res._nextAttr;
-                    
+
                     if (res)
                     {
                         attr._previousSibling = res._previousAttr;
@@ -1564,7 +1644,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         attr._previousSibling = null;
                         currentAttr = firstAttr;
                     }
-                    
+
                     return res;
                 }
                 Attr removeNamedItemNS(DOMString namespaceURI, DOMString localName)
@@ -1572,7 +1652,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     auto res = firstAttr;
                     while (res && (res.localName != localName || res.namespaceURI != namespaceURI))
                         res = res._nextAttr;
-                    
+
                     if (res)
                     {
                         if (res._previousAttr)
@@ -1592,14 +1672,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             // better methods
             auto opIndex(size_t i) { return item(i); }
-            
+
             // range interface
             auto opSlice()
             {
                 struct Range
                 {
                     Attr currentAttr;
-                    
+
                     auto front() { return currentAttr; }
                     void popFront() { currentAttr = currentAttr._nextAttr; }
                     bool empty() { return currentAttr is null; }
@@ -1631,7 +1711,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property bool isElementContentWhitespace()
             {
                 import std.experimental.xml.faststrings: fastIndexOfNeither;
-                
+
                 return _data.fastIndexOfNeither(" \r\n\t") == -1;
             }
             @property DOMString wholeText() { return data; } // <-- TODO
@@ -1642,7 +1722,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             @property dom.NodeType nodeType() { return dom.NodeType.TEXT; }
             @property DOMString nodeName() { return "#text"; }
-            
+
             Text cloneNode(bool deep)
             {
                 auto cloned = allocator.make!Text();
@@ -1660,7 +1740,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             @property dom.NodeType nodeType() { return dom.NodeType.COMMENT; }
             @property DOMString nodeName() { return "#comment"; }
-            
+
             Comment cloneNode(bool deep)
             {
                 auto cloned = allocator.make!Comment();
@@ -1698,7 +1778,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             @property dom.NodeType nodeType() { return dom.NodeType.CDATA_SECTION; }
             @property DOMString nodeName() { return "#cdata-section"; }
-            
+
             CDATASection cloneNode(bool deep)
             {
                 auto cloned = allocator.make!CDATASection();
@@ -1726,7 +1806,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property DOMString nodeName() { return target; }
             @property DOMString nodeValue() { return _data; }
             @property void nodeValue(DOMString newVal) { _data = newVal; }
-            
+
             ProcessingInstruction cloneNode(bool deep)
             {
                 auto cloned = allocator.make!ProcessingInstruction();
@@ -1753,11 +1833,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
     {
         import std.meta;
         import std.traits;
-    
+
         private
         {
             enum string always = "((x) => true)";
-            
+
             static struct Config
             {
                 string name;
@@ -1775,7 +1855,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 @Config("split-cdata-sections", "bool", always) bool split_cdata_sections;
             }
             Params params;
-            
+
             void assign(string field, string type)(dom.UserData val)
             {
                 mixin("if (val.convertsTo!(" ~ type ~ ")) params." ~ field ~ " = val.get!(" ~ type ~ "); \n");
@@ -1808,7 +1888,8 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     foreach (field; AliasSeq!(__traits(allMembers, Params)))
                     {
-                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: return dom.UserData(params." ~ field ~ "); \n");
+                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: \n" ~
+                                    "return dom.UserData(params." ~ field ~ "); \n");
                     }
                     default:
                         throw allocator.make!DOMException(dom.ExceptionCode.NOT_FOUND);
@@ -1822,7 +1903,8 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     {
                         mixin("enum type = getUDAs!(Params." ~ field ~ ", Config)[0].type; \n");
                         mixin("enum settable = getUDAs!(Params." ~ field ~ ", Config)[0].settable; \n");
-                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: return canSet!(type, settable)(value); \n");
+                        mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: \n" ~
+                                    "return canSet!(type, settable)(value); \n");
                     }
                     default:
                         return false;
@@ -1833,24 +1915,25 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 return allocator.make!StringList();
             }
         }
-        
+
         class StringList: dom.DOMStringList!string
         {
             private template MapToConfigName(Members...)
             {
                 static if (Members.length > 0)
-                    mixin("alias MapToConfigName = AliasSeq!(getUDAs!(Params." ~ Members[0] ~ ", Config)[0].name, MapToConfigName!(Members[1..$])); \n");
+                    mixin("alias MapToConfigName = AliasSeq!(getUDAs!(Params." ~ Members[0] ~
+                            ", Config)[0].name, MapToConfigName!(Members[1..$])); \n");
                 else
                     alias MapToConfigName = AliasSeq!();
             }
             private static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
-            
+
             // specific to DOMStringList
             override
             {
                 string item(size_t i) { return arr[i]; }
                 size_t length() { return arr.length; }
-                
+
                 bool contains(string str)
                 {
                     import std.algorithm: canFind;
@@ -1875,41 +1958,41 @@ auto domBuilder(CursorType)(auto ref CursorType cursor)
 
 unittest
 {
-    import std.experimental.allocator.gc_allocator;
-    auto impl = new DOMImplementation!(string, shared(GCAllocator))();
-    
+    import std.experimental.allocator.mallocator;
+    auto impl = Mallocator.instance.make!(DOMImplementation!(string, shared(Mallocator)))();
+
     auto doc = impl.createDocument("myNamespaceURI", "myPrefix:myRootElement", null);
     auto root = doc.documentElement;
     assert(root.prefix == "myPrefix");
-    
+
     auto attr = doc.createAttributeNS("myAttrNamespace", "myAttrPrefix:myAttrName");
     root.setAttributeNode(attr);
     assert(root.attributes.length == 1);
     assert(root.getAttributeNodeNS("myAttrNamespace", "myAttrName") is attr);
-    
+
     attr.value = "myAttrValue";
     assert(attr.childNodes.length == 1);
     assert(attr.firstChild.nodeType == dom.NodeType.TEXT);
     assert(attr.firstChild.nodeValue == attr.value);
-    
+
     auto elem = doc.createElementNS("myOtherNamespace", "myOtherPrefix:myOtherElement");
     assert(root.ownerDocument is doc);
     assert(elem.ownerDocument is doc);
     root.appendChild(elem);
     assert(root.firstChild is elem);
     assert(root.firstChild.namespaceURI == "myOtherNamespace");
-    
+
     auto comm = doc.createComment("myWonderfulComment");
     doc.insertBefore(comm, root);
     assert(doc.childNodes.length == 2);
     assert(doc.firstChild is comm);
-    
+
     assert(comm.substringData(1, 4) == "yWon");
     comm.replaceData(0, 2, "your");
     comm.deleteData(4, 9);
     comm.insertData(4, "Questionable");
     assert(comm.data == "yourQuestionableComment");
-    
+
     auto pi = doc.createProcessingInstruction("myPITarget", "myPIData");
     elem.appendChild(pi);
     assert(elem.lastChild is pi);
@@ -1918,19 +2001,19 @@ unittest
     assert(elem.lastChild is cdata);
     elem.removeChild(cdata);
     assert(elem.childNodes.length == 0);
-    
+
     assert(doc.getElementsByTagNameNS("myOtherNamespace", "myOtherElement").item(0) is elem);
-    
+
     doc.setUserData("userDataKey1", dom.UserData(3.14), null);
     doc.setUserData("userDataKey2", dom.UserData(new Object()), null);
     doc.setUserData("userDataKey3", dom.UserData(null), null);
     assert(doc.getUserData("userDataKey1") == 3.14);
     assert(doc.getUserData("userDataKey2").type == typeid(Object));
     assert(doc.getUserData("userDataKey3").peek!long is null);
-    
+
     assert(elem.lookupNamespaceURI("myOtherPrefix") == "myOtherNamespace");
     assert(doc.lookupPrefix("myNamespaceURI") == "myPrefix");
-    
+
     assert(elem.isEqualNode(elem.cloneNode(false)));
     assert(root.isEqualNode(root.cloneNode(true)));
     assert(comm.isEqualNode(comm.cloneNode(false)));
@@ -1943,7 +2026,7 @@ unittest
     import std.experimental.xml.cursor;
     import std.experimental.xml.domparser;
     import std.stdio;
-    
+
     string xml = q"{
     <?xml version = '1.0' standalone = 'yes'?>
     <books>
@@ -1961,23 +2044,23 @@ unittest
         </book>
     </books>
     }";
-    
+
     auto builder =
          chooseParser!xml
         .cursor
         .domBuilder;
-        
+
     builder.setSource(xml);
     builder.buildRecursive;
-    
+
     auto doc = builder.getDocument;
     auto books = doc.getElementsByTagName("book");
     auto authors = doc.getElementsByTagName("author");
     auto titles = doc.getElementsByTagName("title");
-    
+
     assert(doc.xmlVersion == "1.0");
     assert(doc.xmlStandalone);
-    
+
     enum Pos(dom.DocumentPosition pos) = cast(BitFlags!(dom.DocumentPosition))pos;
     with (dom.DocumentPosition)
     {
@@ -1986,9 +2069,15 @@ unittest
         assert(books[1].compareDocumentPosition(titles[1]) == (Pos!CONTAINED_BY | Pos!FOLLOWING));
         assert(authors[0].compareDocumentPosition(books[0]) == (Pos!CONTAINS | Pos!PRECEDING));
         assert(titles[2].compareDocumentPosition(titles[2]) == Pos!NONE);
-        assert(books[2].attributes[0].compareDocumentPosition(books[2].attributes[1]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!FOLLOWING));
-        assert(books[2].attributes[1].compareDocumentPosition(books[2].attributes[0]) == (Pos!IMPLEMENTATION_SPECIFIC | Pos!PRECEDING));
+        assert(books[2].attributes[0].compareDocumentPosition(books[2].attributes[1])
+                == (Pos!IMPLEMENTATION_SPECIFIC | Pos!FOLLOWING));
+        assert(books[2].attributes[1].compareDocumentPosition(books[2].attributes[0])
+                == (Pos!IMPLEMENTATION_SPECIFIC | Pos!PRECEDING));
     }
-    
+
     assert(books[1].cloneNode(true).childNodes[1].isEqualNode(authors[1]));
+
+    books[2].setIdAttributeNode(books[2].attributes[1], true);
+    assert(books[2].attributes[1].isId);
+    assert(doc.getElementById("978-0201704310") is books[2]);
 }

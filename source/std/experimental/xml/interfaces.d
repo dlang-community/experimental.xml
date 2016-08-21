@@ -88,41 +88,41 @@ import std.traits;
 +   {
 +       // drop leading whitespaces
 +       lexer.dropWhile(" \n\r\t");
-+       
++
 +       // start building the word
 +       lexer.start;
-+       
++
 +       // keep advancing until you find the trailing whitespaces
 +       lexer.advanceUntilAny(" \n\r\t", false);
-+       
++
 +       // return what you found
 +       return lexer.get;
 +   }
-+   
++
 +   /* extract a key/value pair from a string like " key : value " */
 +   auto getKeyValuePair(ref L lexer)
 +       if (isLexer!L)
 +   {
 +       // drop leading whitespaces
 +       lexer.dropWhile(" \n\r\t");
-+       
++
 +       // here starts the key, which ends with either a whitespace or a colon
 +       lexer.start;
 +       lexer.advanceUntilAny(" \n\r\t:", false);
 +       auto key = lexer.get;
-+       
++
 +       // skip any spaces after the key
 +       lexer.dropWhile(" \n\r\t");
 +       // now there must be a colon
 +       assert(lexer.testAndAdvance(':'));
 +       // skip all space after the colon
 +       lexer.dropWhile(" \n\r\t");
-+       
++
 +       // here starts the value, which ends at the first whitespace
 +       lexer.start;
 +       lexer.advanceUntilAny(" \n\r\t", false);
 +       auto value = lexer.get;
-+       
++
 +       // return the pair
 +       return tuple(key, value);
 +   }
@@ -135,14 +135,14 @@ template isLexer(L)
     {
         alias C = L.CharacterType;
         alias T = L.InputType;
-        
+
         L lexer;
         T source;
         char c;
         bool b;
         string s;
         C[] cs;
-        
+
         lexer.setSource(source);
         b = lexer.empty;
         lexer.start();
@@ -166,7 +166,7 @@ template isLexer(L)
 +   Returns:
 +   `true` if L is a lexer (as specified by `isLexer`) and also supports the `save`
 +   method as specified here; `false` otherwise
-+   
++
 +   Specification:
 +   The type shall support at least:
 +   $(UL
@@ -196,35 +196,35 @@ enum XMLKind
 {
     /++ The `<?xml` `?>` declaration at the beginning of the entire document +/
     DOCUMENT,
-    
+
     /++ The beginning of a document type declaration `<!DOCTYPE ... [` +/
     DTD_START,
     /++ The end of a document type declaration `] >` +/
     DTD_END,
     /++ A document type declaration without an internal subset +/
     DTD_EMPTY,
-    
+
     /++ A start tag, delimited by `<` and `>` +/
     ELEMENT_START,
-    
+
     /++ An end tag, delimited by `</` and `>` +/
     ELEMENT_END,
-    
+
     /++ An empty tag, delimited by `<` and `/>` +/
     ELEMENT_EMPTY,
-    
+
     /++ A text element, without any specific delimiter +/
     TEXT,
-    
+
     /++ A CDATA section, delimited by `<![CDATA` and `]]>` +/
     CDATA,
-    
+
     /++ A comment, delimited by `<!--` and `-->` +/
     COMMENT,
-    
+
     /++ A processing instruction, delimited by `<?` and `?>` +/
     PROCESSING_INSTRUCTION,
-    
+
     /++ An attlist declaration, delimited by `<!ATTLIST` and `>` +/
     ATTLIST_DECL,
     /++ An element declaration, delimited by `<!ELEMENT` and `>` +/
@@ -235,7 +235,7 @@ enum XMLKind
     NOTATION_DECL,
     /++ Any unrecognized kind of declaration, delimited by `<!` and `>` +/
     DECLARATION,
-    
+
     /++ A conditional section, delimited by `<![` `[` and `]]>` +/
     CONDITIONAL,
 }
@@ -281,10 +281,10 @@ template isLowLevelParser(P)
     (inout int = 0)
     {
         alias InputType = P.InputType;
-        
+
         P parser;
         InputType input;
-        
+
         parser.setSource(input);
     }));
 }
@@ -301,7 +301,7 @@ template isLowLevelParser(P)
 +   Returns:
 +   `true` if P is a parser (as specified by `isLowLevelParser`) and also supports the
 +   `save` method as specified here; `false` otherwise
-+   
++
 +   Specification:
 +   The type shall support at least:
 +   $(UL
@@ -317,7 +317,7 @@ template isSaveableLowLevelParser(P)
     enum bool isSaveableLowLevelParser = isLowLevelParser!P && isForwardRange!P;
 }
 
-// LEVEL 3: CURSORS   
+// LEVEL 3: CURSORS
 
 /++
 +   Checks whether its argument fulfills all requirements to be used as XML cursor.
@@ -431,13 +431,13 @@ template isCursor(CursorType)
     enum bool isCursor = is(typeof(
     (inout int = 0)
     {
-        alias T = CursorType.InputType;   
+        alias T = CursorType.InputType;
         alias S = CursorType.StringType;
-        
+
         CursorType cursor;
         T input;
         bool b;
-        
+
         cursor.setSource(input);
         b = cursor.atBeginning;
         b = cursor.documentEnd;
@@ -471,7 +471,7 @@ template isCursor(CursorType)
 +   Returns:
 +   `true` if CursorType is a cursor (as specified by `isCursor`) and also supports the
 +   `save` method as specified here; `false` otherwise
-+   
++
 +   Specification:
 +   The type shall support at least:
 +   $(UL
@@ -500,10 +500,10 @@ template isWriter(WriterType)
     (inout int = 0)
     {
         alias StringType = WriterType.StringType;
-        
+
         WriterType writer;
         StringType s;
-        
+
         writer.writeXMLDeclaration(10, s, true);
         writer.writeComment(s);
         writer.writeText(s);
@@ -530,7 +530,7 @@ package mixin template UsesAllocator(Alloc, bool genDefaultCtor = false)
             private TrueAlloc allocator = Alloc.instance;
         else
             private TrueAlloc allocator = &(Alloc.instance);
-            
+
         static if (genDefaultCtor)
             this() {}
     }
@@ -539,12 +539,12 @@ package mixin template UsesAllocator(Alloc, bool genDefaultCtor = false)
         private TrueAlloc allocator;
         @disable this();
     }
-    
+
     this(TrueAlloc allocator)
     {
         this.allocator = allocator;
     }
-    
+
     static if (!is(Alloc == class))
         this(ref Alloc allocator)
         {

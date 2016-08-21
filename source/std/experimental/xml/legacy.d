@@ -19,13 +19,13 @@ class ElementParser
 {
     import std.typecons: No;
     private alias CursorType = typeof(chooseLexer!string.parse.cursor!(No.conflateCDATA));
-    
+
     alias ParserHandler = void delegate(ElementParser);
     alias ElementHandler = void delegate(in Element);
     alias Handler = void delegate(string);
 
     private CursorType* cursor;
-    
+
     ParserHandler[string] onStartTag;
     ElementHandler[string] onEndTag;
     Handler onText;
@@ -33,13 +33,13 @@ class ElementParser
     Handler onComment;
     Handler onCData;
     Handler onTextRaw;
-    
+
     Tag _tag;
     @property const(Tag) tag() const
     {
         return _tag;
     }
-    
+
     private this(CursorType* cur)
     {
         cursor = cur;
@@ -47,7 +47,7 @@ class ElementParser
         foreach (attr; cursor.getAttributes)
             _tag.attributes[attr.prefix ~ ":" ~ attr.name] = attr.value;
     }
-    
+
     void parse()
     {
         if (cursor.enter)
@@ -63,12 +63,12 @@ class ElementParser
                             CursorType copy;
                             if (cursor.getName in onEndTag || null in onEndTag)
                                 copy = cursor.save;
-                            
+
                             if (cursor.getName in onStartTag)
                                 onStartTag[cursor.getName](new ElementParser(cursor));
                             else
                                 onStartTag[null](new ElementParser(cursor));
-                            
+
                             if (cursor.getName in onEndTag)
                                 onEndTag[cursor.getName](new Element(new ElementParser(&copy)));
                             else if (null in onEndTag)
@@ -98,7 +98,7 @@ class ElementParser
                             onCData(cursor.getAll);
                         break;
                     default:
-                        break;  
+                        break;
                 }
             } while (cursor.next());
             cursor.exit();
@@ -109,7 +109,7 @@ class ElementParser
 class DocumentParser: ElementParser
 {
     CursorType cursor;
-    
+
     this(string text)
     {
         cursor = cursor.init;
@@ -134,7 +134,7 @@ class Tag
     TagType type;
     string name;
     string[string] attributes;
-    
+
     this(string name, TagType type = TagType.START)
     {
         this.name = name;
@@ -156,9 +156,9 @@ unittest
         <ccc/>
     </aaa>
     };
-    
+
     int count = 0;
-    
+
     auto parser = new DocumentParser(xml);
     parser.onStartTag[null] = (ElementParser elpar)
     {
@@ -191,7 +191,7 @@ unittest
         elpar.parse();
     };
     parser.parse();
-    
+
     assert(count == 73);
 }
 
@@ -207,23 +207,23 @@ class Element: Item
     Comment[] comments;
     ProcessingInstruction[] pis;
     Element[] elements;
-    
+
     Tag tag;
-    
+
     this(string name, string interior = null)
     {
         tag = new Tag(name);
         if (interior != null)
             opOpAssign!"~"(new Text(interior));
     }
-    
+
     this(const Tag tag_)
     {
         tag = new Tag(tag_.name);
         foreach (k,v; tag_.attributes)
             tag.attributes[k] = v;
     }
-    
+
     private this(ElementParser parser)
     {
         this(parser.tag);
@@ -234,7 +234,7 @@ class Element: Item
         parser.onStartTag[null] = (ElementParser parser) { opOpAssign!"~"(new Element(parser)); };
         parser.parse;
     }
-    
+
     private this()
     {
     }
@@ -250,35 +250,35 @@ class Element: Item
         parser.onStartTag[null] = (ElementParser parser) { opOpAssign!"~"(new Element(parser)); };
         parser.parse;
     }
-    
+
     void opOpAssign(string s)(Text item)
         if (s == "~")
     {
         texts ~= item;
         items ~= item;
     }
-    
+
     void opOpAssign(string s)(CData item)
         if (s == "~")
     {
         cdatas ~= item;
         items ~= item;
     }
-    
+
     void opOpAssign(string s)(Comment item)
         if (s == "~")
     {
         comments ~= item;
         items ~= item;
     }
-    
+
     void opOpAssign(string s)(ProcessingInstruction item)
         if (s == "~")
     {
         pis ~= item;
         items ~= item;
     }
-    
+
     void opOpAssign(string s)(Element item)
         if (s == "~")
     {
@@ -290,7 +290,7 @@ class Element: Item
 class Text: Item
 {
     private string content;
-    
+
     this(string content)
     {
         this.content = content;
@@ -300,7 +300,7 @@ class Text: Item
 class Comment: Item
 {
     private string content;
-    
+
     this(string content)
     {
         this.content = content;
@@ -310,7 +310,7 @@ class Comment: Item
 class CData: Item
 {
     private string content;
-    
+
     this(string content)
     {
         this.content = content;
@@ -320,7 +320,7 @@ class CData: Item
 class ProcessingInstruction: Item
 {
     private string content;
-    
+
     this(string content)
     {
         this.content = content;
@@ -331,14 +331,14 @@ class Document: Element
 {
     string prolog;
     string epilog;
-    
+
     this(const Tag tag)
     {
         super(tag);
         prolog = "<?xml version=\"1.0\"?>";
         epilog = "";
     }
-    
+
     this(string s)
     {
         auto parser = new DocumentParser(s);
@@ -366,9 +366,9 @@ unittest
         <ccc/>
     </aaa>
     };
-    
+
     auto dom = new Document(xml);
-    
+
     import std.string: strip;
     assert(dom.prolog.strip == "<?xml encoding = \"utf-8\" ?>");
     assert(dom.tag.name == "aaa");
