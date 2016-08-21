@@ -105,6 +105,51 @@ $('#symbolSearchPane').show();
 							</code>
 						</div>
 					</section>
+					<section>
+						<h3>Properties</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Type</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Text.isElementContentWhitespace.html" class="public property"><code>isElementContentWhitespace</code></a>
+									<span class="tableEntryAnnotation">[get]</span>
+								</td>
+								<td class="typecol"><code class="prettyprint lang-d"><span class="typ">bool</span></code></td>
+								<td>Returns whether this text node contains element content whitespace, often abusively called "ignorable whitespace".
+</td>
+							</tr>
+						</table>
+					</section>
+					<section>
+						<h3>Methods</h3>
+						<table>
+							<col class="caption"/>
+							<tr>
+								<th>Name</th>
+								<th>Description</th>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Text.splitText.html" class="public">
+										<code>splitText</code>
+									</a>
+								</td>
+								<td>Breaks this node into two nodes at the specified <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></span></a></code>, keeping both
+   in the tree as siblings. After being split, this node will contain all
+   the content up to the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></span></a></code> point. A new node of the same type, which
+   contains all the content at and after the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></span></a></code> point, is returned.
+   If the original node had a parent node, the new node is inserted as the
+   next sibling of the original node. When the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></span></a></code> is equal to the length
+   of this node, the new node has no data.
+</td>
+							</tr>
+						</table>
+					</section>
 
 			</section>
 			<section>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Interface DOMConfiguration</title>
+		<title>Function Text.splitText</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -88,19 +88,26 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Interface DOMConfiguration</h1>
+			<h1>Function Text.splitText</h1>
 			<section>
-				<p>The <code class="lang-d"><span class="typ"><span class="typ">DOMConfiguration</span></span></code> interface represents the configuration of a document
-   and maintains a table of recognized parameters. Using the configuration, it
-   is possible to change <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.normalizeDocument.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></a></code> behavior, such as replacing
-   the <code class="lang-d"><a href="../../../std/experimental/xml/dom/CDATASection.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/CDATASection.html"><span class="typ">CDATASection</span></a></span></a></code> nodes with <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes or specifying the type of the schema
-   that must be used when the validation of the <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> is requested.
+				<p>Breaks this node into two nodes at the specified <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></code>, keeping both
+   in the tree as siblings. After being split, this node will contain all
+   the content up to the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></code> point. A new node of the same type, which
+   contains all the content at and after the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></code> point, is returned.
+   If the original node had a parent node, the new node is inserted as the
+   next sibling of the original node. When the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.splitText.html#offset"><span class="pln">offset</span></a></code> is equal to the length
+   of this node, the new node has no data.
 </p>
 
 					<section>
-						<h3>Template arguments</h3>
+						<h3>Prototype</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">DOMConfiguration</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							<code class="lang-d">
+<a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a>!DOMString <span class="pln">splitText</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<span class="pln">size_t</span> <span class="pln">offset</span>
+								<br/>
+<span class="pun">)</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>

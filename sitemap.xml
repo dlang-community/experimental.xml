@@ -62,6 +62,7 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createDocumentFragment.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createElement.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createElementNS.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createEntityReference.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createProcessingInstruction.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.createTextNode.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.doctype.html</loc></url>
@@ -73,7 +74,10 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.getElementsByTagName.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.getElementsByTagNameNS.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.implementation.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.importNode.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.inputEncoding.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.normalizeDocument.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.renameNode.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.strictErrorChecking.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.strictErrorChecking.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Document.xmlEncoding.html</loc></url>
@@ -173,6 +177,7 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.nodeType.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.nodeValue.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.nodeValue.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.normalize.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.ownerDocument.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.parentNode.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Node.prefix.html</loc></url>
@@ -193,6 +198,8 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/ProcessingInstruction.data.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/ProcessingInstruction.target.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/Text.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Text.isElementContentWhitespace.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/dom/Text.splitText.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/UserData.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/UserDataHandler.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/dom/UserDataOperation.html</loc></url>
@@ -299,6 +306,10 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/SliceLexer.start.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/lexers/SliceLexer.testAndAdvance.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/parser.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/parser/chooseParser.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/parser/chooseParser.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/parser/chooseParser.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/parser/chooseParser.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/parser/parse.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/parser/Parser.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/parser/Parser.empty.html</loc></url>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Interface DOMConfiguration</title>
+		<title>Function Node.normalize</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -88,19 +88,21 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Interface DOMConfiguration</h1>
+			<h1>Function Node.normalize</h1>
 			<section>
-				<p>The <code class="lang-d"><span class="typ"><span class="typ">DOMConfiguration</span></span></code> interface represents the configuration of a document
-   and maintains a table of recognized parameters. Using the configuration, it
-   is possible to change <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.normalizeDocument.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></a></code> behavior, such as replacing
-   the <code class="lang-d"><a href="../../../std/experimental/xml/dom/CDATASection.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/CDATASection.html"><span class="typ">CDATASection</span></a></span></a></code> nodes with <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes or specifying the type of the schema
-   that must be used when the validation of the <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> is requested.
+				<p>Puts all <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes in the full depth of the sub-tree underneath this
+   <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a></span></a></code>, including attribute nodes, into a "normal" form where only structure
+   (e.g., elements, comments, processing instructions, CDATA sections, and entity
+   references) separates <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes, i.e., there are neither adjacent <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code>
+   nodes nor empty <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes. This can be used to ensure that the DOM view
+   of a document is the same as if it were saved and re-loaded.
 </p>
 
 					<section>
-						<h3>Template arguments</h3>
+						<h3>Prototype</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">DOMConfiguration</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							<code class="lang-d">
+<span class="typ">void</span> <span class="pln">normalize<span class="pun">()</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>

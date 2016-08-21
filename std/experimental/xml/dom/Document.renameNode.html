@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Interface DOMConfiguration</title>
+		<title>Function Document.renameNode</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -88,19 +88,38 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Interface DOMConfiguration</h1>
+			<h1>Function Document.renameNode</h1>
 			<section>
-				<p>The <code class="lang-d"><span class="typ"><span class="typ">DOMConfiguration</span></span></code> interface represents the configuration of a document
-   and maintains a table of recognized parameters. Using the configuration, it
-   is possible to change <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.normalizeDocument.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a><wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></a></code> behavior, such as replacing
-   the <code class="lang-d"><a href="../../../std/experimental/xml/dom/CDATASection.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/CDATASection.html"><span class="typ">CDATASection</span></a></span></a></code> nodes with <code class="lang-d"><a href="../../../std/experimental/xml/dom/Text.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></span></a></code> nodes or specifying the type of the schema
-   that must be used when the validation of the <code class="lang-d"><a href="../../../std/experimental/xml/dom/Document.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Document.html"><span class="typ">Document</span></a></span></a></code> is requested.
+				<p>Rename an existing node of type <code class="lang-d"><span class="pln">ELEMENT</span></code> or <code class="lang-d"><span class="pln">ATTRIBUTE</span></code>.
 </p>
+<section><p>When possible this simply changes the name of the given node, otherwise
+   this creates a new node with the specified name and replaces the existing
+   node with the new node as described below.
+   If simply changing the name of the given node is not possible, the following
+   operations are performed: a new node is created, any registered event
+   listener is registered on the new node, any user data attached to the old
+   node is removed from that node, the old node is removed from its parent
+   if it has one, the children are moved to the new node, if the renamed node
+   is an <code class="lang-d"><span class="typ">Element</span></code> its attributes are moved to the new node, the new node is
+   inserted at the position the old node used to have in its parent's child
+   nodes list if it has one, the user data that was attached to the old node
+   is attached to the new node.
+</p>
+</section>
 
 					<section>
-						<h3>Template arguments</h3>
+						<h3>Prototype</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">interface</span> <span class="typ">DOMConfiguration</span><span class="pun">(</span><span class="typ">DOMString</span><span class="pun">)</span>;
+							<code class="lang-d">
+<a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString <span class="pln">renameNode</span><span class="pun">(</span>
+								<br/>
+&nbsp;&nbsp;<a href="../../../../std/experimental/xml/dom/Node.html"><span class="typ">Node</span></a>!DOMString <span class="pln">n</span><span class="pun">,</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">DOMString</span> <span class="pln">namespaceURI</span><span class="pun">,</span>
+								<br/>
+&nbsp;&nbsp;<span class="typ">DOMString</span> <span class="pln">qualifiedName</span>
+								<br/>
+<span class="pun">)</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>

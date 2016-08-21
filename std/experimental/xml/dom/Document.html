@@ -155,7 +155,7 @@ $('#symbolSearchPane').show();
 									<span class="tableEntryAnnotation">[get]</span>
 								</td>
 								<td class="typecol"><code class="prettyprint lang-d"><a href="../../../../std/experimental/xml/dom/DOMConfiguration.html"><span class="typ">DOMConfiguration</span></a>!DOMString</code></td>
-								<td>The configuration used when <code class="lang-d"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span><span class="pun">()</span></code> is invoked.
+								<td>The configuration used when <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.normalizeDocument.html"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></a><span class="pun">()</span></code> is invoked.
 </td>
 							</tr>
 							<tr>
@@ -188,7 +188,7 @@ $('#symbolSearchPane').show();
 								<td>An attribute specifying whether error checking is enforced or not.
    When set to <code class="lang-d"><span class="kwd">false</span></code>, the implementation is free to not test every possible
    error case normally defined on DOM operations, and not raise any <code class="lang-d"><a href="../../../../std/experimental/xml/dom/DOMException.html"><span class="typ">DOMException</span></a></code>
-   on DOM operations or report errors while using <code class="lang-d"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span><span class="pun">()</span></code>.
+   on DOM operations or report errors while using <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Document.normalizeDocument.html"><span class="typ">Document<wbr/></span><span class="pun">.</span><span class="pln">normalizeDocument</span></a><span class="pun">()</span></code>.
    In case of error, the behavior is undefined. This attribute is <code class="lang-d"><span class="kwd">true</span></code> by default.
 </td>
 							</tr>
@@ -311,6 +311,17 @@ $('#symbolSearchPane').show();
 							</tr>
 							<tr>
 								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.createEntityReference.html" class="public">
+										<code>createEntityReference</code>
+									</a>
+								</td>
+								<td>Creates an <code class="lang-d"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ">EntityReference</span></a></span></a></code> object. In addition, if the referenced entity
+   is known, the child list of the <code class="lang-d"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ">EntityReference</span></a></span></a></code> node is made the same as
+   that of the corresponding <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Entity.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Entity.html"><span class="typ">Entity</span></a></span></a></code> node.
+</td>
+							</tr>
+							<tr>
+								<td>
 									<a href="../../../../std/experimental/xml/dom/Document.createProcessingInstruction.html" class="public">
 										<code>createProcessingInstruction</code>
 									</a>
@@ -358,6 +369,38 @@ $('#symbolSearchPane').show();
 								</td>
 								<td>Returns a <code class="lang-d"><a href="../../../../std/experimental/xml/dom/NodeList.html"><span class="typ">NodeList</span></a></code> of all the <code class="lang-d"><span class="typ">Element</span></code>s with a given local name and
    namespace URI in document order.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.importNode.html" class="public">
+										<code>importNode</code>
+									</a>
+								</td>
+								<td>Imports a node from another document to this document, without altering or
+   removing the source node from the original document; this method creates a
+   new copy of the source node. The returned node has no parent; (<code class="lang-d"><span class="pln">parentNode</span></code> is <code class="lang-d"><span class="kwd">null</span></code>).
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.normalizeDocument.html" class="public">
+										<code>normalizeDocument</code>
+									</a>
+								</td>
+								<td>This method acts as if the document was going through a save and load cycle,
+   putting the document in a "normal" form. As a consequence, this method
+   updates the replacement tree of <code class="lang-d"><a href="../../../../std/experimental/xml/dom/EntityReference.html"><span class="typ">EntityReference</span></a></code> nodes and normalizes <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Text.html"><span class="typ">Text</span></a></code>
+   nodes, as defined in the method Node.normalize().
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/dom/Document.renameNode.html" class="public">
+										<code>renameNode</code>
+									</a>
+								</td>
+								<td>Rename an existing node of type <code class="lang-d"><span class="pln">ELEMENT</span></code> or <code class="lang-d"><span class="pln">ATTRIBUTE</span></code>.
 </td>
 							</tr>
 						</table>
