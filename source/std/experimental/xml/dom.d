@@ -25,8 +25,8 @@
 
 module std.experimental.xml.dom;
 
-import std.typecons: BitFlags;
-import std.variant: Variant;
+import std.typecons : BitFlags;
+import std.variant : Variant;
 
 /++
 +   The DOMUserData type is used to store application data inside DOM nodes.

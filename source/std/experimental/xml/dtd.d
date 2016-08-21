@@ -13,7 +13,7 @@ module std.experimental.xml.dtd;
 
 import std.experimental.xml.interfaces;
 import std.experimental.allocator.gc_allocator;
-import std.typecons: Flag, No;
+import std.typecons : Flag, No;
 
 enum DTDCheckerError
 {
@@ -348,7 +348,6 @@ unittest
 {
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
-    import std.stdio;
 
     auto xml = q{
         <?xml?>

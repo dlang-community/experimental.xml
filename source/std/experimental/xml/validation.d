@@ -111,8 +111,6 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
         }
     }
 }
-
-import std.container.array: Array;
 /**
 *   Instantiates an `ElementNestingValidator` with the given `cursor` and `ErrorHandler`
 */
@@ -275,7 +273,7 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
 
     auto getName()
     {
-        import std.algorithm: all;
+        import std.algorithm : all;
 
         auto name = cursor.getName;
         if (cursor.getKind != XMLKind.ELEMENT_END)
@@ -294,7 +292,7 @@ struct CheckXMLNames(CursorType, InvalidTagHandler, InvalidAttrHandler)
 
             auto front()
             {
-                import std.algorithm: all;
+                import std.algorithm : all;
                 auto attr = attrs.front;
                 if (!attr.name[0].isValidXMLNameStart || !attr.name.all!isValidXMLNameChar)
                     callback(attr.name);
@@ -326,7 +324,6 @@ unittest
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
-    import std.stdio;
 
     auto xml = q{
         <?xml?>

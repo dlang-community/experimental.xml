@@ -35,7 +35,7 @@ import dom = std.experimental.xml.dom;
 struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
     if (isCursor!T && is(DOMImplementation : dom.DOMImplementation!(T.StringType)))
 {
-    import std.traits: ReturnType;
+    import std.traits : ReturnType;
 
     /++
     +   The underlying Cursor methods are exposed, so that one can, query the properties

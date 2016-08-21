@@ -21,7 +21,7 @@ module std.experimental.xml.cursor;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
-import std.meta: staticIndexOf;
+import std.meta : staticIndexOf;
 import std.range.primitives;
 import std.typecons;
 
@@ -515,9 +515,9 @@ unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    import std.string: lineSplitter, strip;
-    import std.algorithm: map;
-    import std.array: array;
+    import std.string : lineSplitter, strip;
+    import std.algorithm : map;
+    import std.array : array;
 
     wstring xml = q{
     <?xml encoding = "utf-8" ?>
@@ -683,9 +683,9 @@ auto children(T)(ref T cursor)
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    import std.string: lineSplitter, strip;
-    import std.algorithm: map, equal;
-    import std.array: array;
+    import std.string : lineSplitter, strip;
+    import std.algorithm : map, equal;
+    import std.array : array;
 
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -803,7 +803,7 @@ auto children(T)(ref T cursor)
     assert(cursor.documentEnd());
 }
 
-import std.traits: isArray;
+import std.traits : isArray;
 import std.experimental.allocator.gc_allocator;
 
 /++
@@ -844,10 +844,10 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
                 return *match;
         }
 
-        import std.traits: Unqual;
+        import std.traits : Unqual;
         import std.experimental.allocator;
-        import std.range.primitives: ElementEncodingType;
-        import core.stdc.string: memcpy;
+        import std.range.primitives : ElementEncodingType;
+        import core.stdc.string : memcpy;
 
         alias ElemType = ElementEncodingType!StringType;
         auto cp = cast(ElemType[]) allocator.makeArray!(Unqual!ElemType)(str.length);

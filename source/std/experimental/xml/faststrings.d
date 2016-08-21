@@ -25,7 +25,7 @@ body
     import std.traits;
     static if (is(Unqual!S == Unqual!T))
     {
-        import core.stdc.string: memcmp;
+        import core.stdc.string : memcmp;
         return memcmp(t.ptr, s.ptr, t.length * T.sizeof) == 0;
     }
     else
@@ -138,7 +138,7 @@ T[] xmlEscape(T, Alloc)(T[] str, ref Alloc alloc)
 +/
 void xmlEscapedWrite(Out, T)(ref Out output, T[] str)
 {
-    import std.conv: to;
+    import std.conv : to;
     static immutable amp = to!(T[])("&amp;");
     static immutable lt = to!(T[])("&lt;");
     static immutable gt = to!(T[])("&gt;");

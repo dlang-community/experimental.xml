@@ -30,7 +30,7 @@ private string ifAnyCompiles(string code, string[] codes...)
                 "; else " ~ ifAnyCompiles(codes[0], codes[1..$]);
 }
 
-import std.typecons: tuple;
+import std.typecons : tuple;
 private auto xmlDeclarationAttributes(StringType, Args...)(Args args)
 {
     static assert(Args.length <= 3, "Too many arguments for xml declaration");
@@ -207,7 +207,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
 
     private template expand(string methodName)
     {
-        import std.meta: AliasSeq;
+        import std.meta : AliasSeq;
         alias expand = AliasSeq!(
             "prettyPrinter." ~ methodName ~ "(output)",
             "output.put(prettyPrinter." ~ methodName ~ ")"
@@ -215,7 +215,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
     }
     private template formatAttribute(string attribute)
     {
-        import std.meta: AliasSeq;
+        import std.meta : AliasSeq;
         alias formatAttribute = AliasSeq!(
             "prettyPrinter.formatAttribute(output, " ~ attribute ~ ")",
             "output.put(prettyPrinter.formatAttribute(" ~ attribute ~ "))",
@@ -480,7 +480,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
 
 unittest
 {
-    import std.array: Appender;
+    import std.array : Appender;
     auto app = Appender!string();
     auto writer = Writer!(string, typeof(app))();
     writer.setSink(&app);
@@ -510,7 +510,7 @@ auto writerFor(StringType, OutRange, PrettyPrinter)(ref OutRange outRange, auto 
 
 unittest
 {
-    import std.array: Appender;
+    import std.array : Appender;
     auto app = Appender!string();
     auto writer = app.writerFor!string;
 
@@ -525,7 +525,7 @@ unittest
     writer.writeProcessingInstruction("pi", "it works");
     writer.closeElement("elem");
 
-    import std.string: lineSplitter;
+    import std.string : lineSplitter;
     auto splitter = app.data.lineSplitter;
 
     assert(splitter.front == "<elem attr1='val1' attr2='val2'>");
@@ -553,7 +553,7 @@ import dom = std.experimental.xml.dom;
 void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
     if (is(NodeType: dom.Node!(WriterType.StringType)))
 {
-    import std.traits: ReturnType;
+    import std.traits : ReturnType;
     alias Document = typeof(node.ownerDocument);
     alias Element = ReturnType!(Document.documentElement);
 
@@ -589,7 +589,7 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
     }
 }
 
-import std.typecons: Flag, No, Yes;
+import std.typecons : Flag, No, Yes;
 
 /++
 +   Writes the contents of a cursor to a writer.
@@ -701,7 +701,7 @@ auto writeCursor(Flag!"useFiber" useFiber = No.useFiber, WriterType, CursorType)
 
 unittest
 {
-    import std.array: Appender;
+    import std.array : Appender;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
 
@@ -738,7 +738,7 @@ struct CheckedWriter(WriterType, CursorType = void)
     if (isWriter!(WriterType) && (is(CursorType == void) ||
        (isCursor!CursorType && is(WriterType.StringType == CursorType.StringType))))
 {
-    import core.thread: Fiber;
+    import core.thread : Fiber;
     private Fiber fiber;
     private bool startingTag = false;
 
@@ -980,7 +980,7 @@ template withValidation(alias validationFun, Params...)
 
 unittest
 {
-    import std.array: Appender;
+    import std.array : Appender;
     import std.experimental.xml.validation;
 
     int count = 0;

@@ -246,7 +246,7 @@ public import dom = std.experimental.xml.dom;
 
 @nogc unittest
 {
-    import std.typecons: Yes, No;
+    import std.typecons : Yes, No;
 
     string xml = q{
     <?xml encoding = "utf-8" ?>

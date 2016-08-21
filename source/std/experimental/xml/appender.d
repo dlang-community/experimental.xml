@@ -94,7 +94,7 @@ struct Appender(T, Alloc)
 
     private void ensureAddable(size_t sz)
     {
-        import std.algorithm: max;
+        import std.algorithm : max;
 
         if (arr.length - used >= sz)
             return;

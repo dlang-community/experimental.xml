@@ -65,7 +65,7 @@ struct SAXParser(T, alias H)
     +/
     void processDocument()
     {
-        import std.traits: hasMember;
+        import std.traits : hasMember;
         while (!cursor.documentEnd)
         {
             switch (cursor.getKind)

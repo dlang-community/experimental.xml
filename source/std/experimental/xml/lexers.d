@@ -29,12 +29,12 @@ import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
 import std.range.primitives;
-import std.traits: isArray;
+import std.traits : isArray;
 
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
-import std.typecons: Flag, Yes;
+import std.typecons : Flag, Yes;
 
 /++
 +   A lexer that takes a sliceable input.

@@ -26,7 +26,7 @@ module std.experimental.xml.parser;
 import std.experimental.xml.interfaces;
 import std.experimental.xml.faststrings;
 
-import std.typecons: Flag, Yes, No;
+import std.typecons : Flag, Yes, No;
 
 /++
 +   A low level XML parser.
@@ -45,7 +45,7 @@ import std.typecons: Flag, Yes, No;
 struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace)
     if (isLexer!L)
 {
-    import std.meta: staticIndexOf;
+    import std.meta : staticIndexOf;
 
     /++
     +   The structure returned in output from the low level parser.
@@ -382,8 +382,8 @@ auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
 {
     import std.experimental.xml.lexers;
     import std.experimental.allocator.mallocator;
-    import std.string: lineSplitter;
-    import std.algorithm: equal;
+    import std.string : lineSplitter;
+    import std.algorithm : equal;
 
     string xml = q{
     <?xml encoding = "utf-8" ?>
@@ -450,8 +450,8 @@ auto chooseParser(alias InputType, Alloc = shared(GCAllocator),
 unittest
 {
     import std.experimental.xml.lexers;
-    import std.algorithm: find;
-    import std.string: stripRight;
+    import std.algorithm : find;
+    import std.string : stripRight;
 
     string xml = q{
     <!DOCTYPE mydoc https://myUri.org/bla [

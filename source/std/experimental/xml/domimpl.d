@@ -22,7 +22,7 @@ module std.experimental.xml.domimpl;
 
 import std.experimental.xml.interfaces;
 import dom = std.experimental.xml.dom;
-import std.typecons: rebindable, Flag, BitFlags;
+import std.typecons : rebindable, Flag, BitFlags;
 import std.experimental.allocator;
 import std.experimental.allocator.gc_allocator;
 
@@ -1100,12 +1100,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
-                import std.algorithm: min;
+                import std.algorithm : min;
                 return _data[offset..min(offset + count, length)];
             }
             void appendData(DOMString arg)
             {
-                import std.traits: Unqual;
+                import std.traits : Unqual;
 
                 auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length + arg.length);
                 newData[0 .. data.length] = _data[];
@@ -1115,7 +1115,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             void insertData(size_t offset, DOMString arg)
             {
-                import std.traits: Unqual;
+                import std.traits : Unqual;
 
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
@@ -1129,12 +1129,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             void deleteData(size_t offset, size_t count)
             {
-                import std.traits: Unqual;
+                import std.traits : Unqual;
 
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
-                import std.algorithm: min;
+                import std.algorithm : min;
                 auto end = min(offset + count, length);
 
                 auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length - end + offset);
@@ -1145,12 +1145,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             void replaceData(size_t offset, size_t count, DOMString arg)
             {
-                import std.traits: Unqual;
+                import std.traits : Unqual;
 
                 if (offset > length)
                     throw allocator.make!DOMException(dom.ExceptionCode.INDEX_SIZE);
 
-                import std.algorithm: min;
+                import std.algorithm : min;
                 auto end = min(offset + count, length);
 
                 auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))
@@ -1223,7 +1223,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             @property void prefix(DOMString pre)
             {
-                import std.traits: Unqual;
+                import std.traits : Unqual;
 
                 auto newName = allocator.makeArray!(Unqual!(typeof(_name[0])))(pre.length + localName.length + 1);
                 newName[0 .. pre.length] = pre[];
