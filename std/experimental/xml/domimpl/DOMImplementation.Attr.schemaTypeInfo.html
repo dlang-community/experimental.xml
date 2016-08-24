@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Document.getElementById</title>
+		<title>Function DOMImplementation.Attr.schemaTypeInfo</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -30,10 +30,10 @@
 								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/dom.html" class="selected module">dom</a>
+								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/domimpl.html" class=" module">domimpl</a>
+								<a href="../../../../std/experimental/xml/domimpl.html" class="selected module">domimpl</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/domparser.html" class=" module">domparser</a>
@@ -88,32 +88,19 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Document.getElementById</h1>
+			<h1>Function DOMImplementation.Attr.schemaTypeInfo</h1>
 			<section>
-				<p>Returns the <code class="lang-d"><span class="typ">Element</span></code> that has an ID attribute with the given value. If no
-   such element exists, this returns <code class="lang-d"><span class="kwd">null</span></code>. If more than one element has an
-   ID attribute with that value, what is returned is undefined.
-   The DOM implementation is expected to use the attribute <code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.isId.html"><span class="typ"><a href="../../../../std/experimental/xml/dom/Attr.html"><span class="typ">Attr</span></a><wbr/></span><span class="pun">.</span><span class="pln">isId</span></a></code> to
-   determine if an attribute is of type ID.
+				<p>Implementation of <a href="../dom/Attr.schemaTypeInfo"><code class="lang-d"><a href="../../../../std/experimental/xml/dom/Attr.schemaTypeInfo.html"><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">experimental<wbr/></span><span class="pun">.</span><span class="pln">xml<wbr/></span><span class="pun">.</span><span class="pln">dom<wbr/></span><span class="pun">.</span><span class="typ">Attr<wbr/></span><span class="pun">.</span><span class="pln">schemaTypeInfo</span></a></code></a>.
 </p>
-<section></section>
 
 					<section>
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<a href="../../../../std/experimental/xml/domimpl/DOMImplementation.Element.html"><span class="typ">DOMImplementation<wbr/></span><span class="pun">.<wbr/></span><span class="typ">Element</span></a>!DOMString <span class="pln">getElementById</span><span class="pun">(</span>
-								<br/>
-&nbsp;&nbsp;<span class="typ">DOMString</span> <span class="pln">elementId</span>
-								<br/>
-<span class="pun">)</span><span class="pun">;</span>
+<a href="../../../../std/experimental/xml/dom/XMLTypeInfo.html"><span class="typ">XMLTypeInfo</span></a>!DOMString <span class="pln">schemaTypeInfo<span class="pun">()</span><span class="pln"> </span><span class="kwd">@property</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>
-<section><h3>Note</h3>
-<p>Attributes with the name "ID" or "id" are not of type ID unless so defined.
-</p>
-</section>
 
 			</section>
 			<section>
