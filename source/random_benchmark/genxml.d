@@ -229,7 +229,7 @@ void genText(Out)(Out output, ulong depth, GenXmlConfig config, ref FileStats st
 void genCDATA(Out)(Out output, ulong depth, GenXmlConfig config, ref FileStats stats)
 {
     indent(output, depth, stats);
-    output.put("<!CDATA[[");
+    output.put("<![CDATA[[");
     auto str = genString(config.minTextLen, config.maxTextLen, textChars, depth);
     output.put(str);
     output.put("]]>");

@@ -36,6 +36,8 @@ enum BenchmarkConfig theBenchmark = {
         ComponentConfig("Cursor_RangeLexer", "to!string", "cursorTest!RangeLexer"),
         ComponentConfig("Legacy_SAX_API", "to!string", "oldSAXTest!\"std.xml\""),
         ComponentConfig("Legacy_SAX_Emulator", "to!string","oldSAXTest!\"std.experimental.xml.legacy\""),
+        ComponentConfig("Legacy_DOM_API", "to!string", "buildOldDOM"),
+        ComponentConfig("DOMBuilder_SliceLexer", "to!string", "buildDOM"),
     ],
     configurations: [
         K100,
@@ -156,6 +158,24 @@ void oldSAXTest(string api)(string data)
     
     DocumentParser parser = new DocumentParser(data);
     recursiveParse(parser);
+}
+
+void buildOldDOM(string data)
+{
+    import std.xml;
+    doNotOptimize(new Document(data));
+}
+
+void buildDOM(string data)
+{
+    auto builder =
+         chooseParser!data
+        .cursor
+        .domBuilder;
+    builder.setSource(data);
+    
+    builder.buildRecursive;
+    doNotOptimize(builder.getDocument);
 }
 
 void iterateString(string data)
@@ -310,14 +330,21 @@ ulong total_tests;
 ulong performed_tests;
 auto testFile(string name, uint runs, Duration delegate(string) fun)
 {
+    import core.memory;
+        
     FileResults results;
     auto input = readText(name);
     foreach (run; 0..runs)
     {
+        GC.disable;
         auto time = fun(input);
+        GC.enable;
+        
         results.times ~= time;
         results.speeds ~= (cast(double)getSize(name)) / time.total!"usecs";
         stderr.writef("\r%d out of %d tests performed", ++performed_tests, total_tests);
+        
+        GC.collect();
     }
     results.timeStat = typeof(results.timeStat)(results.times);
     results.speedStat = PreciseStatisticData!double(results.speeds);
