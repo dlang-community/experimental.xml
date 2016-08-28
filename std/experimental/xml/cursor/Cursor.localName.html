@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Cursor.getName</title>
+		<title>Function Cursor.localName</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -22,9 +22,6 @@
 						<ul class="tree-view">
 							<li>
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
-							</li>
-							<li>
-								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
@@ -88,18 +85,17 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Cursor.getName</h1>
+			<h1>Function Cursor.localName</h1>
 			<section>
-				<p>If the current node is an element or a doctype, return its complete name;
-   it it is a processing instruction, return its target;
-   otherwise, return an empty string;
+				<p>If the current node is an element, returns its local name (without namespace prefix);
+   otherwise, returns the same result as <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.name.html"><span class="pln"><a href="../../../../std/experimental/xml/cursor/Cursor.name.html"><span class="pln">name</span></a></span></a></code>.
 </p>
 
 					<section>
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<a href="../../../../std/experimental/xml/cursor/Cursor.StringType.html"><span class="typ">Cursor<wbr/></span><span class="pun">.<wbr/></span><span class="typ">StringType</span></a> <span class="pln">getName<span class="pun">()</span><span class="pun">;</span>
+<a href="../../../../std/experimental/xml/cursor/Cursor.StringType.html"><span class="typ">Cursor<wbr/></span><span class="pun">.<wbr/></span><span class="typ">StringType</span></a> <span class="pln">localName<span class="pun">()</span><span class="pun">;</span>
 							</code>
 						</div>
 					</section>

@@ -24,9 +24,6 @@
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
-							</li>
-							<li>
 								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
 							</li>
 							<li>
@@ -142,8 +139,29 @@ $('#symbolSearchPane').show();
 									</a>
 								</td>
 								<td>Returns whether the cursor is at the beginning of the document
-   (i.e. whether no enter/next/exit has been performed successfully and thus
+   (i.e. whether no <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.enter.html"><span class="pln">enter</span></a></code>/<code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.next.html"><span class="pln">next</span></a></code>/<code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.exit.html"><span class="pln">exit</span></a></code> has been performed successfully and thus
    the cursor points to the xml declaration)
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.attributes.html" class="public">
+										<code>attributes</code>
+									</a>
+								</td>
+								<td>If the current node is an element, return its attributes as a range of triplets
+   (<code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.prefix.html"><span class="pln"><a href="../../../../std/experimental/xml/cursor/Cursor.prefix.html"><span class="pln">prefix</span></a></span></a></code>, <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.name.html"><span class="pln"><a href="../../../../std/experimental/xml/cursor/Cursor.name.html"><span class="pln">name</span></a></span></a></code>, <code class="lang-d"><span class="pln">value</span></code>); if the current node is the document node, return the attributes
+   of the xml declaration (encoding, version, ...); otherwise, returns an empty array.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.content.html" class="public">
+										<code>content</code>
+									</a>
+								</td>
+								<td>Return the text content of a cdata section, a comment or a text node;
+   in all other cases, returns the entire node without the name
 </td>
 							</tr>
 							<tr>
@@ -161,8 +179,8 @@ $('#symbolSearchPane').show();
 										<code>enter</code>
 									</a>
 								</td>
-								<td>Advances to the first child of the current node and returns true.
-   If it returns false, the cursor is either on the same node (it wasn't
+								<td>Advances to the first child of the current node and returns <code class="lang-d"><span class="kwd">true</span></code>.
+   If it returns <code class="lang-d"><span class="kwd">false</span></code>, the cursor is either on the same node (it wasn't
    an element start) or it is at the close tag of the element it was called on
    (it was a pair open/close tag without any content)
 </td>
@@ -178,38 +196,8 @@ $('#symbolSearchPane').show();
 							</tr>
 							<tr>
 								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getAll.html" class="public">
-										<code>getAll</code>
-									</a>
-								</td>
-								<td>Returns the entire text of the current node.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getAttributes.html" class="public">
-										<code>getAttributes</code>
-									</a>
-								</td>
-								<td>If the current node is an element, return its attributes as a range of triplets
-   (prefix, name, value); if the current node is the document node, return the attributes
-   of the xml declaration (encoding, version, ...); otherwise, return an empty array.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getContent.html" class="public">
-										<code>getContent</code>
-									</a>
-								</td>
-								<td>Return the text content of a CDATA section, a comment or a text node;
-   in all other cases, returns the entire node without the name
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getKind.html" class="public">
-										<code>getKind</code>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.kind.html" class="public">
+										<code>kind</code>
 									</a>
 								</td>
 								<td>Returns the kind of the current node.
@@ -217,33 +205,23 @@ $('#symbolSearchPane').show();
 							</tr>
 							<tr>
 								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getLocalName.html" class="public">
-										<code>getLocalName</code>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.localName.html" class="public">
+										<code>localName</code>
 									</a>
 								</td>
-								<td>If the current node is an element, return its local name (without namespace prefix);
-   otherwise, return the same result as getName().
+								<td>If the current node is an element, returns its local name (without namespace prefix);
+   otherwise, returns the same result as <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.name.html"><span class="pln">name</span></a></code>.
 </td>
 							</tr>
 							<tr>
 								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getName.html" class="public">
-										<code>getName</code>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.name.html" class="public">
+										<code>name</code>
 									</a>
 								</td>
-								<td>If the current node is an element or a doctype, return its complete name;
+								<td>If the current node is an element or a doctype, returns its complete name;
    it it is a processing instruction, return its target;
-   otherwise, return an empty string;
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/cursor/Cursor.getPrefix.html" class="public">
-										<code>getPrefix</code>
-									</a>
-								</td>
-								<td>If the current node is an element, return its namespace prefix;
-   otherwise, the result in unspecified;
+   otherwise, returns an empty string;
 </td>
 							</tr>
 							<tr>
@@ -254,7 +232,17 @@ $('#symbolSearchPane').show();
 								</td>
 								<td>Advances to the next sibling of the current node.
    Returns whether it succeded. If it fails, either the
-   document has ended or the only meaningful operation is exit().
+   document has ended or the only meaningful operation is <code class="lang-d"><a href="../../../../std/experimental/xml/cursor/Cursor.exit.html"><span class="pln"><a href="../../../../std/experimental/xml/cursor/Cursor.exit.html"><span class="pln">exit</span></a></span></a></code>.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.prefix.html" class="public">
+										<code>prefix</code>
+									</a>
+								</td>
+								<td>If the current node is an element, returns its namespace prefix;
+   otherwise, the result in unspecified;
 </td>
 							</tr>
 							<tr>
@@ -275,6 +263,15 @@ $('#symbolSearchPane').show();
 									</a>
 								</td>
 								<td>Initializes this cursor (and the underlying low level parser) with the given input.
+</td>
+							</tr>
+							<tr>
+								<td>
+									<a href="../../../../std/experimental/xml/cursor/Cursor.wholeContent.html" class="public">
+										<code>wholeContent</code>
+									</a>
+								</td>
+								<td>Returns the entire text of the current node.
 </td>
 							</tr>
 						</table>

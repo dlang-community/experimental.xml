@@ -24,9 +24,6 @@
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/appender.html" class=" module">appender</a>
-							</li>
-							<li>
 								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
 							</li>
 							<li>
@@ -118,13 +115,13 @@ $('#symbolSearchPane').show();
 </span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span><span class="pun">;
 </span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">;
 </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">exit</span><span class="pun">;
-</span><span class="typ">XMLKind </span><span class="pln">kind </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">;
-</span><span class="kwd">auto </span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getName</span><span class="pun">;
-</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getLocalName</span><span class="pun">;
-</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getPrefix</span><span class="pun">;
-</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getContent</span><span class="pun">;
-</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getAll</span><span class="pun">;
-</span><span class="kwd">auto </span><span class="pln">attrs </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getAttributes</span><span class="pun">;
+</span><span class="typ">XMLKind </span><span class="pln">kind </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">kind</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">localName</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">prefix</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">content</span><span class="pun">;
+</span><span class="pln">s </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">wholeContent</span><span class="pun">;
+</span><span class="kwd">auto </span><span class="pln">attrs </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">attributes</span><span class="pun">;
 </span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">prefix</span><span class="pun">;
 </span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">localName</span><span class="pun">;
 </span><span class="pln">s </span><span class="pun">= </span><span class="pln">attrs<wbr/></span><span class="pun">.</span><span class="pln">front<wbr/></span><span class="pun">.</span><span class="pln">name</span><span class="pun">;
@@ -156,21 +153,21 @@ $('#symbolSearchPane').show();
             (partial or complete) usage, a cursor may be reinitialized and used with
              another input by calling this function;</li>
        <li><code class="lang-d"><span class="typ">bool </span><span class="pln">atBeginning</span><span class="pun">()</span></code>: returns true if the cursor has never been advanced;
-             it is thus pointing to the node of type <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.DOCUMENT.html"><span class="typ">XMLKind<wbr/></span><span class="pun">.</span><span class="pln">DOCUMENT</span></a></code> representing
+             it is thus pointing to the node of type <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.document.html"><span class="typ">XMLKind<wbr/></span><span class="pun">.</span><span class="pln">document</span></a></code> representing
              the XML declaration of the document;</li>
        <li><code class="lang-d"><span class="typ">bool </span><span class="pln">documentEnd</span><span class="pun">()</span></code>: returns <code class="lang-d"><span class="kwd">true</span></code> if the input has been completely
              consumed; if it is the case, any advancing operation will perform no action</li>
        <li> the following methods can be used to query the current node properties:
-             <ul>               <li><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a><span class="pln"> getKind</span><span class="pun">()</span></code>: returns the <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a></code> of the current node;</li>
-               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getName</span><span class="pun">()</span></code>: returns the qualified name of the current
+             <ul>               <li><code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a><span class="pln"> kind</span><span class="pun">()</span></code>: returns the <code class="lang-d"><a href="../../../../std/experimental/xml/interfaces/XMLKind.html"><span class="typ">XMLKind</span></a></code> of the current node;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">name</span><span class="pun">()</span></code>: returns the qualified name of the current
                      element or the target of the current processing instruction;
                      the empty string in all other cases;</li>
-               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getLocalName</span><span class="pun">()</span></code>: returns the local name of the
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">localName</span><span class="pun">()</span></code>: returns the local name of the
                      current element, if it has a prefix; the empty string in all
                      other cases;</li>
-               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getPrefix</span><span class="pun">()</span></code>: returns the prefix of the current element,
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">prefix</span><span class="pun">()</span></code>: returns the prefix of the current element,
                      if it has any; the empty string in all other cases;</li>
-               <li><code class="lang-d"><span class="kwd">auto </span><span class="pln">getAttributes</span><span class="pun">()</span></code>: returns a range of all attributes defined
+               <li><code class="lang-d"><span class="kwd">auto </span><span class="pln">attributes</span><span class="pun">()</span></code>: returns a range of all attributes defined
                      on the current element; if the current node is a processing
                      instruction, its data section is parsed as if it was the attributes
                      list of an element (which is quite common); for all other node
@@ -184,10 +181,10 @@ $('#symbolSearchPane').show();
                              if it has any prefix; the empty string otherwise;</li>
                        <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">value</span></code>: the value of the attribute;</li>
                      </ul></li>
-               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getContent</span><span class="pun">()</span></code>: returns the text content of the current
-                     comment, text node or CDATA section or the data of the current
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">content</span><span class="pun">()</span></code>: returns the text content of the current
+                     comment, text node or cdata section or the data of the current
                      processing instruction; the empty string in all other cases;</li>
-               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">getAll</span><span class="pun">()</span></code>: returns the entire content of the node;</li>
+               <li><code class="lang-d"><span class="typ">StringType </span><span class="pln">wholeContent</span><span class="pun">()</span></code>: returns the entire content of the node;</li>
              </ul></li>
        <li> the following methods can be used to advance the cursor in the stream
              of XML nodes:
@@ -215,7 +212,7 @@ $('#symbolSearchPane').show();
     </span><span class="kwd">do
     </span><span class="pun">{
         </span><span class="com">// print the kind of the current node
-        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">);
+        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">kind</span><span class="pun">);
         </span><span class="com">// if the node has children
         </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">)
         {

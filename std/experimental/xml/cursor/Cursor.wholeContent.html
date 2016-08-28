@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Struct Appender</title>
+		<title>Function Cursor.wholeContent</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -24,10 +24,7 @@
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/appender.html" class="selected module">appender</a>
-							</li>
-							<li>
-								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
+								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
@@ -88,101 +85,37 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Struct Appender</h1>
+			<h1>Function Cursor.wholeContent</h1>
 			<section>
-				<p>Appender implementation that uses a custom allocator. Meant for internal usage.
+				<p>Returns the entire text of the current node.
 </p>
 
 					<section>
-						<h3>Template arguments</h3>
+						<h3>Prototype</h3>
 						<div class="prototype">
-							<code class="lang-d"><span class="kwd">struct</span> <span class="typ">Appender</span><span class="pun">(</span><span class="pln">T</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">)</span>;
+							<code class="lang-d">
+<a href="../../../../std/experimental/xml/cursor/Cursor.StringType.html"><span class="typ">Cursor<wbr/></span><span class="pun">.<wbr/></span><span class="typ">StringType</span></a> <span class="pln">wholeContent<span class="pun">()</span><span class="pln"> </span><span class="kwd">const</span><span class="pun">;</span>
 							</code>
 						</div>
-					</section>
-					<section>
-						<h3>Properties</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Type</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/appender/Appender.capacity.html" class="public property"><code>capacity</code></a>
-									<span class="tableEntryAnnotation">[get]</span>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d"><span class="pln">size_t</span></code></td>
-								<td>Returns the capacity of the array (the maximum number of elements the
- managed array can accommodate before triggering a reallocation).  If any
- appending will reallocate, <code class="lang-d"><span class="pln">capacity</span></code> returns <code class="lang-d"><span class="lit">0</span></code>.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/appender/Appender.data.html" class="public property"><code>data</code></a>
-									<span class="tableEntryAnnotation">[get]</span>
-								</td>
-								<td class="typecol"><code class="prettyprint lang-d"><span class="kwd">inout</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)</span><span class="pun">[]</span></code></td>
-								<td>Returns the managed array.
-</td>
-							</tr>
-						</table>
-					</section>
-					<section>
-						<h3>Methods</h3>
-						<table>
-							<col class="caption"/>
-							<tr>
-								<th>Name</th>
-								<th>Description</th>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/appender/Appender.clear.html" class="public">
-										<code>clear</code>
-									</a>
-								</td>
-								<td>Clears the managed array.  This allows the elements of the array to be reused
- for appending.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/appender/Appender.reserve.html" class="public">
-										<code>reserve</code>
-									</a>
-								</td>
-								<td>Reserve at least newCapacity elements for appending.  Note that more elements
- may be reserved than requested.  If newCapacity &lt;= capacity, then nothing is
- done.
-</td>
-							</tr>
-							<tr>
-								<td>
-									<a href="../../../../std/experimental/xml/appender/Appender.shrinkTo.html" class="public">
-										<code>shrinkTo</code>
-									</a>
-								</td>
-								<td>Shrinks the managed array to the given length.
-</td>
-							</tr>
-						</table>
 					</section>
 
 			</section>
 			<section>
 				<h2>Authors</h2>
+<p>Lodovico Giaretta
+</p>
 
 			</section>
 			<section>
 				<h2>Copyright</h2>
+<p>Copyright Lodovico Giaretta 2016 --
+</p>
 
 			</section>
 			<section>
 				<h2>License</h2>
+<p><a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>.
+</p>
 
 			</section>
 		</div>

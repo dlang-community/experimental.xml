@@ -24,9 +24,6 @@
 								<a href="../../std/experimental/xml.html" class="selected module">Package members</a>
 							</li>
 							<li>
-								<a href="../../std/experimental/xml/appender.html" class=" module">appender</a>
-							</li>
-							<li>
 								<a href="../../std/experimental/xml/cursor.html" class=" module">cursor</a>
 							</li>
 							<li>
@@ -146,8 +143,8 @@ $('#symbolSearchPane').show();
 {
     </span><span class="typ">void </span><span class="pln">onText</span><span class="pun">(</span><span class="kwd">ref </span><span class="typ">NodeType </span><span class="pln">node</span><span class="pun">)
     {
-        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getContent<wbr/></span><span class="pun">.</span><span class="pln">splitter<wbr/></span><span class="pun">.</span><span class="pln">find<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"D"</span><span class="pun">))
-            </span><span class="pln">writeln</span><span class="pun">(</span><span class="str">"Match found: "</span><span class="pun">, </span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">getContent</span><span class="pun">);
+        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">content<wbr/></span><span class="pun">.</span><span class="pln">splitter<wbr/></span><span class="pun">.</span><span class="pln">find<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"D"</span><span class="pun">))
+            </span><span class="pln">writeln</span><span class="pun">(</span><span class="str">"Match found: "</span><span class="pun">, </span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">content</span><span class="pun">);
     }
 }
 
@@ -169,7 +166,7 @@ $('#symbolSearchPane').show();
 <pre class="code"><code class="lang-d"><span class="com">// the basic cursor only detects missing xml declarations and unparseable attributes
 </span><span class="kwd">auto </span><span class="pln">callback1 </span><span class="pun">= (</span><span class="typ">CursorError </span><span class="pln">err</span><span class="pun">)
 {
-    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">err </span><span class="pun">== </span><span class="typ">CursorError<wbr/></span><span class="pun">.</span><span class="pln">MISSING_XML_DECLARATION</span><span class="pun">)
+    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">err </span><span class="pun">== </span><span class="typ">CursorError<wbr/></span><span class="pun">.</span><span class="pln">missingXMLDeclaration</span><span class="pun">)
         </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Missing XML declaration"</span><span class="pun">);
     </span><span class="kwd">else
         assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid attributes syntax"</span><span class="pun">);
@@ -202,7 +199,7 @@ $('#symbolSearchPane').show();
     </span><span class="com">// cycle the current node and all its siblings
     </span><span class="kwd">do
     </span><span class="pun">{
-        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">getKind</span><span class="pun">);
+        </span><span class="pln">writeln</span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">kind</span><span class="pun">);
         </span><span class="com">// if the current node has children, inspect them recursively
         </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">enter</span><span class="pun">)
         {
