@@ -81,7 +81,7 @@ struct DTDChecker(CursorType, ErrorHandler, Alloc = shared(GCAllocator),
         {
             enum AttType
             {
-                CDATA,
+                cdata,
                 ID,
                 IDREF,
                 IDREFS,
@@ -118,11 +118,11 @@ struct DTDChecker(CursorType, ErrorHandler, Alloc = shared(GCAllocator),
     {
         if (cursor.enter)
         {
-            if (cursor.getKind == XMLKind.DTD_START)
+            if (cursor.kind == XMLKind.dtdStart)
             {
                 import std.experimental.xml.faststrings;
 
-                auto dtd = cursor.getContent;
+                auto dtd = cursor.content;
 
                 auto start = dtd.fastIndexOfNeither(" \r\n\t");
                 if (start == -1)
@@ -173,19 +173,19 @@ struct DTDChecker(CursorType, ErrorHandler, Alloc = shared(GCAllocator),
     {
         do
         {
-            switch (cur.getKind) with (XMLKind)
+            switch (cur.kind) with (XMLKind)
             {
-                case ATTLIST_DECL:
-                    parseAttlistDecl(cur.getContent);
+                case attlistDecl:
+                    parseAttlistDecl(cur.content);
                     break;
-                case ELEMENT_DECL:
-                    parseElementDecl(cur.getContent);
+                case elementDecl:
+                    parseElementDecl(cur.content);
                     break;
-                case NOTATION_DECL:
-                    parseNotationDecl(cur.getContent);
+                case notationDecl:
+                    parseNotationDecl(cur.content);
                     break;
-                case ENTITY_DECL:
-                    parseEntityDecl(cur.getContent);
+                case entityDecl:
+                    parseEntityDecl(cur.content);
                     break;
                 default:
                     errorHandler(DTDCheckerError.DTD_SYNTAX);

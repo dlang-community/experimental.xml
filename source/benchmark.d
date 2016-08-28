@@ -70,7 +70,7 @@ void main()
     {
         do
         {
-            foreach(attr; cursor.getAttributes)
+            foreach(attr; cursor.attributes)
                 doNotOptimize(attr);
                 
             if (cursor.enter)

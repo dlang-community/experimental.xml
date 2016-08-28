@@ -43,8 +43,8 @@ class ElementParser
     private this(CursorType* cur)
     {
         cursor = cur;
-        _tag =  new Tag(cursor.getName);
-        foreach (attr; cursor.getAttributes)
+        _tag =  new Tag(cursor.name);
+        foreach (attr; cursor.attributes)
             _tag.attributes[attr.prefix ~ ":" ~ attr.name] = attr.value;
     }
 
@@ -54,48 +54,48 @@ class ElementParser
         {
             do
             {
-                switch (cursor.getKind)
+                switch (cursor.kind)
                 {
-                    case XMLKind.ELEMENT_START:
-                    case XMLKind.ELEMENT_EMPTY:
-                        if (cursor.getName in onStartTag || null in onStartTag)
+                    case XMLKind.elementStart:
+                    case XMLKind.elementEmpty:
+                        if (cursor.name in onStartTag || null in onStartTag)
                         {
                             CursorType copy;
-                            if (cursor.getName in onEndTag || null in onEndTag)
+                            if (cursor.name in onEndTag || null in onEndTag)
                                 copy = cursor.save;
 
-                            if (cursor.getName in onStartTag)
-                                onStartTag[cursor.getName](new ElementParser(cursor));
+                            if (cursor.name in onStartTag)
+                                onStartTag[cursor.name](new ElementParser(cursor));
                             else
                                 onStartTag[null](new ElementParser(cursor));
 
-                            if (cursor.getName in onEndTag)
-                                onEndTag[cursor.getName](new Element(new ElementParser(&copy)));
+                            if (cursor.name in onEndTag)
+                                onEndTag[cursor.name](new Element(new ElementParser(&copy)));
                             else if (null in onEndTag)
                                 onEndTag[null](new Element(new ElementParser(&copy)));
                         }
-                        else if (cursor.getName in onEndTag)
-                            onEndTag[cursor.getName](new Element(new ElementParser(cursor)));
+                        else if (cursor.name in onEndTag)
+                            onEndTag[cursor.name](new Element(new ElementParser(cursor)));
                         else if (null in onEndTag)
                             onEndTag[null](new Element(new ElementParser(cursor)));
                         break;
-                    case XMLKind.PROCESSING_INSTRUCTION:
+                    case XMLKind.processingInstruction:
                         if (onPI != null)
-                            onPI(cursor.getAll);
+                            onPI(cursor.wholeContent);
                         break;
-                    case XMLKind.TEXT:
+                    case XMLKind.text:
                         if (onTextRaw != null)
-                            onTextRaw(cursor.getAll);
+                            onTextRaw(cursor.wholeContent);
                         if (onText != null)
-                            onText(cursor.getAll);
+                            onText(cursor.wholeContent);
                         break;
-                    case XMLKind.COMMENT:
+                    case XMLKind.comment:
                         if (onComment != null)
-                            onComment(cursor.getAll);
+                            onComment(cursor.wholeContent);
                         break;
-                    case XMLKind.CDATA:
+                    case XMLKind.cdata:
                         if (onCData != null)
-                            onCData(cursor.getAll);
+                            onCData(cursor.wholeContent);
                         break;
                     default:
                         break;
@@ -344,7 +344,7 @@ class Document: Element
         auto parser = new DocumentParser(s);
         parser.onStartTag[null] = (ElementParser parser)
         {
-            auto prologEnd = (parser.cursor.getAll.ptr - s.ptr) - 1;
+            auto prologEnd = (parser.cursor.wholeContent.ptr - s.ptr) - 1;
             prolog = s[0..prologEnd];
             super.parse(parser);
         };

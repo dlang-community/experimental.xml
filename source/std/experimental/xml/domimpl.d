@@ -76,7 +76,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             auto doctype = cast(DocumentType)_doctype;
             if (_doctype && !doctype)
-                throw allocator.multiVersionMake!DOMException(this, dom.ExceptionCode.WRONG_DOCUMENT);
+                throw allocator.multiVersionMake!DOMException(this, dom.ExceptionCode.wrongDocument);
 
             auto doc = allocator.multiVersionMake!Document(this);
             doc._ownerDocument = doc;
@@ -86,7 +86,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             if (namespaceURI)
             {
                 if (!qualifiedName)
-                    throw allocator.multiVersionMake!DOMException(this, dom.ExceptionCode.NAMESPACE);
+                    throw allocator.multiVersionMake!DOMException(this, dom.ExceptionCode.namespace);
                 doc.appendChild(doc.createElementNS(namespaceURI, qualifiedName));
             }
             else if (qualifiedName)
@@ -252,10 +252,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
                 auto other = cast(Node)_other;
                 if (!other)
-                    return Ret!(dom.DocumentPosition.DISCONNECTED);
+                    return Ret!(dom.DocumentPosition.disconnected);
 
                 if (this is other)
-                    return Ret!(dom.DocumentPosition.NONE);
+                    return Ret!(dom.DocumentPosition.none);
 
                 auto node1 = other;
                 auto node2 = this;
@@ -272,9 +272,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         foreach (attr; (cast(Element)node2).attributes) with (dom.DocumentPosition)
                         {
                             if (attr is attr1)
-                                return Ret!IMPLEMENTATION_SPECIFIC | Ret!PRECEDING;
+                                return Ret!implementationSpecific | Ret!preceding;
                             else if (attr is attr2)
-                                return Ret!IMPLEMENTATION_SPECIFIC | Ret!FOLLOWING;
+                                return Ret!implementationSpecific | Ret!following;
                         }
                     }
                 }
@@ -295,9 +295,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (root1 !is root2) with (dom.DocumentPosition)
                 {
                     if (cast(void*)root1 < cast(void*)root2)
-                        return Ret!DISCONNECTED | Ret!IMPLEMENTATION_SPECIFIC | Ret!PRECEDING;
+                        return Ret!disconnected | Ret!implementationSpecific | Ret!preceding;
                     else
-                        return Ret!DISCONNECTED | Ret!IMPLEMENTATION_SPECIFIC | Ret!FOLLOWING;
+                        return Ret!disconnected | Ret!implementationSpecific | Ret!following;
                 }
 
                 bool swapped = depth1 < depth2;
@@ -315,9 +315,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (node1 is node2) with (dom.DocumentPosition)
                 {
                     if (swapped)
-                        return Ret!CONTAINS | Ret!PRECEDING;
+                        return Ret!contains | Ret!preceding;
                     else
-                        return Ret!CONTAINED_BY | Ret!FOLLOWING;
+                        return Ret!containedBy | Ret!following;
                 }
                 while(true)
                 {
@@ -327,9 +327,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         {
                             node1 = node1.nextSibling;
                             if (node1 is node2)
-                                return Ret!(dom.DocumentPosition.PRECEDING);
+                                return Ret!(dom.DocumentPosition.preceding);
                         }
-                        return Ret!(dom.DocumentPosition.FOLLOWING);
+                        return Ret!(dom.DocumentPosition.following);
                     }
                     node1 = node1.parentNode;
                     node2 = node2.parentNode;
@@ -349,7 +349,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             Element parentElement()
             {
                 auto parent = parentNode;
-                while (parent && parent.nodeType != dom.NodeType.ELEMENT)
+                while (parent && parent.nodeType != dom.NodeType.element)
                     parent = parent.parentNode;
                 return cast(Element)parent;
             }
@@ -359,7 +359,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     auto value = data.value;
                     // putting data.value directly in the following line causes an error; should investigate further
-                    value(dom.UserDataOperation.NODE_CLONED, data.key, userData[data.key], this, dest);
+                    value(dom.UserDataOperation.nodeCloned, data.key, userData[data.key], this, dest);
                 }
             }
         }
@@ -384,19 +384,19 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
             Node insertBefore(dom.Node!DOMString _newChild, dom.Node!DOMString _refChild)
             {
-                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
             }
             Node replaceChild(dom.Node!DOMString newChild, dom.Node!DOMString oldChild)
             {
-                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
             }
             Node removeChild(dom.Node!DOMString oldChild)
             {
-                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
             }
             Node appendChild(dom.Node!DOMString newChild)
             {
-                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
             }
             bool hasChildNodes() const { return false; }
         }
@@ -440,12 +440,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ENTITY:
-                    case NOTATION:
-                    case DOCUMENT_FRAGMENT:
-                    case DOCUMENT_TYPE:
+                    case entity:
+                    case notation:
+                    case documentFragment:
+                    case documentType:
                         return null;
-                    case ATTRIBUTE:
+                    case attribute:
                         Attr attr = cast(Attr)this;
                         if (attr.ownerElement)
                             return attr.ownerElement.lookupNamespacePrefix(namespaceURI, attr.ownerElement);
@@ -461,12 +461,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ENTITY:
-                    case NOTATION:
-                    case DOCUMENT_TYPE:
-                    case DOCUMENT_FRAGMENT:
+                    case entity:
+                    case notation:
+                    case documentType:
+                    case documentFragment:
                         return null;
-                    case ATTRIBUTE:
+                    case attribute:
                         auto attr = cast(Attr)this;
                         if (attr.ownerElement)
                             return attr.ownerElement.lookupNamespaceURI(prefix);
@@ -483,12 +483,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 switch (nodeType) with (dom.NodeType)
                 {
-                    case ENTITY:
-                    case NOTATION:
-                    case DOCUMENT_TYPE:
-                    case DOCUMENT_FRAGMENT:
+                    case entity:
+                    case notation:
+                    case documentType:
+                    case documentFragment:
                         return false;
-                    case ATTRIBUTE:
+                    case attribute:
                         auto attr = cast(Attr)this;
                         if (attr.ownerElement)
                             return attr.ownerElement.isDefaultNamespace(namespaceURI);
@@ -583,20 +583,20 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 if (!_refChild)
                     return appendChild(_newChild);
 
                 auto newChild = cast(Node)_newChild;
                 auto refChild = cast(Node)_refChild;
                 if (!newChild || !refChild || newChild.ownerDocument !is ownerDocument)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.WRONG_DOCUMENT);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.wrongDocument);
                 if (this is newChild || newChild.isAncestor(this) || newChild is refChild)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
                 if (refChild.parentNode !is this)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
 
-                if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
+                if (newChild.nodeType == dom.NodeType.documentFragment)
                 {
                     for (auto child = rebindable(newChild); child !is null; child = child.nextSibling)
                         insertBefore(child, refChild);
@@ -626,10 +626,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 auto oldChild = cast(Node)_oldChild;
                 if (!oldChild || oldChild.parentNode !is this)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
 
                 if (oldChild is firstChild)
                     _firstChild = oldChild.nextSibling;
@@ -650,16 +650,16 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 auto newChild = cast(Node)_newChild;
                 if (!newChild || newChild.ownerDocument !is ownerDocument)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.WRONG_DOCUMENT);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.wrongDocument);
                 if (this is newChild || newChild.isAncestor(this))
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
                 if (newChild.parentNode !is null)
                     newChild.parentNode.removeChild(newChild);
 
-                if (newChild.nodeType == dom.NodeType.DOCUMENT_FRAGMENT)
+                if (newChild.nodeType == dom.NodeType.documentFragment)
                 {
                     for (auto node = rebindable(newChild.firstChild); node !is null; node = node.nextSibling)
                         appendChild(node);
@@ -700,8 +700,8 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 auto result = Appender!(typeof(this.textContent()[0]), typeof(*allocator))(allocator);
                 for (auto child = rebindable(firstChild); child !is null; child = child.nextSibling)
                 {
-                    if (child.nodeType != dom.NodeType.COMMENT &&
-                        child.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
+                    if (child.nodeType != dom.NodeType.comment &&
+                        child.nodeType != dom.NodeType.processingInstruction)
                     {
                         result.put(child.textContent);
                     }
@@ -712,7 +712,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
 
                 while (firstChild)
                     removeChild(firstChild);
@@ -742,7 +742,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.DOCUMENT_FRAGMENT; }
+            @property dom.NodeType nodeType() { return dom.NodeType.documentFragment; }
             @property DOMString nodeName() { return "#document-fragment"; }
         }
     }
@@ -846,7 +846,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 Element find(Node node)
                 {
-                    if (node.nodeType == dom.NodeType.ELEMENT && node.hasAttributes)
+                    if (node.nodeType == dom.NodeType.element && node.hasAttributes)
                         foreach (attr; node.attributes)
                         {
                             if (attr.isId && attr.nodeValue == elementId)
@@ -867,7 +867,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 switch (node.nodeType) with (dom.NodeType)
                 {
-                    case ATTRIBUTE:
+                    case attribute:
                         Attr result;
                         if (node.prefix)
                             result = createAttributeNS(node.namespaceURI, node.nodeName);
@@ -877,7 +877,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         foreach (i; 0..children.length)
                             result.appendChild(importNode(children.item(i), true));
                         return result;
-                    case DOCUMENT_FRAGMENT:
+                    case documentFragment:
                         auto result = createDocumentFragment();
                         if (deep)
                         {
@@ -886,7 +886,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                                 result.appendChild(importNode(children.item(i), deep));
                         }
                         return result;
-                    case ELEMENT:
+                    case element:
                         Element result;
                         if (node.prefix)
                             result = createElementNS(node.namespaceURI, node.nodeName);
@@ -909,10 +909,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                                 result.appendChild(importNode(children.item(i), true));
                         }
                         return result;
-                    case PROCESSING_INSTRUCTION:
+                    case processingInstruction:
                         return createProcessingInstruction(node.nodeName, node.nodeValue);
                     default:
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_SUPPORTED);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notSupported);
                 }
             }
             Node adoptNode(dom.Node!DOMString source) { return null; }
@@ -929,7 +929,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (ver == "1.0" || ver == "1.1")
                     _xmlVersion = ver;
                 else
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_SUPPORTED);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notSupported);
             }
 
             @property bool strictErrorChecking() { return _strictErrorChecking; }
@@ -944,11 +944,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 auto node = cast(Node)n;
                 if (!node || node.ownerDocument !is this)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.WRONG_DOCUMENT);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.wrongDocument);
 
                 auto type = node.nodeType;
-                if (type != dom.NodeType.ELEMENT && type != dom.NodeType.ATTRIBUTE)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_SUPPORTED);
+                if (type != dom.NodeType.element && type != dom.NodeType.attribute)
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notSupported);
 
                 auto withNs = (cast(NodeWithNamespace)node);
                 withNs.setQualifiedName(qualifiedName);
@@ -967,7 +967,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.DOCUMENT; }
+            @property dom.NodeType nodeType() { return dom.NodeType.document; }
             @property DOMString nodeName() { return "#document"; }
 
             DOMString lookupPrefix(DOMString namespaceURI)
@@ -988,65 +988,65 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         {
             Node insertBefore(dom.Node!DOMString newChild, dom.Node!DOMString refChild)
             {
-                if (newChild.nodeType == dom.NodeType.ELEMENT)
+                if (newChild.nodeType == dom.NodeType.element)
                 {
                     if (_root)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.insertBefore(newChild, refChild);
                     _root = cast(Element)newChild;
                     return res;
                 }
-                else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
+                else if (newChild.nodeType == dom.NodeType.documentType)
                 {
                     if (_doctype)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.insertBefore(newChild, refChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
-                else if (newChild.nodeType != dom.NodeType.COMMENT &&
-                         newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                else if (newChild.nodeType != dom.NodeType.comment &&
+                         newChild.nodeType != dom.NodeType.processingInstruction)
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
                 else
                     return super.insertBefore(newChild, refChild);
             }
             Node replaceChild(dom.Node!DOMString newChild, dom.Node!DOMString oldChild)
             {
-                if (newChild.nodeType == dom.NodeType.ELEMENT)
+                if (newChild.nodeType == dom.NodeType.element)
                 {
                     if (oldChild !is _root)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.replaceChild(newChild, oldChild);
                     _root = cast(Element)newChild;
                     return res;
                 }
-                else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
+                else if (newChild.nodeType == dom.NodeType.documentType)
                 {
                     if (oldChild !is _doctype)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.replaceChild(newChild, oldChild);
                     _doctype = cast(DocumentType)newChild;
                     return res;
                 }
-                else if (newChild.nodeType != dom.NodeType.COMMENT &&
-                         newChild.nodeType != dom.NodeType.PROCESSING_INSTRUCTION)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                else if (newChild.nodeType != dom.NodeType.comment &&
+                         newChild.nodeType != dom.NodeType.processingInstruction)
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
                 else
                     return super.replaceChild(newChild, oldChild);
             }
             Node removeChild(dom.Node!DOMString oldChild)
             {
-                if (oldChild.nodeType == dom.NodeType.ELEMENT)
+                if (oldChild.nodeType == dom.NodeType.element)
                 {
                     auto res = super.removeChild(oldChild);
                     _root = null;
                     return res;
                 }
-                else if (oldChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
+                else if (oldChild.nodeType == dom.NodeType.documentType)
                 {
                     auto res = super.removeChild(oldChild);
                     _doctype = null;
@@ -1057,19 +1057,19 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             Node appendChild(dom.Node!DOMString newChild)
             {
-                if (newChild.nodeType == dom.NodeType.ELEMENT)
+                if (newChild.nodeType == dom.NodeType.element)
                 {
                     if (_root)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.appendChild(newChild);
                     _root = cast(Element)newChild;
                     return res;
                 }
-                else if (newChild.nodeType == dom.NodeType.DOCUMENT_TYPE)
+                else if (newChild.nodeType == dom.NodeType.documentType)
                 {
                     if (_doctype)
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.hierarchyRequest);
 
                     auto res = super.appendChild(newChild);
                     _doctype = cast(DocumentType)newChild;
@@ -1097,7 +1097,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 static if (ns)
                 {
-                    if (item.nodeType == dom.NodeType.ELEMENT)
+                    if (item.nodeType == dom.NodeType.element)
                     {
                         auto elem = cast(Element)item;
                         if (elem.namespaceURI == namespaceURI && elem.localName == localName)
@@ -1105,7 +1105,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     }
                 }
                 else
-                    if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                    if (item.nodeType == dom.NodeType.element && item.nodeName == tagname)
                         return cast(Element)item;
 
                 auto res = findNext(item);
@@ -1122,7 +1122,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 
                 static if (ns)
                 {
-                    if (item.nodeType == dom.NodeType.ELEMENT)
+                    if (item.nodeType == dom.NodeType.element)
                     {
                         auto elem = cast(Element)item;
                         if (elem.namespaceURI == namespaceURI && elem.localName == localName)
@@ -1130,7 +1130,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     }
                 }
                 else
-                    if (item.nodeType == dom.NodeType.ELEMENT && item.nodeName == tagname)
+                    if (item.nodeType == dom.NodeType.element && item.nodeName == tagname)
                         return cast(Element)item;
 
                 return findNext(item);
@@ -1189,7 +1189,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             DOMString substringData(size_t offset, size_t count)
             {
                 if (offset > length)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.indexSize);
 
                 import std.algorithm : min;
                 return _data[offset..min(offset + count, length)];
@@ -1209,7 +1209,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 import std.traits : Unqual;
 
                 if (offset > length)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.indexSize);
 
                 auto newData = allocator.makeArray!(Unqual!(typeof(_data[0])))(_data.length + arg.length);
                 newData[0 .. offset] = _data[0 .. offset];
@@ -1223,7 +1223,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 import std.traits : Unqual;
 
                 if (offset > length)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.indexSize);
 
                 import std.algorithm : min;
                 auto end = min(offset + count, length);
@@ -1239,7 +1239,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 import std.traits : Unqual;
 
                 if (offset > length)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.indexSize);
 
                 import std.algorithm : min;
                 auto end = min(offset + count, length);
@@ -1261,7 +1261,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 data = newVal;
             }
             @property DOMString textContent() { return data; }
@@ -1269,7 +1269,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 data = newVal;
             }
         }
@@ -1328,7 +1328,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
 
                 import std.traits : Unqual;
 
@@ -1392,14 +1392,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.ATTRIBUTE; }
+            @property dom.NodeType nodeType() { return dom.NodeType.attribute; }
 
             @property DOMString nodeValue() { return value; }
             @property void nodeValue(DOMString newVal)
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 value = newVal;
             }
 
@@ -1500,7 +1500,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else if (_attrs.getNamedItem(oldAttr.name) is oldAttr)
                     return _attrs.removeNamedItem(oldAttr.name);
 
-                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
             }
 
             /++
@@ -1575,7 +1575,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (attr)
                     attr._isId = isId;
                 else
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
             }
             /++
             +   Implementation of $(LINK2 ../dom/Element.setIdAttributeNS,
@@ -1587,7 +1587,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 if (attr)
                     attr._isId = isId;
                 else
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
             }
             /++
             +   Implementation of $(LINK2 ../dom/Element.getAttribute,
@@ -1600,7 +1600,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else if (_attrs.getNamedItem(idAttr.name) is idAttr)
                     (cast(Attr)idAttr)._isId = isId;
                 else
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
             }
 
             /++
@@ -1663,7 +1663,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.ELEMENT; }
+            @property dom.NodeType nodeType() { return dom.NodeType.element; }
 
             @property Map attributes() { return _attrs.length > 0 ? _attrs : null; }
             bool hasAttributes() { return _attrs.length > 0; }
@@ -1754,11 +1754,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 Attr setNamedItem(dom.Node!DOMString arg)
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.WRONG_DOCUMENT);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.wrongDocument);
 
                     Attr attr = cast(Attr)arg;
                     if (!attr)
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.hierarchyRequest);
 
                     if (attr._previousAttr)
                         attr._previousAttr._nextSibling = attr._nextAttr;
@@ -1800,7 +1800,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         return res;
                     }
                     else
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.NOT_FOUND);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.notFound);
                 }
 
                 Attr getNamedItemNS(DOMString namespaceURI, DOMString localName)
@@ -1813,11 +1813,11 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 Attr setNamedItemNS(dom.Node!DOMString arg)
                 {
                     if (arg.ownerDocument !is this.outer.ownerDocument)
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.WRONG_DOCUMENT);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.wrongDocument);
 
                     Attr attr = cast(Attr)arg;
                     if (!attr)
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.HIERARCHY_REQUEST);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.hierarchyRequest);
 
                     if (attr._previousAttr)
                         attr._previousAttr._nextSibling = attr._nextAttr;
@@ -1859,7 +1859,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         return res;
                     }
                     else
-                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.NOT_FOUND);
+                        throw allocator.multiVersionMake!DOMException(this.outer.outer, dom.ExceptionCode.notFound);
                 }
             }
             private
@@ -1895,7 +1895,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             Text splitText(size_t offset)
             {
                 if (offset > data.length)
-                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.INDEX_SIZE);
+                    throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.indexSize);
                 auto second = ownerDocument.createTextNode(data[offset..$]);
                 data = data[0..offset];
                 if (parentNode)
@@ -1928,10 +1928,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         if (node.previousSibling)
                             switch (node.previousSibling.nodeType) with (dom.NodeType)
                             {
-                                case TEXT:
-                                case CDATA_SECTION:
+                                case text:
+                                case cdataSection:
                                     return cast(Text) node.previousSibling;
-                                case ENTITY_REFERENCE:
+                                case entityReference:
                                     if (cast(Text)(node.previousSibling.lastChild))
                                         return cast(Text) node.previousSibling.lastChild;
                                     else
@@ -1941,7 +1941,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                             }
                         node = node.parentNode;
                     }
-                    while (node && node.nodeType == dom.NodeType.ENTITY_REFERENCE);
+                    while (node && node.nodeType == dom.NodeType.entityReference);
                     return null;
                 }
                 Text findNextText(Text text)
@@ -1952,10 +1952,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         if (node.nextSibling)
                             switch (node.nextSibling.nodeType) with (dom.NodeType)
                             {
-                                case TEXT:
-                                case CDATA_SECTION:
+                                case text:
+                                case cdataSection:
                                     return cast(Text) node.nextSibling;
-                                case ENTITY_REFERENCE:
+                                case entityReference:
                                     if (cast(Text)(node.nextSibling.firstChild))
                                         return cast(Text) node.nextSibling.firstChild;
                                     else
@@ -1965,7 +1965,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                             }
                         node = node.parentNode;
                     }
-                    while (node && node.nodeType == dom.NodeType.ENTITY_REFERENCE);
+                    while (node && node.nodeType == dom.NodeType.entityReference);
                     return null;
                 }
 
@@ -1998,10 +1998,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     foreach (child; reference.childNodes)
                         switch (child.nodeType) with (dom.NodeType)
                         {
-                            case TEXT:
-                            case CDATA_SECTION:
+                            case text:
+                            case cdataSection:
                                 break;
-                            case ENTITY_REFERENCE:
+                            case entityReference:
                                 if (!hasOnlyText(reference))
                                     return false;
                                 break;
@@ -2015,10 +2015,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     if (!reference.firstChild) return false;
                     switch (reference.firstChild.nodeType) with (dom.NodeType)
                     {
-                        case TEXT:
-                        case CDATA_SECTION:
+                        case text:
+                        case cdataSection:
                             return true;
-                        case ENTITY_REFERENCE:
+                        case entityReference:
                             return startsWithText(reference.firstChild);
                         default:
                             return false;
@@ -2029,10 +2029,10 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                     if (!reference.lastChild) return false;
                     switch (reference.lastChild.nodeType) with (dom.NodeType)
                     {
-                        case TEXT:
-                        case CDATA_SECTION:
+                        case text:
+                        case cdataSection:
                             return true;
-                        case ENTITY_REFERENCE:
+                        case entityReference:
                             return endsWithText(reference.lastChild);
                         default:
                             return false;
@@ -2040,19 +2040,19 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 }
 
                 Node current;
-                if (parentNode && parentNode.nodeType == dom.NodeType.ENTITY_REFERENCE)
+                if (parentNode && parentNode.nodeType == dom.NodeType.entityReference)
                 {
                     current = parentNode;
-                    while (current.parentNode && current.parentNode.nodeType == dom.NodeType.ENTITY_REFERENCE)
+                    while (current.parentNode && current.parentNode.nodeType == dom.NodeType.entityReference)
                         current = current.parentNode;
 
                     if (!hasOnlyText(current))
                         throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                      dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                      dom.ExceptionCode.noModificationAllowed);
                 }
                 else if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 else
                     current = this;
 
@@ -2060,13 +2060,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 auto node = current.previousSibling;
                 while (node)
                 {
-                    if (node.nodeType == dom.NodeType.ENTITY_REFERENCE)
+                    if (node.nodeType == dom.NodeType.entityReference)
                     {
                         if (endsWithText(node))
                         {
                             if (!hasOnlyText(node))
                                 throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                          dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                          dom.ExceptionCode.noModificationAllowed);
                         }
                         else break;
                     }
@@ -2079,13 +2079,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 node = current.nextSibling;
                 while (node)
                 {
-                    if (node.nodeType == dom.NodeType.ENTITY_REFERENCE)
+                    if (node.nodeType == dom.NodeType.entityReference)
                     {
                         if (startsWithText(node))
                         {
                             if (!hasOnlyText(node))
                                 throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                          dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                          dom.ExceptionCode.noModificationAllowed);
                         }
                         else break;
                     }
@@ -2101,7 +2101,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 foreach (i; 0..nextToKill)
                     current.parentNode.removeChild(current.nextSibling);
 
-                if (current.nodeType == dom.NodeType.ENTITY_REFERENCE)
+                if (current.nodeType == dom.NodeType.entityReference)
                 {
                     if (current.parentNode && newText)
                     {
@@ -2124,7 +2124,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.TEXT; }
+            @property dom.NodeType nodeType() { return dom.NodeType.text; }
             @property DOMString nodeName() { return "#text"; }
 
             Text cloneNode(bool deep)
@@ -2142,7 +2142,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.COMMENT; }
+            @property dom.NodeType nodeType() { return dom.NodeType.comment; }
             @property DOMString nodeName() { return "#comment"; }
 
             Comment cloneNode(bool deep)
@@ -2192,7 +2192,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.DOCUMENT_TYPE; }
+            @property dom.NodeType nodeType() { return dom.NodeType.documentType; }
             @property DOMString nodeName() { return _name; }
         }
     }
@@ -2202,7 +2202,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.CDATA_SECTION; }
+            @property dom.NodeType nodeType() { return dom.NodeType.cdataSection; }
             @property DOMString nodeName() { return "#cdata-section"; }
 
             CDATASection cloneNode(bool deep)
@@ -2237,14 +2237,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.PROCESSING_INSTRUCTION; }
+            @property dom.NodeType nodeType() { return dom.NodeType.processingInstruction; }
             @property DOMString nodeName() { return target; }
             @property DOMString nodeValue() { return _data; }
             @property void nodeValue(DOMString newVal)
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 _data = newVal;
             }
 
@@ -2253,7 +2253,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 if (readonly)
                     throw allocator.multiVersionMake!DOMException(this.outer,
-                                                                  dom.ExceptionCode.NO_MODIFICATION_ALLOWED);
+                                                                  dom.ExceptionCode.noModificationAllowed);
                 _data = newVal;
             }
 
@@ -2274,7 +2274,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         // inherited from Node
         override
         {
-            @property dom.NodeType nodeType() { return dom.NodeType.ENTITY_REFERENCE; }
+            @property dom.NodeType nodeType() { return dom.NodeType.entityReference; }
             @property DOMString nodeName() { return _ent_name; }
             @property bool readonly() { return true; }
         }
@@ -2335,7 +2335,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         mixin("case getUDAs!(Params." ~ field ~ ", Config)[0].name: assign!(field, type)(value); \n");
                     }
                     default:
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
                 }
             }
             /++
@@ -2352,7 +2352,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                                     "return dom.UserData(params." ~ field ~ "); \n");
                     }
                     default:
-                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.NOT_FOUND);
+                        throw allocator.multiVersionMake!DOMException(this.outer, dom.ExceptionCode.notFound);
                 }
             }
             /++
@@ -2440,7 +2440,7 @@ unittest
 
     attr.value = "myAttrValue";
     assert(attr.childNodes.length == 1);
-    assert(attr.firstChild.nodeType == dom.NodeType.TEXT);
+    assert(attr.firstChild.nodeType == dom.NodeType.text);
     assert(attr.firstChild.nodeValue == attr.value);
 
     auto elem = doc.createElementNS("myOtherNamespace", "myOtherPrefix:myOtherElement");
@@ -2464,7 +2464,7 @@ unittest
     auto pi = doc.createProcessingInstruction("myPITarget", "myPIData");
     elem.appendChild(pi);
     assert(elem.lastChild is pi);
-    auto cdata = doc.createCDATASection("myCDATAContent");
+    auto cdata = doc.createCDATASection("mycdataContent");
     elem.replaceChild(cdata, pi);
     assert(elem.lastChild is cdata);
     elem.removeChild(cdata);
@@ -2532,15 +2532,15 @@ unittest
     enum Pos(dom.DocumentPosition pos) = cast(BitFlags!(dom.DocumentPosition))pos;
     with (dom.DocumentPosition)
     {
-        assert(books[1].compareDocumentPosition(authors[2]) == Pos!FOLLOWING);
-        assert(authors[2].compareDocumentPosition(titles[0]) == Pos!PRECEDING);
-        assert(books[1].compareDocumentPosition(titles[1]) == (Pos!CONTAINED_BY | Pos!FOLLOWING));
-        assert(authors[0].compareDocumentPosition(books[0]) == (Pos!CONTAINS | Pos!PRECEDING));
-        assert(titles[2].compareDocumentPosition(titles[2]) == Pos!NONE);
+        assert(books[1].compareDocumentPosition(authors[2]) == Pos!following);
+        assert(authors[2].compareDocumentPosition(titles[0]) == Pos!preceding);
+        assert(books[1].compareDocumentPosition(titles[1]) == (Pos!containedBy | Pos!following));
+        assert(authors[0].compareDocumentPosition(books[0]) == (Pos!contains | Pos!preceding));
+        assert(titles[2].compareDocumentPosition(titles[2]) == Pos!none);
         assert(books[2].attributes[0].compareDocumentPosition(books[2].attributes[1])
-                == (Pos!IMPLEMENTATION_SPECIFIC | Pos!FOLLOWING));
+                == (Pos!implementationSpecific | Pos!following));
         assert(books[2].attributes[1].compareDocumentPosition(books[2].attributes[0])
-                == (Pos!IMPLEMENTATION_SPECIFIC | Pos!PRECEDING));
+                == (Pos!implementationSpecific | Pos!preceding));
     }
 
     assert(books[1].cloneNode(true).childNodes[1].isEqualNode(authors[1]));

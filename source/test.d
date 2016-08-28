@@ -98,11 +98,11 @@ Results handleTestcases(T)(string directory, ref T cursor, int depth)
     auto results = Results();
     do
     {
-        if (cursor.getName() == "TESTCASES")
+        if (cursor.name == "TESTCASES")
         {
             writeIndent(depth);
             write("TESTCASES");
-            foreach (att; cursor.getAttributes())
+            foreach (att; cursor.attributes)
                 if (att.name == "PROFILE")
                     write(" -- ", att.value);
             writeln();
@@ -113,7 +113,7 @@ Results handleTestcases(T)(string directory, ref T cursor, int depth)
                 cursor.exit();
             }
         }
-        else if (cursor.getName() == "TEST")
+        else if (cursor.name == "TEST")
         {
             results += handleTest(directory, cursor, depth);
         }
@@ -129,7 +129,7 @@ Results handleTest(T)(string directory, ref T cursor, int depth)
     auto result = Results();
     
     string file, kind;
-    foreach (att; cursor.getAttributes())
+    foreach (att; cursor.attributes)
         if (att.name == "ENTITIES" && att.value != "none")
         {
             result.totals["skipped"]++;
@@ -208,7 +208,7 @@ class MyException: Exception
 // callback used to ignore missing xml declaration, while throwing on invalid attributes
 void uselessCallback(CursorError err)
 {
-    if (err != CursorError.MISSING_XML_DECLARATION)
+    if (err != CursorError.missingXMLDeclaration)
         throw new MyException("AAAAHHHHH");
 }
 
@@ -286,7 +286,7 @@ bool parseFile(string filename, ref bool lint)
     cursor.setSource(text);
     
     lint = false;
-    foreach (attr; cursor.getAttributes)
+    foreach (attr; cursor.attributes)
         if (attr.name == "version" && attr.value == "1.0")
             lint = true;
     
