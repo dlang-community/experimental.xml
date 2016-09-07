@@ -91,9 +91,9 @@ $('#symbolSearchPane').show();
 </p>
 <section><p>This is completely equivalent to
 </p>
-<pre class="code"><code class="lang-d"><span class="kwd">auto </span><span class="pln">parser </span><span class="pun">=
+<pre class="code"><code class="lang-d"><span class="kwd">auto <a href="../../../../std/experimental/xml/parser/parser.html"></span><span class="pln">parser</span></a><span class="pln"> </span><span class="pun">=
      </span><span class="pln">chooseLexer</span><span class="pun">!(</span><span class="typ">InputType</span><span class="pun">, </span><span class="pln">reuseBuffer</span><span class="pun">)(<a href="../../../../std/experimental/xml/parser/chooseParser.html#alloc"></span><span class="pln">alloc</span></a><span class="pun">, <a href="../../../../std/experimental/xml/parser/chooseParser.html#handler"></span><span class="pln">handler</span></a><span class="pun">)
-    <a href="../../../../std/experimental/xml/parser/parse.html"></span><wbr/><span class="pun">.</span><span class="pln">parse</span></a><span class="pun">!(</span><span class="pln">preserveWhitespace</span><span class="pun">)(<a href="../../../../std/experimental/xml/parser/chooseParser.html#handler"></span><span class="pln">handler</span></a><span class="pun">)</span></code></pre>
+    <a href="../../../../std/experimental/xml/parser/parser.html"></span><wbr/><span class="pun">.</span><span class="pln">parser</span></a><span class="pun">!(</span><span class="pln">preserveWhitespace</span><span class="pun">)(<a href="../../../../std/experimental/xml/parser/chooseParser.html#handler"></span><span class="pln">handler</span></a><span class="pun">)</span></code></pre>
 </section>
 
 					<section>
@@ -104,34 +104,30 @@ $('#symbolSearchPane').show();
 								<br/>
 &nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">Alloc</span> <span class="pln">alloc</span><span class="pun">,</span>
 								<br/>
-&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
-								<br/>
-<span class="pun">)</span><span class="pun">;</span>
-								<br/>
-								<br/>
-<span class="kwd">auto</span> <span class="pln">chooseParser</span><span class="pun">(</span><span class="kwd">alias </span><span class="typ">InputType</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span><span class="pun">(</span>
-								<br/>
-&nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">Alloc</span> <span class="pln">alloc</span><span class="pun">,</span>
-								<br/>
-&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span>
 								<br/>
 <span class="pun">)</span><span class="pun">;</span>
 								<br/>
 								<br/>
 <span class="kwd">auto</span> <span class="pln">chooseParser</span><span class="pun">(</span><span class="typ">InputType</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span>
 								<br/>
 <span class="pun">)</span>
 								<br/>
-<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">Alloc<wbr/></span><span class="pun">.</span><span class="pln">instance</span><span class="pun">))</span><span class="pun">);</span>
+<span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">Alloc<wbr/></span><span class="pun">.</span><span class="pln">instance</span><span class="pun">)) &amp;&amp; </span><span class="pln">isSomeFunction</span><span class="pun">!</span><span class="typ">ErrorHandler</span><span class="pun">);</span>
 								<br/>
 								<br/>
-<span class="kwd">auto</span> <span class="pln">chooseParser</span><span class="pun">(</span><span class="kwd">alias </span><span class="typ">InputType</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span><span class="pun">(</span>
+<span class="kwd">auto</span> <span class="pln">chooseParser</span><span class="pun">(</span><span class="typ">InputType</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">)</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+&nbsp;&nbsp;<span class="kwd">ref </span><span class="typ">Alloc</span> <span class="pln">alloc</span>
 								<br/>
 <span class="pun">)</span>
+								<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="pun">!</span><span class="pln">isSomeFunction</span><span class="pun">!</span><span class="typ">Alloc</span><span class="pun">);</span>
+								<br/>
+								<br/>
+<span class="kwd">auto</span> <span class="pln">chooseParser<span class="pun">(</span><span class="typ">InputType</span><span class="pun">, </span><span class="typ">Alloc</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"reuseBuffer"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">reuseBuffer</span><span class="pun">)</span><span class="pun">()</span>
 								<br/>
 <span class="kwd">if</span> <span class="pun">(</span><span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="typ">Alloc<wbr/></span><span class="pun">.</span><span class="pln">instance</span><span class="pun">))</span><span class="pun">);</span>
 							</code>

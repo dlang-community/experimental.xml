@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="UTF-8"/>
-		<title>Function Cursor.setSource</title>
+		<title>Function parser</title>
 		<link rel="stylesheet" type="text/css" href="../../../../styles/ddox.css"/>
 		<link rel="stylesheet" href="../../../../prettify/prettify.css" type="text/css"/>
 		<script type="text/javascript" src="../../../../scripts/jquery.js">/**/</script>
@@ -24,7 +24,7 @@
 								<a href="../../../../std/experimental/xml.html" class=" module">Package members</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/cursor.html" class="selected module">cursor</a>
+								<a href="../../../../std/experimental/xml/cursor.html" class=" module">cursor</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/dom.html" class=" module">dom</a>
@@ -51,7 +51,7 @@
 								<a href="../../../../std/experimental/xml/lexers.html" class=" module">lexers</a>
 							</li>
 							<li>
-								<a href="../../../../std/experimental/xml/parser.html" class=" module">parser</a>
+								<a href="../../../../std/experimental/xml/parser.html" class="selected module">parser</a>
 							</li>
 							<li>
 								<a href="../../../../std/experimental/xml/sax.html" class=" module">sax</a>
@@ -85,23 +85,39 @@ $('#symbolSearchPane').show();
 				</div>
 		</nav>
 		<div id="main-contents">
-			<h1>Function Cursor.setSource</h1>
+			<h1>Function parser</h1>
 			<section>
-				<p>Initializes this cursor (and the underlying low level parser) with the given input.
+				<p>Returns an instance of <code class="lang-d"><a href="../../../std/experimental/xml/parser/Parser.html"><span class="typ"><a href="../../../../std/experimental/xml/parser/Parser.html"><span class="typ">Parser</span></a></span></a></code> from the given lexer.
 </p>
+<section></section>
 
 					<section>
 						<h3>Prototype</h3>
 						<div class="prototype">
 							<code class="lang-d">
-<span class="typ">void</span> <span class="pln">setSource</span><span class="pun">(</span>
+<span class="kwd">auto</span> <span class="pln">parser</span><span class="pun">(</span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">typecons<wbr/></span><span class="pun">.</span><span class="typ">Flag</span><span class="pun">!(</span><span class="str">"preserveWhitespace"</span><span class="pun">)<wbr/>.</span><span class="typ">Flag </span><span class="pln">preserveWhitespace</span><span class="pun">, </span><span class="pln">T</span><span class="pun">, </span><span class="typ">ErrorHandler</span><span class="pun">)</span><span class="pun">(</span>
 								<br/>
-&nbsp;&nbsp;<a href="../../../../std/experimental/xml/cursor/Cursor.InputType.html"><span class="typ">Cursor<wbr/></span><span class="pun">.<wbr/></span><span class="typ">InputType</span></a> <span class="pln">input</span>
+&nbsp;&nbsp;<span class="kwd">auto ref </span><span class="pln">T</span> <span class="pln">lexer</span><span class="pun">,</span>
 								<br/>
-<span class="pun">)</span><span class="pun">;</span>
+&nbsp;&nbsp;<span class="typ">ErrorHandler</span> <span class="pln">handler</span> <span class="pun">=</span> 
+								<br/>
+<span class="pun">)</span>
+								<br/>
+<span class="kwd">if</span> <span class="pun">(</span><span class="pln">isLexer</span><span class="pun">!</span><span class="pln">T</span><span class="pun">);</span>
 							</code>
 						</div>
 					</section>
+<section><h3>Parameters</h3>
+<table><col class="caption"><tr><th>Name</th><th>Description</th></tr>
+<tr><td id="preserveWhitespace">preserveWhitespace</td><td> whether the returned <code class="lang-d"><a href="../../../../std/experimental/xml/parser/Parser.html"><span class="typ">Parser</span></a></code> shall skip element content
+                            whitespace or return it as text nodes</td></tr>
+<tr><td id="lexer">lexer</td><td> the lexer to build this <code class="lang-d"><a href="../../../../std/experimental/xml/parser/Parser.html"><span class="typ">Parser</span></a></code> from</td></tr>
+</table>
+</section>
+<section><h3>Returns</h3>
+<p>A <code class="lang-d"><a href="../../../../std/experimental/xml/parser/Parser.html"><span class="typ">Parser</span></a></code> instance initialized with the given lexer
+</p>
+</section>
 
 			</section>
 			<section>

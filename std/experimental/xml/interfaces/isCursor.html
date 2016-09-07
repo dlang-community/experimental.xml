@@ -104,12 +104,9 @@ $('#symbolSearchPane').show();
 							<code class="lang-d">
 <span class="kwd">enum</span> <span class="pln">isCursor</span><span class="pun">(</span><span class="typ">CursorType</span><span class="pun">)</span> <span class="pun">=</span> <span class="kwd">is</span><span class="pun">(</span><span class="kwd">typeof</span><span class="pun">((</span><span class="kwd">inout </span><span class="typ">int </span><span class="pun">= </span><span class="lit">0</span><span class="pun">)
 {
-</span><span class="kwd">alias </span><span class="pln">T </span><span class="pun">= </span><span class="typ">CursorType<wbr/></span><span class="pun">.</span><span class="typ">InputType</span><span class="pun">;
 </span><span class="kwd">alias </span><span class="pln">S </span><span class="pun">= </span><span class="typ">CursorType<wbr/></span><span class="pun">.</span><span class="typ">StringType</span><span class="pun">;
 </span><span class="typ">CursorType </span><span class="pln">cursor</span><span class="pun">;
-</span><span class="pln">T input</span><span class="pun">;
 </span><span class="typ">bool </span><span class="pln">b</span><span class="pun">;
-</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
 </span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">atBeginning</span><span class="pun">;
 </span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">documentEnd</span><span class="pun">;
 </span><span class="pln">b </span><span class="pun">= </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">next</span><span class="pun">;
