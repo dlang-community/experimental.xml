@@ -359,7 +359,8 @@ unittest
     };
 
     auto cursor =
-         chooseParser!xml
+         xml
+        .parser
         .cursor
         .dtdChecker;
 

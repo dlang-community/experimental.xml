@@ -169,7 +169,8 @@ void buildOldDOM(string data)
 void buildDOM(string data)
 {
     auto builder =
-         chooseParser!data
+         data
+        .parser
         .cursor
         .domBuilder;
     builder.setSource(data);

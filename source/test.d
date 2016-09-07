@@ -220,7 +220,7 @@ void main()
 {
     auto cursor = 
          chooseLexer!string
-        .parse
+        .parser
         .cursor(&uselessCallback); // If an index is not well-formed, just tell us but continue parsing
     
     auto results = Results();
@@ -280,7 +280,8 @@ bool parseFile(string filename, ref bool lint)
     }
     
     auto cursor = 
-         chooseParser!text(() { throw new MyException("AAAAHHHHH"); })
+         text
+        .parser(() { throw new MyException("AAAAHHHHH"); })
         .cursor(&uselessCallback); // lots of tests do not have an xml declaration
     
     cursor.setSource(text);
