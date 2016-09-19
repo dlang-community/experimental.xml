@@ -4,14 +4,11 @@ language: d
 matrix:
   fast_finish: true
   include:
-    - d: dmd
+    - d: dmd-2.071.2
       env: PRIMARY="true"
-    - d: dmd-2.071.2-b3
-      env: PRIMARY="false"
     - d: ldc-1.1.0-beta2
       env: PRIMARY="false"
   allow_failures:
-    - d: dmd-2.071.2-b3
     - d: ldc-1.1.0-beta2
 
 script:
