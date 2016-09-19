@@ -92,7 +92,7 @@
 +           assert(0, "Missing XML declaration");
 +       else
 +           assert(0, "Invalid attributes syntax");
-+   }
++   };
 +
 +   // used by checkXMLNames, a pluggable validator
 +   auto callback2 = (string s) { assert(0, "Invalid XML element name"); }
