@@ -60,12 +60,8 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
         domImpl = impl;
     }
 
-    /++
-    +   Initializes this builder and the underlying components.
-    +/
-    void setSource(T.InputType input)
+    private void initialize()
     {
-        cursor.setSource(input);
         document = domImpl.createDocument(null, null, null);
 
         if (cursor.kind == XMLKind.document)
@@ -83,6 +79,15 @@ struct DOMBuilder(T, DOMImplementation = dom.DOMImplementation!(T.StringType))
                 }
 
         currentNode = document;
+    }
+
+    /++
+    +   Initializes this builder and the underlying components.
+    +/
+    void setSource(T.InputType input)
+    {
+        cursor.setSource(input);
+        initialize();
     }
 
     /++
@@ -212,6 +217,7 @@ auto domBuilder(CursorType, DOMImplementation)(auto ref CursorType cursor, DOMIm
     auto res = DOMBuilder!(CursorType, DOMImplementation)();
     res.cursor = cursor;
     res.domImpl = impl;
+    res.initialize;
     return res;
 }
 

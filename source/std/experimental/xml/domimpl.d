@@ -1091,28 +1091,34 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
         else
             private DOMString tagname;
 
-        private Element findNext(Node node)
+        private bool check(Node node)
         {
-            foreach (item; node.childNodes)
+            static if (ns)
             {
-                static if (ns)
+                if (node.nodeType == dom.NodeType.element)
                 {
-                    if (item.nodeType == dom.NodeType.element)
-                    {
-                        auto elem = cast(Element)item;
-                        if (elem.namespaceURI == namespaceURI && elem.localName == localName)
-                            return elem;
-                    }
+                    auto elem = cast(Element)node;
+                    return elem.namespaceURI == namespaceURI && elem.localName == localName;
                 }
                 else
-                    if (item.nodeType == dom.NodeType.element && item.nodeName == tagname)
-                        return cast(Element)item;
-
-                auto res = findNext(item);
-                if (res !is null)
-                    return res;
+                    return false;
             }
-            return findNextBack(node);
+            else
+                return node.nodeType == dom.NodeType.element && node.nodeName == tagname;
+        }
+
+        private Element findNext(Node node)
+        {
+            if (node.firstChild)
+            {
+                auto item = node.firstChild;
+                if (check(item))
+                    return cast(Element)item;
+                else
+                    return findNext(item);
+            }
+            else
+                return findNextBack(node);
         }
         private Element findNextBack(Node node)
         {
@@ -1120,25 +1126,13 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             {
                 auto item = node.nextSibling;
 
-                static if (ns)
-                {
-                    if (item.nodeType == dom.NodeType.element)
-                    {
-                        auto elem = cast(Element)item;
-                        if (elem.namespaceURI == namespaceURI && elem.localName == localName)
-                            return elem;
-                    }
-                }
+                if (check(item))
+                    return cast(Element)item;
                 else
-                    if (item.nodeType == dom.NodeType.element && item.nodeName == tagname)
-                        return cast(Element)item;
-
-                return findNext(item);
+                    return findNext(item);
             }
-            else if (node.parentNode && node.parentNode !is root)
-            {
+            else if (node.parentNode && node.parentNode !is node.ownerDocument)
                 return findNextBack(node.parentNode);
-            }
             else
                 return null;
         }
@@ -1152,6 +1146,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 auto node = findNext(root);
                 while (node !is null)
                 {
+                    //writeln("Found node ", node.nodeName);
                     res++;
                     node = findNext(node);
                 }
