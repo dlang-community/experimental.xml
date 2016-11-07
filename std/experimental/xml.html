@@ -86,37 +86,41 @@ $('#symbolSearchPane').show();
 		</nav>
 		<div id="main-contents">
 			<h1>Module std.experimental.xml</h1>
-			<p>An xml processing library.
+			<p>An xml processing library
 </p>
 <section><p><h2>Quick start</h2>
    The library offers a simple fluid interface to build an XML parsing chain.
    Let's see a first example: we want to change the name of an author in our book
    catalogue, using DOM.
 </p>
-<pre class="code"><code class="lang-d"><span class="typ">string </span><span class="pln">input </span><span class="pun">= </span><span class="str">q"{
-&lt;?xml version = "1.0"?&gt;
-&lt;books&gt;
-    &lt;book ISBN = "078-5342635362"&gt;
-        &lt;title&gt;The D Programming Language&lt;/title&gt;
-        &lt;author&gt;A. Alexandrescu&lt;/author&gt;
-    &lt;/book&gt;
-    &lt;book ISBN = "978-1515074601"&gt;
-        &lt;title&gt;Programming in D&lt;/title&gt;
-        &lt;author&gt;Ali Çehreli&lt;/author&gt;
-    &lt;/book&gt;
-    &lt;book ISBN = "978-0201704310"&gt;
-        &lt;title&gt;Modern C++ Design&lt;/title&gt;
-        &lt;author&gt;A. Alexandrescu&lt;/author&gt;
-    &lt;/book&gt;
-&lt;/books&gt;
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">stdio</span><span class="pun">: </span><span class="typ">File</span><span class="pun">;
+
+</span><span class="typ">string </span><span class="pln">input </span><span class="pun">= </span><span class="str">q"{
+    &lt;?xml version = "1.0"?&gt;
+    &lt;books&gt;
+       &lt;book ISBN = "078-5342635362"&gt;
+           &lt;title&gt;The D Programming Language&lt;/title&gt;
+           &lt;author&gt;A. Alexandrescu&lt;/author&gt;
+       &lt;/book&gt;
+       &lt;book ISBN = "978-1515074601"&gt;
+           &lt;title&gt;Programming in D&lt;/title&gt;
+           &lt;author&gt;Ali Çehreli&lt;/author&gt;
+       &lt;/book&gt;
+       &lt;book ISBN = "978-0201704310"&gt;
+           &lt;title&gt;Modern C++ Design&lt;/title&gt;
+           &lt;author&gt;A. Alexandrescu&lt;/author&gt;
+       &lt;/book&gt;
+    &lt;/books&gt;
 }"</span><span class="pun">;
 
 </span><span class="com">// the following steps are all configurable
 </span><span class="kwd">auto </span><span class="pln">domBuilder </span><span class="pun">=
-     </span><span class="pln">chooseLexer</span><span class="pun">!</span><span class="pln">input  </span><span class="com">// instantiate the best lexer based on the type of input
-    <wbr/></span><span class="pun">.</span><span class="pln">parser             </span><span class="com">// instantiate a parser on top of the lexer
-    <wbr/></span><span class="pun">.</span><span class="pln">cursor             </span><span class="com">// instantiate a cursor on top of the parser
-    <wbr/></span><span class="pun">.</span><span class="pln">domBuilder</span><span class="pun">;        </span><span class="com">// and finally the DOM builder on top of the cursor
+    </span><span class="pln">input
+   <wbr/></span><span class="pun">.</span><span class="pln">lexer              </span><span class="com">// instantiate the best lexer based on the type of input
+   <wbr/></span><span class="pun">.</span><span class="pln">parser             </span><span class="com">// instantiate a parser on top of the lexer
+   <wbr/></span><span class="pun">.</span><span class="pln">cursor             </span><span class="com">// instantiate a cursor on top of the parser
+   <wbr/></span><span class="pun">.</span><span class="pln">domBuilder</span><span class="pun">;        </span><span class="com">// and finally the DOM builder on top of the cursor
 
 // the source is forwarded down the parsing chain and everything is initialized
 </span><span class="pln">domBuilder<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
@@ -127,42 +131,48 @@ $('#symbolSearchPane').show();
 
 </span><span class="com">// find and substitute all matching authors
 </span><span class="kwd">foreach </span><span class="pun">(</span><span class="pln">author</span><span class="pun">; </span><span class="pln">dom<wbr/></span><span class="pun">.</span><span class="pln">getElementsByTagName</span><span class="pun">(</span><span class="str">"author"</span><span class="pun">))
-    </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">== </span><span class="str">"A. Alexandrescu"</span><span class="pun">)
-        </span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">= </span><span class="str">"Andrei Alexandrescu"</span><span class="pun">;
+   </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">== </span><span class="str">"A. Alexandrescu"</span><span class="pun">)
+       </span><span class="pln">author<wbr/></span><span class="pun">.</span><span class="pln">textContent </span><span class="pun">= </span><span class="str">"Andrei Alexandrescu"</span><span class="pun">;
 
 </span><span class="com">// write it out to "catalogue.xml"
 </span><span class="kwd">auto </span><span class="pln">file </span><span class="pun">= </span><span class="typ">File</span><span class="pun">(</span><span class="str">"catalogue.xml"</span><span class="pun">, </span><span class="str">"w"</span><span class="pun">);
 </span><span class="pln">file<wbr/></span><span class="pun">.</span><span class="pln">lockingTextWriter
     <wbr/></span><span class="pun">.</span><span class="pln">writerFor</span><span class="pun">!</span><span class="typ">string   </span><span class="com">// instatiates an xml writer on top of an output range
     <wbr/></span><span class="pun">.</span><span class="pln">writeDOM</span><span class="pun">(</span><span class="pln">dom</span><span class="pun">);     </span><span class="com">// write the document with all of its children</span></code></pre>
+
 <p>   Also available is a SAX parser, which we will use to find all text nodes containing
    a specific word:
 </p>
+
 <pre class="code"><code class="lang-d"><span class="com">// don't bother about the type of a node: the library will do the right instantiations
 </span><span class="kwd">static struct </span><span class="typ">MyHandler</span><span class="pun">(</span><span class="typ">NodeType</span><span class="pun">)
 {
+    </span><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">stdio</span><span class="pun">, </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">algorithm</span><span class="pun">;
+
     </span><span class="typ">void </span><span class="pln">onText</span><span class="pun">(</span><span class="kwd">ref </span><span class="typ">NodeType </span><span class="pln">node</span><span class="pun">)
     {
-        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">content<wbr/></span><span class="pun">.</span><span class="pln">splitter<wbr/></span><span class="pun">.</span><span class="pln">find<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"D"</span><span class="pun">))
+        </span><span class="kwd">if </span><span class="pun">(</span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">content<wbr/></span><span class="pun">.</span><span class="pln">splitter<wbr/></span><span class="pun">.</span><span class="pln">canFind</span><span class="pun">(</span><span class="str">"D"</span><span class="pun">))
             </span><span class="pln">writeln</span><span class="pun">(</span><span class="str">"Match found: "</span><span class="pun">, </span><span class="pln">node<wbr/></span><span class="pun">.</span><span class="pln">content</span><span class="pun">);
     }
 }
 
 </span><span class="kwd">auto </span><span class="pln">saxParser </span><span class="pun">=
-     </span><span class="pln">chooseParser</span><span class="pun">!</span><span class="pln">input     </span><span class="com">// this is a shorthand for chooseLexer!Input.parse
+     </span><span class="pln">input
+    <wbr/></span><span class="pun">.</span><span class="pln">parser                 </span><span class="com">// if you want the default lexer, you can skip `.lexer`
     <wbr/></span><span class="pun">.</span><span class="pln">cursor
     <wbr/></span><span class="pun">.</span><span class="pln">saxParser</span><span class="pun">!</span><span class="typ">MyHandler</span><span class="pun">;   </span><span class="com">// only this call changed from the previous example chain
 
-</span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
 </span><span class="pln">saxParser<wbr/></span><span class="pun">.</span><span class="pln">processDocument</span><span class="pun">;  </span><span class="com">// this call triggers the actual work
 
 // With the same input of the first example, the output would be:
 // Match found: The D Programming Language
 // Match found: Programming in D</span></code></pre>
+
 <p>   You may want to perform extra checks on the input, to guarantee correctness;
    this is achieved by plugging custom components in the chain.
    Let's use this feature to validate our input and write it to a file
 </p>
+
 <pre class="code"><code class="lang-d"><span class="com">// the basic cursor only detects missing xml declarations and unparseable attributes
 </span><span class="kwd">auto </span><span class="pln">callback1 </span><span class="pun">= (</span><span class="typ">CursorError </span><span class="pln">err</span><span class="pun">)
 {
@@ -173,27 +183,33 @@ $('#symbolSearchPane').show();
 };
 
 </span><span class="com">// used by checkXMLNames, a pluggable validator
-</span><span class="kwd">auto </span><span class="pln">callback2 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML element name"</span><span class="pun">); }
-</span><span class="kwd">auto </span><span class="pln">callback3 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML attribute name"</span><span class="pun">); }
+</span><span class="kwd">auto </span><span class="pln">callback2 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML element name"</span><span class="pun">); };
+</span><span class="kwd">auto </span><span class="pln">callback3 </span><span class="pun">= (</span><span class="typ">string </span><span class="pln">s</span><span class="pun">) { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Invalid XML attribute name"</span><span class="pun">); };
 
 </span><span class="kwd">auto </span><span class="pln">cursor </span><span class="pun">=
-    <wbr/>.</span><span class="pln">chooseParser</span><span class="pun">!</span><span class="pln">input</span><span class="pun">((){ </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Parser error"</span><span class="pun">) })    </span><span class="com">// most components take an
+     </span><span class="pln">input
+    <wbr/></span><span class="pun">.</span><span class="pln">parser</span><span class="pun">({ </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Parser error"</span><span class="pun">); })                 </span><span class="com">// most components take an
     <wbr/></span><span class="pun">.</span><span class="pln">cursor</span><span class="pun">(</span><span class="pln">callback1</span><span class="pun">)                                      </span><span class="com">// optional error handler
      // time to plug-in a validator
     <wbr/></span><span class="pun">.</span><span class="pln">elementNestingValidator</span><span class="pun">!(
-        (){ </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Wrong nesting of xml tags"</span><span class="pun">); }       </span><span class="com">// called if tags are not well nested
+        { </span><span class="kwd">assert</span><span class="pun">(</span><span class="lit">0</span><span class="pun">, </span><span class="str">"Wrong nesting of xml tags"</span><span class="pun">); }         </span><span class="com">// called if tags are not well nested
     </span><span class="pun">);
 
 </span><span class="kwd">auto </span><span class="pln">writer </span><span class="pun">=
-     </span><span class="pln">myOutputRange                                          </span><span class="com">// a writer builds on top of an output range
-    <wbr/></span><span class="pun">.</span><span class="pln">writerFor</span><span class="pun">!(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="typ">StringType</span><span class="pun">)
-    <wbr/>.</span><span class="pln">withValidation</span><span class="pun">!</span><span class="pln">checkXMLNames</span><span class="pun">(</span><span class="pln">callback2</span><span class="pun">, </span><span class="pln">callback3</span><span class="pun">)     </span><span class="com">// we can also apply validations while writing back
-    <wbr/></span><span class="pun">.</span><span class="pln">writeCursor</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">)                                    </span><span class="com">// write the entire contents of the cursor</span></code></pre>
+     </span><span class="pln">myOutputRange
+    <wbr/></span><span class="pun">.</span><span class="pln">writerFor</span><span class="pun">!(</span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="typ">StringType</span><span class="pun">)                          </span><span class="com">// a writer builds on top of an output range
+    <wbr/></span><span class="pun">.</span><span class="pln">withValidation</span><span class="pun">!</span><span class="pln">checkXMLNames</span><span class="pun">(</span><span class="pln">callback2</span><span class="pun">, </span><span class="pln">callback3</span><span class="pun">);    </span><span class="com">// we can also apply validations while writing back
+
+</span><span class="pln">writer<wbr/></span><span class="pun">.</span><span class="pln">writeCursor</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">);                                 </span><span class="com">// write the entire contents of the cursor</span></code></pre>
+
 <p>   While DOM and SAX are simple, standardized APIs, you may want to directly use
    the underlying Cursor API, which provides great control, flexibility and speed,
    at the price of a slightly lower abstraction level:
 </p>
-<pre class="code"><code class="lang-d"><span class="com">// A function to inspect the entire document recursively, writing the kind of nodes encountered
+
+<pre class="code"><code class="lang-d"><span class="kwd">import </span><span class="pln">std<wbr/></span><span class="pun">.</span><span class="pln">stdio</span><span class="pun">;
+
+</span><span class="com">// A function to inspect the entire document recursively, writing the kind of nodes encountered
 </span><span class="typ">void </span><span class="pln">writeRecursive</span><span class="pun">(</span><span class="pln">T</span><span class="pun">)(</span><span class="kwd">ref </span><span class="pln">T cursor</span><span class="pun">)
 {
     </span><span class="com">// cycle the current node and all its siblings
@@ -211,8 +227,8 @@ $('#symbolSearchPane').show();
 }
 
 </span><span class="kwd">auto </span><span class="pln">cursor </span><span class="pun">=
-     </span><span class="pln">chooseParser</span><span class="pun">!</span><span class="pln">input
-    <wbr/></span><span class="pun">.</span><span class="pln">cursor</span><span class="pun">;                </span><span class="com">// this time we stop here and use the cursor directly
+     </span><span class="pln">chooseParser</span><span class="pun">!(</span><span class="kwd">typeof</span><span class="pun">(</span><span class="pln">input</span><span class="pun">))
+    <wbr/>.</span><span class="pln">cursor</span><span class="pun">;                </span><span class="com">// this time we stop here and use the cursor directly
 
 </span><span class="pln">cursor<wbr/></span><span class="pun">.</span><span class="pln">setSource</span><span class="pun">(</span><span class="pln">input</span><span class="pun">);
 </span><span class="pln">writeRecursive</span><span class="pun">(</span><span class="pln">cursor</span><span class="pun">);     </span><span class="com">// call our function</span></code></pre>

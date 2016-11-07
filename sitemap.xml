@@ -394,8 +394,8 @@
 <url><loc>http://127.0.0.1/std/experimental/xml/sax/saxParser.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/sax/saxParser.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation.html</loc></url>
-<url><loc>http://127.0.0.1/std/experimental/xml/validation/CheckXMLNames.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation/checkXMLNames.html</loc></url>
+<url><loc>http://127.0.0.1/std/experimental/xml/validation/CheckXMLNames.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation/ElementNestingValidator.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation/elementNestingValidator.html</loc></url>
 <url><loc>http://127.0.0.1/std/experimental/xml/validation/isValidXMLCharacter10.html</loc></url>
