@@ -42,6 +42,11 @@ private auto xmlDeclarationAttributes(StringType, Args...)(Args args)
         StringType versionString = args[0] == 10 ? "1.0" : "1.1";
         auto args1 = args[1..$];
     }
+    else static if (is(Args[0] == StringType))
+    {
+        StringType versionString = args[0];
+        auto args1 = args[1..$];
+    }
     else
     {
         StringType versionString = [];
@@ -494,14 +499,14 @@ unittest
 /++
 +   Returns a `Writer` for the given `StringType`, `outRange` and `PrettyPrinter`.
 +/
-auto writerFor(StringType, alias PrettyPrinter = PrettyPrinters.Indenter, OutRange)(ref OutRange outRange)
+auto writerFor(StringType, alias PrettyPrinter = PrettyPrinters.Indenter, OutRange)(auto ref OutRange outRange)
 {
     auto res = Writer!(StringType, OutRange, PrettyPrinter)();
     res.setSink(outRange);
     return res;
 }
 /// ditto
-auto writerFor(StringType, OutRange, PrettyPrinter)(ref OutRange outRange, auto ref PrettyPrinter printer)
+auto writerFor(StringType, OutRange, PrettyPrinter)(auto ref OutRange outRange, auto ref PrettyPrinter printer)
 {
     auto res = Writer!(StringType, OutRange, PrettyPrinter)(printer);
     res.setSink(outRange);
@@ -561,11 +566,11 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
     {
         case document:
             auto doc = cast(Document)node;
-            writer.writeXMLDeclaration(doc.xmlVersion, doc.xmlEncoding, dom.xmlStandalone);
+            writer.writeXMLDeclaration(doc.xmlVersion, doc.xmlEncoding, doc.xmlStandalone);
             foreach (child; doc.childNodes)
                 writer.writeDOM(child);
             break;
-        case ELEMENT:
+        case element:
             auto elem = cast(Element)node;
             writer.startElement(elem.tagName);
             if (elem.hasAttributes)
@@ -576,13 +581,13 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
             writer.closeElement(elem.tagName);
             break;
         case text:
-            writer.writeText(node.value);
+            writer.writeText(node.nodeValue);
             break;
-        case cdata:
-            writer.writeCDATA(node.value);
+        case cdataSection:
+            writer.writeCDATA(node.nodeValue);
             break;
         case comment:
-            writer.writeComment(node.value);
+            writer.writeComment(node.nodeValue);
             break;
         default:
             break;

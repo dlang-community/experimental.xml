@@ -373,7 +373,7 @@ auto chooseParser(InputType,
                  (ref Alloc alloc, ErrorHandler handler)
 {
     return chooseLexer!(InputType, reuseBuffer, Alloc, ErrorHandler)(alloc, handler)
-          .parse!(preserveWhitespace)(handler);
+          .parser!(preserveWhitespace)(handler);
 }
 /// ditto
 auto chooseParser(InputType, Alloc = shared(GCAllocator),
@@ -391,7 +391,7 @@ auto chooseParser(InputType,
                  (ref Alloc alloc)
     if (!isSomeFunction!Alloc)
 {
-    return chooseLexer!(InputType, reuseBuffer, Alloc, ErrorHandler)
+    return chooseLexer!(InputType, reuseBuffer, Alloc)
                        (alloc, (){ throw new XMLException("XML syntax error"); })
           .parse!(preserveWhitespace)(handler);
 }
@@ -401,7 +401,7 @@ auto chooseParser(InputType, Alloc = shared(GCAllocator),
                   Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer)()
     if (is(typeof(Alloc.instance)))
 {
-    return chooseParser!(InputType, preserveWhitespace, reuseBuffer, Alloc, ErrorHandler)
+    return chooseParser!(InputType, preserveWhitespace, reuseBuffer, Alloc)
                         (Alloc.instance, (){ throw new XMLException("XML syntax error"); });
 }
 

@@ -53,7 +53,7 @@ struct ElementNestingValidator(CursorType, alias ErrorHandler)
     import std.container.array;
     private Array!StringType stack;
 
-    private CursorType cursor;
+    CursorType cursor;
     alias cursor this;
 
     this(Args...)(Args args)

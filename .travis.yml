@@ -6,13 +6,10 @@ matrix:
   include:
     - d: dmd
       env: PRIMARY="true"
-    - d: dmd-2.071.2-b3
-      env: PRIMARY="false"
-    - d: ldc-1.1.0-beta2
+    - d: ldc-1.1.0-beta3
       env: PRIMARY="false"
   allow_failures:
-    - d: dmd-2.071.2-b3
-    - d: ldc-1.1.0-beta2
+    - d: ldc-1.1.0-beta3
 
 script:
   - make build-all

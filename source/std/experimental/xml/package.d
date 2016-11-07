@@ -6,37 +6,41 @@
 */
 
 /++
-+   An xml processing library.
++   An xml processing library
 +
 +   $(H Quick start)
 +   The library offers a simple fluid interface to build an XML parsing chain.
 +   Let's see a first example: we want to change the name of an author in our book
 +   catalogue, using DOM.
-+   ---
++
++   ------
++   import std.stdio: File;
++
 +   string input = q"{
-+   <?xml version = "1.0"?>
-+   <books>
-+       <book ISBN = "078-5342635362">
-+           <title>The D Programming Language</title>
-+           <author>A. Alexandrescu</author>
-+       </book>
-+       <book ISBN = "978-1515074601">
-+           <title>Programming in D</title>
-+           <author>Ali Çehreli</author>
-+       </book>
-+       <book ISBN = "978-0201704310">
-+           <title>Modern C++ Design</title>
-+           <author>A. Alexandrescu</author>
-+       </book>
-+   </books>
++       <?xml version = "1.0"?>
++       <books>
++          <book ISBN = "078-5342635362">
++              <title>The D Programming Language</title>
++              <author>A. Alexandrescu</author>
++          </book>
++          <book ISBN = "978-1515074601">
++              <title>Programming in D</title>
++              <author>Ali Çehreli</author>
++          </book>
++          <book ISBN = "978-0201704310">
++              <title>Modern C++ Design</title>
++              <author>A. Alexandrescu</author>
++          </book>
++       </books>
 +   }";
 +
 +   // the following steps are all configurable
 +   auto domBuilder =
-+        chooseLexer!input  // instantiate the best lexer based on the type of input
-+       .parser             // instantiate a parser on top of the lexer
-+       .cursor             // instantiate a cursor on top of the parser
-+       .domBuilder;        // and finally the DOM builder on top of the cursor
++       input
++      .lexer              // instantiate the best lexer based on the type of input
++      .parser             // instantiate a parser on top of the lexer
++      .cursor             // instantiate a cursor on top of the parser
++      .domBuilder;        // and finally the DOM builder on top of the cursor
 +
 +   // the source is forwarded down the parsing chain and everything is initialized
 +   domBuilder.setSource(input);
@@ -47,44 +51,50 @@
 +
 +   // find and substitute all matching authors
 +   foreach (author; dom.getElementsByTagName("author"))
-+       if (author.textContent == "A. Alexandrescu")
-+           author.textContent = "Andrei Alexandrescu";
++      if (author.textContent == "A. Alexandrescu")
++          author.textContent = "Andrei Alexandrescu";
 +
 +   // write it out to "catalogue.xml"
 +   auto file = File("catalogue.xml", "w");
 +   file.lockingTextWriter
 +       .writerFor!string   // instatiates an xml writer on top of an output range
 +       .writeDOM(dom);     // write the document with all of its children
-+   ---
++   -----
++
 +   Also available is a SAX parser, which we will use to find all text nodes containing
 +   a specific word:
-+   ---
++
++   -----
 +   // don't bother about the type of a node: the library will do the right instantiations
 +   static struct MyHandler(NodeType)
 +   {
++       import std.stdio, std.algorithm;
++
 +       void onText(ref NodeType node)
 +       {
-+           if (node.content.splitter.find.canFind("D"))
++           if (node.content.splitter.canFind("D"))
 +               writeln("Match found: ", node.content);
 +       }
 +   }
 +
 +   auto saxParser =
-+        chooseParser!input     // this is a shorthand for chooseLexer!Input.parse
++        input
++       .parser                 // if you want the default lexer, you can skip `.lexer`
 +       .cursor
 +       .saxParser!MyHandler;   // only this call changed from the previous example chain
 +
-+   saxParser.setSource(input);
 +   saxParser.processDocument;  // this call triggers the actual work
 +
 +   // With the same input of the first example, the output would be:
 +   // Match found: The D Programming Language
 +   // Match found: Programming in D
-+   ---
++   -----
++
 +   You may want to perform extra checks on the input, to guarantee correctness;
 +   this is achieved by plugging custom components in the chain.
 +   Let's use this feature to validate our input and write it to a file
-+   ---
++
++   -----
 +   // the basic cursor only detects missing xml declarations and unparseable attributes
 +   auto callback1 = (CursorError err)
 +   {
@@ -92,30 +102,36 @@
 +           assert(0, "Missing XML declaration");
 +       else
 +           assert(0, "Invalid attributes syntax");
-+   }
++   };
 +
 +   // used by checkXMLNames, a pluggable validator
-+   auto callback2 = (string s) { assert(0, "Invalid XML element name"); }
-+   auto callback3 = (string s) { assert(0, "Invalid XML attribute name"); }
++   auto callback2 = (string s) { assert(0, "Invalid XML element name"); };
++   auto callback3 = (string s) { assert(0, "Invalid XML attribute name"); };
 +
 +   auto cursor =
-+       .chooseParser!input((){ assert(0, "Parser error") })    // most components take an
++        input
++       .parser({ assert(0, "Parser error"); })                 // most components take an
 +       .cursor(callback1)                                      // optional error handler
 +        // time to plug-in a validator
 +       .elementNestingValidator!(
-+           (){ assert(0, "Wrong nesting of xml tags"); }       // called if tags are not well nested
++           { assert(0, "Wrong nesting of xml tags"); }         // called if tags are not well nested
 +       );
 +
 +   auto writer =
-+        myOutputRange                                          // a writer builds on top of an output range
-+       .writerFor!(cursor.StringType)
-+       .withValidation!checkXMLNames(callback2, callback3)     // we can also apply validations while writing back
-+       .writeCursor(cursor)                                    // write the entire contents of the cursor
-+   ---
++        myOutputRange
++       .writerFor!(cursor.StringType)                          // a writer builds on top of an output range
++       .withValidation!checkXMLNames(callback2, callback3);    // we can also apply validations while writing back
++
++   writer.writeCursor(cursor);                                 // write the entire contents of the cursor
++   -----
++
 +   While DOM and SAX are simple, standardized APIs, you may want to directly use
 +   the underlying Cursor API, which provides great control, flexibility and speed,
 +   at the price of a slightly lower abstraction level:
-+   ---
++
++   -----
++   import std.stdio;
++
 +   // A function to inspect the entire document recursively, writing the kind of nodes encountered
 +   void writeRecursive(T)(ref T cursor)
 +   {
@@ -134,12 +150,12 @@
 +   }
 +
 +   auto cursor =
-+        chooseParser!input
++        chooseParser!(typeof(input))
 +       .cursor;                // this time we stop here and use the cursor directly
 +
 +   cursor.setSource(input);
 +   writeRecursive(cursor);     // call our function
-+   ---
++   -----
 +
 +   $(H Library overview)
 +
