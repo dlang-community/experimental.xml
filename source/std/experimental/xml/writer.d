@@ -577,7 +577,7 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
                 foreach (attr; elem.attributes)
                     writer.writeAttribute(attr.nodeName, attr.value);
             foreach (child; elem.childNodes)
-                writer.writeDOM(elem);
+                writer.writeDOM(child);
             writer.closeElement(elem.tagName);
             break;
         case text:

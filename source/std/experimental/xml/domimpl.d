@@ -29,12 +29,11 @@ import std.experimental.allocator.gc_allocator;
 // this is needed because compilers up to at least DMD 2.071.1 suffer from issue 16319
 private auto multiVersionMake(Type, Allocator, Args...)(ref Allocator allocator, auto ref Args args)
 {
-    static if (__traits(compiles, allocator.make!Type(args)))
+    static if (Args.length == 0  && __traits(compiles, allocator.make!Type(args)))
         return allocator.make!Type(args);
-    else static if (Args.length > 0 && __traits(compiles, allocator.make!Type(args[1..$])))
+    else static if (Args.length > 0 && __traits(compiles, allocator.make!Type(args[0 .. $])))
     {
-        auto res = allocator.make!Type(args[1..$]);
-        res.outer = args[0];
+        auto res = allocator.make!Type(args[0 .. $]);
         return res;
     }
     else
@@ -2390,7 +2389,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     alias MapToConfigName = AliasSeq!();
             }
-            private static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
+            static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
 
             // specific to DOMStringList
             override

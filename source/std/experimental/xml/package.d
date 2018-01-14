@@ -56,9 +56,14 @@
 +
 +   // write it out to "catalogue.xml"
 +   auto file = File("catalogue.xml", "w");
-+   file.lockingTextWriter
-+       .writerFor!string   // instatiates an xml writer on top of an output range
-+       .writeDOM(dom);     // write the document with all of its children
++
++	auto textWriter = file.lockingTextWriter;  // instatiates an xml writer on top of an output range
++	textWriter.writerFor!string.writeDOM(dom); // write the document with all of its children
++
++   // bug: 
++   // file.lockingTextWriter
++   //    .writerFor!string   // instatiates an xml writer on top of an output range
++   //    .writeDOM(dom);     // write the document with all of its children
 +   -----
 +
 +   Also available is a SAX parser, which we will use to find all text nodes containing
