@@ -482,9 +482,11 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
 unittest
 {
     import std.array : Appender;
-    auto app = Appender!string();
+    import std.typecons : refCounted;
+
+    auto app = Appender!string().refCounted;
     auto writer = Writer!(string, typeof(app))();
-    writer.setSink(&app);
+    writer.setSink(app);
 
     writer.writeXMLDeclaration(10, "utf-8", false);
     assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>");
@@ -512,7 +514,8 @@ auto writerFor(StringType, OutRange, PrettyPrinter)(auto ref OutRange outRange, 
 unittest
 {
     import std.array : Appender;
-    auto app = Appender!string();
+    import std.typecons : refCounted;
+    auto app = Appender!string().refCounted;
     auto writer = app.writerFor!string;
 
     writer.startElement("elem");
@@ -705,6 +708,7 @@ unittest
     import std.array : Appender;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
+    import std.typecons : refCounted;
 
     string xml =
     "<?xml?>\n" ~
@@ -719,7 +723,7 @@ unittest
     auto cursor = xml.parser.cursor;
     cursor.setSource(xml);
 
-    auto app = Appender!string();
+    auto app = Appender!string().refCounted;
     auto writer = Writer!(string, typeof(app), PrettyPrinters.Indenter)();
 
     writer.setSink(app);
@@ -983,14 +987,15 @@ unittest
 {
     import std.array : Appender;
     import std.experimental.xml.validation;
+    import std.typecons : refCounted;
 
     int count = 0;
 
-    auto app = Appender!string();
+    auto app = Appender!string().refCounted;
     auto writer =
          Writer!(string, typeof(app), PrettyPrinters.Indenter)()
         .withValidation!checkXMLNames((string s) { count++; }, (string s) { count++; });
-    writer.setSink(&app);
+    writer.setSink(app);
 
     writer.writeXMLDeclaration(10, "utf-8", false);
     assert(app.data == "<?xml version='1.0' encoding='utf-8' standalone='no'?>\n");
