@@ -1,6 +1,7 @@
 # dub files
 dub.selections.json
 .dub/
+std-experimental-xml-test-library
 
 # compiled files
 *.a
