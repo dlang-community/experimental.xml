@@ -1,8 +1,8 @@
 {
-    "name": "std-experimental-xml-live",
-    "description": "A replacement for Phobos std.xml, developed as a GSoC 2016 project",
-    "authors": ["Lodovico Giaretta"],
-    "homepage": "https://github.com/lodo1995/experimental.xml",
+    "name": "std-experimental-xml",
+    "description": "A replacement for Phobos std.xml",
+    "authors": ["DLang-Community", "Lodovico Giaretta"],
+    "homepage": "https://github.com/dlang-community/experimental.xml",
     "targetType": "library",
     "license": "BSL-1.0",
     "excludedSourceFiles": ["source/benchmark.d", "source/test.d", "source/random_benchmark/*"],
