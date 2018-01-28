@@ -29,12 +29,11 @@ import std.experimental.allocator.gc_allocator;
 // this is needed because compilers up to at least DMD 2.071.1 suffer from issue 16319
 private auto multiVersionMake(Type, Allocator, Args...)(ref Allocator allocator, auto ref Args args)
 {
-    static if (__traits(compiles, allocator.make!Type(args)))
+    static if (Args.length == 0  && __traits(compiles, allocator.make!Type(args)))
         return allocator.make!Type(args);
-    else static if (Args.length > 0 && __traits(compiles, allocator.make!Type(args[1..$])))
+    else static if (Args.length > 0 && __traits(compiles, allocator.make!Type(args[0 .. $])))
     {
-        auto res = allocator.make!Type(args[1..$]);
-        res.outer = args[0];
+        auto res = allocator.make!Type(args[0 .. $]);
         return res;
     }
     else
@@ -147,6 +146,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
     {
         override
         {
+            /// Implementation of $(LINK2 ../dom/Node.ownerDocument, `std.experimental.xml.dom.Node.ownerDocument`).
+            @property Document ownerDocument() { return _ownerDocument; }
+
             /// Implementation of $(LINK2 ../dom/Node.parentNode, `std.experimental.xml.dom.Node.parentNode`).
             @property Node parentNode() { return _parentNode; }
             /++
@@ -156,8 +158,6 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             @property Node previousSibling() { return _previousSibling; }
             /// Implementation of $(LINK2 ../dom/Node.nextSibling, `std.experimental.xml.dom.Node.nextSibling`).
             @property Node nextSibling() { return _nextSibling; }
-            /// Implementation of $(LINK2 ../dom/Node.ownerDocument, `std.experimental.xml.dom.Node.ownerDocument`).
-            @property Document ownerDocument() { return _ownerDocument; }
 
             /++
             +   Implementation of $(LINK2 ../dom/Node.isSameNode, `std.experimental.xml.dom.Node.isSameNode`).
@@ -2389,7 +2389,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 else
                     alias MapToConfigName = AliasSeq!();
             }
-            private static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
+            static immutable string[] arr = [MapToConfigName!(__traits(allMembers, Params))];
 
             // specific to DOMStringList
             override

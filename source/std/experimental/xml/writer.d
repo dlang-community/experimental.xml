@@ -188,9 +188,9 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         static assert(0, "Invalid pretty printer type for string type " ~ StringType.stringof);
 
     static if (is(OutRange))
-        private OutRange* output;
+        private OutRange output;
     else static if (is(OutRange!StringType))
-        private OutRange!StringType* output;
+        private OutRange!StringType output;
     else
         static assert(0, "Invalid output range type for string type " ~ StringType.stringof);
 
@@ -201,11 +201,7 @@ struct Writer(_StringType, alias OutRange, alias PrettyPrinter = PrettyPrinters.
         prettyPrinter = pretty;
     }
 
-    void setSink(ref typeof(*output) output)
-    {
-        this.output = &output;
-    }
-    void setSink(typeof(output) output)
+    void setSink(ref typeof(output) output)
     {
         this.output = output;
     }
@@ -577,7 +573,7 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
                 foreach (attr; elem.attributes)
                     writer.writeAttribute(attr.nodeName, attr.value);
             foreach (child; elem.childNodes)
-                writer.writeDOM(elem);
+                writer.writeDOM(child);
             writer.closeElement(elem.tagName);
             break;
         case text:
