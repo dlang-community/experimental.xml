@@ -8,6 +8,7 @@ as the original author isn't active anymore.
 
 Feel free to submit pull requests, but don't active development to happen on this module.
 
+Dcoumentation: https://rawgit.com/dlang-community/experimental.xml/gh-pages/index.html
 
 --------------------------------------------------------------------------------
 
