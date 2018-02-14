@@ -273,12 +273,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         {
                             if (attr is attr1)
                                 return Ret!implementationSpecific | Ret!preceding;
-                            else if (attr is attr2)
+                            else if (attr is attr2) {
                                 return Ret!implementationSpecific | Ret!following;
+                            }
                         }
                     }
                 }
-
                 void rootAndDepth(ref Node node, out int depth)
                 {
                     while (node.parentNode)
@@ -844,12 +844,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             }
             Element getElementById(DOMString elementId)
             {
-                Element find(Node node)
+                Element find(dom.Node!DOMString node)
                 {
                     if (node.nodeType == dom.NodeType.element && node.hasAttributes)
                         foreach (attr; node.attributes)
                         {
-                            if (attr.isId && attr.nodeValue == elementId)
+                            if ((cast(Attr)attr).isId && attr.nodeValue == elementId)
                                 return cast(Element)node;
                         }
                     foreach (child; node.childNodes)
@@ -1455,7 +1455,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             void setAttribute(DOMString name, DOMString value)
             {
                 auto attr = ownerDocument.createAttribute(name);
-                attr.value = value;
+                attr.nodeValue = value;
                 attr._ownerElement = this;
                 _attrs.setNamedItem(attr);
             }
@@ -1513,7 +1513,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             void setAttributeNS(DOMString namespaceURI, DOMString qualifiedName, DOMString value)
             {
                 auto attr = ownerDocument.createAttributeNS(namespaceURI, qualifiedName);
-                attr.value = value;
+                attr.nodeValue = value;
                 attr._ownerElement = this;
                 _attrs.setNamedItem(attr);
             }
@@ -1644,7 +1644,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 }
                 if (hasAttributes)
                     foreach (attr; attributes)
-                        if (attr.prefix == "xmlns" && attr.value == namespaceURI &&
+                        if (attr.prefix == "xmlns" && attr.nodeValue == namespaceURI &&
                             originalElement.lookupNamespaceURI(attr.localName) == namespaceURI)
                         {
                             return attr.localName;
@@ -1685,9 +1685,9 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     foreach (attr; attributes)
                         if (attr.prefix == "xmlns" && attr.localName == prefix)
-                            return attr.value;
+                            return attr.nodeValue;
                         else if (attr.nodeName == "xmlns" && !prefix)
-                            return attr.value;
+                            return attr.nodeValue;
                 }
                 auto parentElement = parentElement();
                 if (parentElement)
@@ -1702,7 +1702,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                 {
                     foreach (attr; attributes)
                         if (attr.nodeName == "xmlns")
-                            return attr.value == namespaceURI;
+                            return attr.nodeValue == namespaceURI;
                 }
                 auto parentElement = parentElement();
                 if (parentElement)
@@ -2433,10 +2433,10 @@ unittest
     assert(root.attributes.length == 1);
     assert(root.getAttributeNodeNS("myAttrNamespace", "myAttrName") is attr);
 
-    attr.value = "myAttrValue";
+    attr.nodeValue = "myAttrValue";
     assert(attr.childNodes.length == 1);
     assert(attr.firstChild.nodeType == dom.NodeType.text);
-    assert(attr.firstChild.nodeValue == attr.value);
+    assert(attr.firstChild.nodeValue == attr.nodeValue);
 
     auto elem = doc.createElementNS("myOtherNamespace", "myOtherPrefix:myOtherElement");
     assert(root.ownerDocument is doc);

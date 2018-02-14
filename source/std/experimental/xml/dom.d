@@ -700,6 +700,16 @@ interface NodeList(DOMString)
     +   `0` to `length-1` inclusive.
     +/
     @property size_t length();
+
+    final int opApply(int delegate(Node!DOMString) foreachBody)
+    {
+        for (size_t i = 0; i < length; i++)
+        {
+            auto result = foreachBody(item(i));
+            if (result) return result;
+        }
+        return 0;
+    }
 }
 
 /++
@@ -725,6 +735,16 @@ interface NamedNodeMap(DOMString)
     +   `0` to `length-1` inclusive.
     +/
     @property size_t length();
+
+    final int opApply(int delegate(Node!DOMString) foreachBody)
+    {
+        for (size_t i = 0; i < length; i++)
+        {
+            auto result = foreachBody(item(i));
+            if (result) return result;
+        }
+        return 0;
+    }
 
     /// Retrieves a node specified by name.
     Node!DOMString getNamedItem(DOMString name);

@@ -574,7 +574,7 @@ void writeDOM(WriterType, NodeType)(auto ref WriterType writer, NodeType node)
             writer.startElement(elem.tagName);
             if (elem.hasAttributes)
                 foreach (attr; elem.attributes)
-                    writer.writeAttribute(attr.nodeName, attr.value);
+                    writer.writeAttribute(attr.nodeName, attr.nodeValue);
             foreach (child; elem.childNodes)
                 writer.writeDOM(child);
             writer.closeElement(elem.tagName);
