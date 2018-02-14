@@ -273,12 +273,12 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
                         {
                             if (attr is attr1)
                                 return Ret!implementationSpecific | Ret!preceding;
-                            else if (attr is attr2)
+                            else if (attr is attr2) {
                                 return Ret!implementationSpecific | Ret!following;
+                            }
                         }
                     }
                 }
-
                 void rootAndDepth(ref Node node, out int depth)
                 {
                     while (node.parentNode)

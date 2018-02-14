@@ -705,8 +705,8 @@ interface NodeList(DOMString)
     {
         for (size_t i = 0; i < length; i++)
         {
-            if (foreachBody(item(i)) != 0)
-                return 1;
+            auto result = foreachBody(item(i));
+            if (result) return result;
         }
         return 0;
     }
@@ -740,8 +740,8 @@ interface NamedNodeMap(DOMString)
     {
         for (size_t i = 0; i < length; i++)
         {
-            if (foreachBody(item(i)) != 0)
-                return 1;
+            auto result = foreachBody(item(i));
+            if (result) return result;
         }
         return 0;
     }
