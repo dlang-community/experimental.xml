@@ -12,7 +12,7 @@
 module std.experimental.xml.dtd;
 
 import std.experimental.xml.interfaces;
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator.gc_allocator;
 import std.typecons : Flag, No;
 
 enum DTDCheckerError

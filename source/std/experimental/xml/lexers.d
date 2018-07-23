@@ -31,8 +31,8 @@ import std.experimental.xml.faststrings;
 import std.range.primitives;
 import std.traits : isArray, isSomeFunction;
 
-import std.experimental.allocator;
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator;
+import stdx.allocator.gc_allocator;
 
 import std.typecons : Flag, Yes;
 
@@ -864,7 +864,7 @@ unittest
 
 @nogc unittest
 {
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
 
     auto handler = () { assert(0, "something went wrong..."); };
 

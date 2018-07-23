@@ -330,7 +330,7 @@ auto parser(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace
 }
 
 import std.experimental.xml.lexers;
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator.gc_allocator;
 
 auto parser(Flag!"preserveWhitespace" preserveWhitespace = No.preserveWhitespace,
             Flag!"reuseBuffer" reuseBuffer = Yes.reuseBuffer, T, Alloc, ErrorHandler)
@@ -408,7 +408,7 @@ auto chooseParser(InputType, Alloc = shared(GCAllocator),
 @nogc unittest
 {
     import std.experimental.xml.lexers;
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
     import std.string : lineSplitter;
     import std.algorithm : equal;
 
@@ -481,7 +481,7 @@ unittest
     import std.algorithm : find;
     import std.string : stripRight;
 
-    string xml = q{
+    string xml = q"{
     <!DOCTYPE mydoc https://myUri.org/bla [
         <!ELEMENT myelem ANY>
         <!ENTITY   myent    "replacement text">
@@ -489,7 +489,7 @@ unittest
         <!NOTATION PUBLIC 'h'>
         <!FOODECL asdffdsa >
     ]>
-    };
+    }";
 
     auto parser = xml.parser;
 

@@ -16,7 +16,7 @@ module std.experimental.xml.appender;
 */
 package struct Appender(T, Alloc)
 {
-    import std.experimental.allocator;
+    import stdx.allocator;
     import std.array;
     import std.range.primitives;
     import std.traits;
@@ -181,7 +181,7 @@ package struct Appender(T, Alloc)
 
 @nogc unittest
 {
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
 
     static immutable arr1 = [1];
     static immutable arr234 = [2, 3, 4];

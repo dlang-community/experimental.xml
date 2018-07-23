@@ -230,7 +230,7 @@ unittest
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
-    import std.experimental.allocator.gc_allocator;
+    import stdx.allocator.gc_allocator;
     import domimpl = std.experimental.xml.domimpl;
 
     alias DOMImplType = domimpl.DOMImplementation!string;
@@ -269,7 +269,7 @@ unittest
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
     import std.experimental.xml.cursor;
-    import std.experimental.allocator.gc_allocator;
+    import stdx.allocator.gc_allocator;
     import domimpl = std.experimental.xml.domimpl;
 
     alias DOMImplType = domimpl.DOMImplementation!string;

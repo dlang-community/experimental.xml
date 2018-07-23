@@ -72,7 +72,7 @@ enum GenXmlConfig M1 = { name: "M1",
                          maxChilds:        7,
                          minAttributeNum:  1,
                          maxAttributeNum:  4};
-                          
+
 enum GenXmlConfig K100 = { name: "K100",
                            minDepth:         4,
                            maxDepth:        11,
@@ -87,7 +87,7 @@ struct DumbBufferedReader
 {
     string content;
     size_t chunk_size;
-    
+
     void popFront() @nogc
     {
         if (content.length > chunk_size)
@@ -135,7 +135,7 @@ void inspectOneLevel(T)(ref T cursor)
     {
         foreach(attr; cursor.attributes)
             doNotOptimize(attr);
-            
+
         if (cursor.enter)
         {
             inspectOneLevel(cursor);
@@ -148,14 +148,14 @@ void inspectOneLevel(T)(ref T cursor)
 void oldSAXTest(string api)(string data)
 {
     mixin("import " ~ api ~ ";\n");
-    
+
     void recursiveParse(ElementParser parser)
     {
         doNotOptimize(cast(Tag)(parser.tag));
         parser.onStartTag[null] = &recursiveParse;
         parser.parse;
     }
-    
+
     DocumentParser parser = new DocumentParser(data);
     recursiveParse(parser);
 }
@@ -174,7 +174,7 @@ void buildDOM(string data)
         .cursor
         .domBuilder;
     builder.setSource(data);
-    
+
     builder.buildRecursive;
     doNotOptimize(builder.getDocument);
 }
@@ -274,16 +274,16 @@ struct FileResults
 
 mixin template BenchmarkFunctions(ComponentConfig[] comps, size_t pos = 0)
 {
-    mixin("auto " ~ comps[pos].name ~ "_BenchmarkFunction(string data) {"
-            "import core.time: MonoTime;"
-            "auto input = " ~ comps[pos].inputFunction ~ "(data);"
+    mixin("auto " ~ comps[pos].name ~ "_BenchmarkFunction(string data) {" ~
+            "import core.time: MonoTime;" ~
+            "auto input = " ~ comps[pos].inputFunction ~ "(data);" ~
             "MonoTime before = MonoTime.currTime;"
-            ~ comps[pos].benchmarkFunction ~ "(input);"
-            "MonoTime after = MonoTime.currTime;"
-            "return after - before;"
+            ~ comps[pos].benchmarkFunction ~ "(input);" ~
+            "MonoTime after = MonoTime.currTime;" ~
+            "return after - before;" ~
             "}"
         );
-            
+
     static if (pos + 1 < comps.length)
         mixin BenchmarkFunctions!(comps, pos + 1);
 }
@@ -294,23 +294,23 @@ auto performBenchmark(BenchmarkConfig benchmark)()
 
     enum ComponentConfig[] theComponents = theBenchmark.components;
     mixin BenchmarkFunctions!(theComponents);
-    
+
     total_tests = benchmark.runsPerFile * benchmark.filesPerConfig * benchmark.configurations.length * benchmark.components.length;
     ComponentResults[string] results;
     foreach(component; aliasSeqOf!(theComponents))
         results[component.name] = testComponent(benchmark, mixin("&" ~ component.name ~ "_BenchmarkFunction"));
-        
+
     return results;
 }
 
 auto testComponent(BenchmarkConfig benchmark, Duration delegate(string) fun)
 {
     import std.algorithm: map, joiner;
-    
+
     ComponentResults results;
     foreach (config; benchmark.configurations)
         results.configResults[config.name] = testConfiguration(config.name, benchmark.filesPerConfig, benchmark.runsPerFile, fun);
-    
+
     results.speedStat = PreciseStatisticData!double(results.configResults.byValue.map!"a.fileResults.byValue".joiner.map!"a.speeds".joiner);
     return results;
 }
@@ -318,11 +318,11 @@ auto testComponent(BenchmarkConfig benchmark, Duration delegate(string) fun)
 auto testConfiguration(string config, uint files, uint runs, Duration delegate(string) fun)
 {
     import std.algorithm: map, joiner;
-    
+
     ConfigResults results;
     foreach (filename; getConfigFiles(config, files))
         results.fileResults[filename] = testFile(filename, runs, fun);
-        
+
     results.speedStat = PreciseStatisticData!double(results.fileResults.byValue.map!"a.speeds".joiner);
     return results;
 }
@@ -332,7 +332,7 @@ ulong performed_tests;
 auto testFile(string name, uint runs, Duration delegate(string) fun)
 {
     import core.memory;
-        
+
     FileResults results;
     auto input = readText(name);
     foreach (run; 0..runs)
@@ -340,11 +340,11 @@ auto testFile(string name, uint runs, Duration delegate(string) fun)
         GC.disable;
         auto time = fun(input);
         GC.enable;
-        
+
         results.times ~= time;
         results.speeds ~= (cast(double)getSize(name)) / time.total!"usecs";
         stderr.writef("\r%d out of %d tests performed", ++performed_tests, total_tests);
-        
+
         GC.collect();
     }
     results.timeStat = typeof(results.timeStat)(results.times);
@@ -370,11 +370,11 @@ auto generateTestFiles(BenchmarkConfig benchmark)
         mkdir("random-benchmark");
 
     FileStats[string] results;
-        
+
     total_files = benchmark.filesPerConfig * benchmark.configurations.length;
     foreach (config; benchmark.configurations)
         results.merge!"a"(generateTestFiles(config, config.name, benchmark.filesPerConfig));
-        
+
     return results;
 }
 
@@ -403,7 +403,7 @@ void merge(alias f, V, K)(ref V[K] first, const V[K] second)
 {
     import std.functional: binaryFun;
     alias fun = binaryFun!f;
-    
+
     foreach (kv; second.byKeyValue)
         if (kv.key in first)
             first[kv.key] = fun(first[kv.key], kv.value);
@@ -438,7 +438,7 @@ void printTimesForConfiguration(BenchmarkConfig benchmark, ComponentResults[stri
     import std.range: repeat, take;
     auto component_width = max(results.byKey.map!"a.length".maxCount[0], 8);
     auto std_width = 16;
-    
+
     string formatDuration(Duration d)
     {
         import std.format: format;
@@ -452,7 +452,7 @@ void printTimesForConfiguration(BenchmarkConfig benchmark, ComponentResults[stri
         else
             return to!string(millis/1000) ~ " s";
     }
-    
+
     foreach (component; benchmark.components)
     {
         write("\r  " , component.name, ":", repeat(' ').take(component_width - component.name.length));
@@ -563,15 +563,15 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
     import std.algorithm: each, map, max, maxCount;
     import std.path: pathSplitter, stripExtension;
     import std.file: getSize;
-    
+
     ulong columnWidth = 16;
-    
+
     void writeSized(ulong value, string measure = " ")
     {
         import std.format: format;
         import std.range: repeat, take;
         import std.math: ceil, log10;
-        
+
         string formatted;
         if (!value)
         {
@@ -601,21 +601,21 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
                 center("-", columnWidth).write;
         }
     }
-    
+
     write("\n  names:             ");
     foreach(name; config.getConfigFiles(maxFiles))
         name.pathSplitter.back.stripExtension.center(columnWidth).write;
-        
+
     write("\n  total file size:   ");
     foreach(name; config.getConfigFiles(maxFiles))
         writeSized(name.getSize(), "B");
-        
+
     write("\n  raw text content:  ");
     writeAttribute!("textChars", "B");
-        
+
     write("\n  useless spacing:   ");
     writeAttribute!("spaces", "B");
-            
+
     write("\n  total nodes:       ");
     foreach(name; config.getConfigFiles(maxFiles))
         if (filestats[name] != FileStats.init)
@@ -626,19 +626,19 @@ void printFilesForConfiguration(string config, uint maxFiles, FileStats[string] 
         }
         else
             center("-", columnWidth).write;
-            
+
     write("\n  element nodes:     ");
     writeAttribute!("elements");
-            
+
     write("\n  attribute nodes:   ");
     writeAttribute!("attributes", "B");
-            
+
     write("\n  text nodes:        ");
     writeAttribute!("textNodes", "B");
-            
+
     write("\n  cdata nodes:       ");
     writeAttribute!("cdataNodes", "B");
-            
+
     write("\n  comment nodes:     ");
     writeAttribute!("comments", "B");
     writeln();
@@ -673,9 +673,9 @@ void printResultsSpeedSummary(BenchmarkConfig benchmark, ComponentResults[string
     auto spaces = repeat(' ');
     auto lines = repeat('-');
     auto boldLines = repeat('=');
-    
+
     writeln("\n=== CONFIGURATIONS SUMMARY ===\n");
-    
+
     write(spaces.take(component_width));
     foreach (i; 0..benchmark.configurations.length)
     {
@@ -758,22 +758,22 @@ void printResultsCSV(BenchmarkConfig benchmark, ComponentResults[string] results
     import core.time: ClockType;
     auto now = Clock.currTime!(ClockType.second);
     auto timeStr = now.toISOExtString;
-    
+
     import std.format: format;
     auto fmtP = "P, " ~ timeStr ~ ", %s, %f, %f, %f, %f, %f";
     auto fmtC = "C, " ~ timeStr ~ ", %s, %s, %f, %f, %f, %f, %f";
     auto fmtF = "F, " ~ timeStr ~ ", %s, %s, %s, %f, %f, %f, %f, %f";
-    
+
     foreach (component; benchmark.components)
     {
         auto compStats = results[component.name].speedStat;
         fmtP.format(component.name, compStats.min, compStats.mean, compStats.max, compStats.median, compStats.deviation).writeln;
-        
+
         foreach (config; benchmark.configurations)
         {
             auto confStats = results[component.name].configResults[config.name].speedStat;
             fmtC.format(component.name, config.name, confStats.min, confStats.mean, confStats.max, confStats.median, confStats.deviation).writeln;
-        
+
             foreach (file, fileResults; results[component.name].configResults[config.name].fileResults)
             {
                 auto fileStats = fileResults.speedStat;
