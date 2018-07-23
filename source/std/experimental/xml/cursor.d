@@ -554,7 +554,7 @@ unittest
     import std.algorithm : map;
     import std.array : array;
 
-    wstring xml = q{
+    wstring xml = q"{
     <?xml encoding = "utf-8" ?>
     <!DOCTYPE mydoc https://myUri.org/bla [
         <!ELEMENT myelem ANY>
@@ -572,7 +572,7 @@ unittest
         <![CDATA[ Ciaone! ]]>
         <ccc/>
     </aaa>
-    };
+    }";
 
     auto cursor = xml.lexer.parser.cursor;
 
@@ -734,7 +734,7 @@ auto children(T)(ref T cursor)
     </aaa>
     };
 
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
 
     auto handler = () { assert(0, "Some problem here..."); };
     auto lexer = RangeLexer!(string, typeof(handler), shared(Mallocator))(Mallocator.instance);
@@ -839,7 +839,7 @@ auto children(T)(ref T cursor)
 }
 
 import std.traits : isArray;
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator.gc_allocator;
 
 /++
 +   A cursor that wraps another cursor, copying all output strings.
@@ -880,7 +880,7 @@ struct CopyingCursor(CursorType, Alloc = shared(GCAllocator), Flag!"intern" inte
         }
 
         import std.traits : Unqual;
-        import std.experimental.allocator;
+        import stdx.allocator;
         import std.range.primitives : ElementEncodingType;
         import core.stdc.string : memcpy;
 
@@ -962,7 +962,7 @@ unittest
 {
     import std.experimental.xml.lexers;
     import std.experimental.xml.parser;
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
 
     wstring xml = q{
     <?xml encoding = "utf-8" ?>

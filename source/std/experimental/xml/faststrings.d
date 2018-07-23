@@ -105,7 +105,7 @@ unittest
     assert(fastIndexOfNeither([1, 3, 2], [2, 3, 1]) == -1);
 }
 
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator.gc_allocator;
 
 /++
 +   Returns a copy of the input string, after escaping all XML reserved characters.
@@ -306,7 +306,7 @@ void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)
 
 @nogc unittest
 {
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
     auto alloc = Mallocator.instance;
     assert(xmlEscape("some standard string"d, alloc) == "some standard string"d);
     assert(xmlEscape("& \"some\" <standard> 'string'", alloc) ==
@@ -317,7 +317,7 @@ void xmlUnescapedWrite(Flag!"strict" strict = Yes.strict, Out, T, U)
 
 @nogc unittest
 {
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
     auto alloc = Mallocator.instance;
     assert(xmlUnescape("some standard string"d, alloc) == "some standard string"d);
     assert(xmlUnescape("some s&#116;range&#x20;string", alloc) == "some strange string");

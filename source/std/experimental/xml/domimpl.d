@@ -23,8 +23,8 @@ module std.experimental.xml.domimpl;
 import std.experimental.xml.interfaces;
 import dom = std.experimental.xml.dom;
 import std.typecons : rebindable, Flag, BitFlags;
-import std.experimental.allocator;
-import std.experimental.allocator.gc_allocator;
+import stdx.allocator;
+import stdx.allocator.gc_allocator;
 
 // this is needed because compilers up to at least DMD 2.071.1 suffer from issue 16319
 private auto multiVersionMake(Type, Allocator, Args...)(ref Allocator allocator, auto ref Args args)
@@ -2414,14 +2414,14 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
 +/
 auto domBuilder(CursorType)(auto ref CursorType cursor)
 {
-    import std.experimental.allocator.gc_allocator;
+    import stdx.allocator.gc_allocator;
     import dompar = std.experimental.xml.domparser;
     return dompar.domBuilder(cursor, new DOMImplementation!(CursorType.StringType, shared(GCAllocator))());
 }
 
 unittest
 {
-    import std.experimental.allocator.mallocator;
+    import stdx.allocator.mallocator;
     auto impl = Mallocator.instance.make!(DOMImplementation!(string, shared(Mallocator)))();
 
     auto doc = impl.createDocument("myNamespaceURI", "myPrefix:myRootElement", null);

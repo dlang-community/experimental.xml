@@ -6,26 +6,29 @@
     "targetType": "library",
     "license": "BSL-1.0",
     "excludedSourceFiles": ["source/benchmark.d", "source/test.d", "source/random_benchmark/*"],
+    "dependencies": {
+        "stdx-allocator": "~>2.77.2"
+    },
     "configurations":
     [
         {
-            "name": "library",
+            "name": "library"
         },
         {
             "name": "benchmark",
             "targetType": "executable",
-            "mainSourceFile": "source/benchmark.d",
+            "mainSourceFile": "source/benchmark.d"
         },
         {
             "name": "random-benchmark",
             "targetType": "executable",
             "mainSourceFile": "source/random_benchmark/random_benchmark.d",
-            "sourceFiles": ["source/random_benchmark/genxml.d"],
+            "sourceFiles": ["source/random_benchmark/genxml.d"]
         },
         {
             "name": "test",
             "targetType": "executable",
-            "mainSourceFile": "source/test.d",
-        },
-    ],
+            "mainSourceFile": "source/test.d"
+        }
+    ]
 }
