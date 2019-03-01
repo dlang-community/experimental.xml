@@ -315,6 +315,8 @@ struct Parser(L, ErrorHandler, Flag!"preserveWhitespace" preserveWhitespace = No
 +       preserveWhitespace = whether the returned `Parser` shall skip element content
 +                            whitespace or return it as text nodes
 +       lexer = the _lexer to build this `Parser` from
++       handler = optional error-handling delegate (if not provided, the default will
++                 assert on any XML syntax error)
 +
 +   Returns:
 +   A `Parser` instance initialized with the given lexer
