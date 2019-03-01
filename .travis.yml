@@ -13,6 +13,7 @@ matrix:
 
 script:
   - make build-all
+  - make docs
   - if [ ${PRIMARY} = "true" ]; then make unittest-cov; else make unittest; fi
 
 after_success:
