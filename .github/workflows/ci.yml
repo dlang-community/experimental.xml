@@ -19,7 +19,7 @@ jobs:
           compiler: ${{ matrix.dc }}
 
       - name: Run tests
-        run: dub -q test
+        run: make test
 
-      - name: Run all
-        run: unittest
+      - name: Run benchmarks
+        run: make benchmark
