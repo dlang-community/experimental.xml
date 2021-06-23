@@ -73,10 +73,9 @@ package struct Appender(T, Alloc)
             }
             else
             {
-                import std.conv : emplaceRef;
                 foreach (ref it ; arr[used..(used+len)])
                 {
-                    emplaceRef!T(it, range.front);
+					it = range.front;
                     range.popFront();
                 }
             }

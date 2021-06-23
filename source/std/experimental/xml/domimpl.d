@@ -171,7 +171,7 @@ class DOMImplementation(DOMString, Alloc = shared(GCAllocator), ErrorHandler = b
             /// Implementation of $(LINK2 ../dom/Node.isEqualNode, `std.experimental.xml.dom.Node.isEqualNode`).
             bool isEqualNode(dom.Node!DOMString other)
             {
-                import std.traits: AliasSeq;
+                import std.meta: AliasSeq;
 
                 if (!other || nodeType != other.nodeType)
                     return false;

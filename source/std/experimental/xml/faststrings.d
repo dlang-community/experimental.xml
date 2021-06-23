@@ -20,7 +20,7 @@ in
 {
     assert(t.length == s.length);
 }
-body
+do
 {
     import std.traits;
     static if (is(Unqual!S == Unqual!T))
